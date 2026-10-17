@@ -2,18 +2,27 @@
 
 `TSOFilesC` is a C module over the existing `TSOFiles` Swift implementation.
 Its C functions are thin forwards to Swift C-ABI entry points. It does not
-reimplement RefPack or DBPF parsing. Include `Sources/TSOFilesC/include/TSOFilesC.h`
-and use the `TSOFilesC` SwiftPM product from a dependent package.
+reimplement archive parsing or compression. Include
+`Sources/TSOFilesC/include/TSOFilesC.h` and use the `TSOFilesC` SwiftPM product
+from a dependent package.
 
-RefPack decompression and DBPF entry extraction return library-allocated byte
-buffers. Release them with `tsofiles_c_buffer_free`. DBPF handles returned by
-`tsofiles_c_dbpf_open` must be released with `tsofiles_c_dbpf_close`.
+The API exposes RefPack decompression and DBPF, FAR1, and FAR3 archive reads.
+FAR1 open takes variant `0` for FAR1a and `1` for FAR1b. Archive entries are
+addressed by zero-based index; FAR1 and FAR3 also support exact UTF-8 name
+lookup, while FAR3 supports lookup by its file and type IDs.
 
-Functions return `TSOFilesCStatus` values. Byte-output pointers are initialized
-to null (and their sizes to zero) before work starts, so callers can safely
-clean up after an error. Pointers passed to handle operations must be a live
-handle returned by this API; invalid or already-released handles are not
-recoverable.
+Entry data and entry names are copied into library-allocated buffers. Names
+contain UTF-8 bytes without a trailing NUL. Release all returned buffers with
+`tsofiles_c_buffer_free`. Release archive handles with the matching close
+function: DBPF, FAR1, or FAR3. Byte-output pointers are initialized to null
+(and their sizes to zero) before work starts, so callers can safely clean up
+after an error.
+
+Functions return `TSOFilesCStatus` values. In addition to invalid-argument and
+out-of-range statuses, archive open reports format-specific not-archive and
+truncated errors. FAR3 entry reads report missing entries and RefPack
+decompression failures. Handle pointers must be live handles returned by this
+API; invalid or already-released handles are not recoverable.
 
 Run `swift test --package-path NSOClient/TSOFilesC` for the Swift API tests and
 `swift run --package-path NSOClient/TSOFilesC TSOFilesCCSmoke` to compile and
