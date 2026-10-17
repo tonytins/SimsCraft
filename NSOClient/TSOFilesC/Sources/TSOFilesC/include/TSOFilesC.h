@@ -31,10 +31,10 @@ typedef enum TSOFilesCStatus {
 
 /*
  * Decompresses a RefPack stream. The output is allocated by this library and
- * must be released with tsofiles_c_buffer_free. A zero-length output is NULL.
+ * must be released with buffer_free. A zero-length output is NULL.
  * Input and output sizes are signed 64-bit byte counts and must be nonnegative.
  */
-int32_t tsofiles_c_refpack_decompress(
+int32_t refpack_decompress(
     const uint8_t *compressed,
     int64_t compressed_size,
     int64_t decompressed_size,
@@ -42,39 +42,39 @@ int32_t tsofiles_c_refpack_decompress(
     int64_t *output_size
 );
 
-/* Releases a byte buffer returned by tsofiles_c_refpack_decompress or
- * tsofiles_c_dbpf_entry_data. Passing NULL is allowed. */
-void tsofiles_c_buffer_free(uint8_t *buffer);
+/* Releases a byte buffer returned by a data or entry-name function.
+ * Passing NULL is allowed. */
+void buffer_free(uint8_t *buffer);
 
 /*
  * Opens a DBPF archive from memory. The archive copies/retains its own data,
  * so the input buffer can be released after this call. Release the returned
- * archive with tsofiles_c_dbpf_close.
+ * archive with dbpf_close.
  */
-int32_t tsofiles_c_dbpf_open(
+int32_t dbpf_open(
     const uint8_t *bytes,
     int64_t byte_count,
     TSOFilesCArchive **archive
 );
 
-/* Releases an archive returned by tsofiles_c_dbpf_open. Passing NULL is allowed. */
-void tsofiles_c_dbpf_close(TSOFilesCArchive *archive);
+/* Releases an archive returned by dbpf_open. Passing NULL is allowed. */
+void dbpf_close(TSOFilesCArchive *archive);
 
 /* Writes the archive version to the provided outputs. */
-int32_t tsofiles_c_dbpf_version(
+int32_t dbpf_version(
     const TSOFilesCArchive *archive,
     uint32_t *major_version,
     uint32_t *minor_version
 );
 
 /* Writes the number of entries in the archive. */
-int32_t tsofiles_c_dbpf_entry_count(const TSOFilesCArchive *archive, int64_t *count);
+int32_t dbpf_entry_count(const TSOFilesCArchive *archive, int64_t *count);
 
 /*
  * Reads the metadata for an entry by its zero-based index. Entries are in
  * archive index order.
  */
-int32_t tsofiles_c_dbpf_entry_at(
+int32_t dbpf_entry_at(
     const TSOFilesCArchive *archive,
     int64_t index,
     uint32_t *type_id,
@@ -85,7 +85,7 @@ int32_t tsofiles_c_dbpf_entry_at(
 );
 
 /* Finds the first entry matching its instance and type IDs. */
-int32_t tsofiles_c_dbpf_find_entry(
+int32_t dbpf_find_entry(
     const TSOFilesCArchive *archive,
     uint32_t instance_id,
     uint32_t type_id,
@@ -93,7 +93,7 @@ int32_t tsofiles_c_dbpf_find_entry(
 );
 
 /* Copies an entry's contents into a library-allocated buffer. */
-int32_t tsofiles_c_dbpf_entry_data(
+int32_t dbpf_entry_data(
     const TSOFilesCArchive *archive,
     int64_t index,
     uint8_t **data,
@@ -102,39 +102,39 @@ int32_t tsofiles_c_dbpf_entry_data(
 
 /*
  * Opens a FAR1 archive. variant is 0 for FAR1a and 1 for FAR1b.
- * The returned archive must be released with tsofiles_c_far1_close.
+ * The returned archive must be released with far1_close.
  */
-int32_t tsofiles_c_far1_open(
+int32_t far1_open(
     const uint8_t *bytes,
     int64_t byte_count,
     int32_t variant,
     TSOFilesCFAR1Archive **archive
 );
 
-void tsofiles_c_far1_close(TSOFilesCFAR1Archive *archive);
-int32_t tsofiles_c_far1_entry_count(const TSOFilesCFAR1Archive *archive, int64_t *count);
-int32_t tsofiles_c_far1_entry_at(
+void far1_close(TSOFilesCFAR1Archive *archive);
+int32_t far1_entry_count(const TSOFilesCFAR1Archive *archive, int64_t *count);
+int32_t far1_entry_at(
     const TSOFilesCFAR1Archive *archive,
     int64_t index,
     int64_t *data_length,
     int64_t *compressed_length,
     int64_t *data_offset
 );
-int32_t tsofiles_c_far1_find_entry(
+int32_t far1_find_entry(
     const TSOFilesCFAR1Archive *archive,
     const uint8_t *name,
     int64_t name_size,
     int64_t *index
 );
 /* Entry-name buffers contain UTF-8 bytes without a trailing NUL. Free with
- * tsofiles_c_buffer_free. */
-int32_t tsofiles_c_far1_entry_name(
+ * buffer_free. */
+int32_t far1_entry_name(
     const TSOFilesCFAR1Archive *archive,
     int64_t index,
     uint8_t **name,
     int64_t *name_size
 );
-int32_t tsofiles_c_far1_entry_data(
+int32_t far1_entry_data(
     const TSOFilesCFAR1Archive *archive,
     int64_t index,
     uint8_t **data,
@@ -143,12 +143,12 @@ int32_t tsofiles_c_far1_entry_data(
 
 /*
  * Opens a FAR3 archive. The returned archive must be released with
- * tsofiles_c_far3_close.
+ * far3_close.
  */
-int32_t tsofiles_c_far3_open(const uint8_t *bytes, int64_t byte_count, TSOFilesCFAR3Archive **archive);
-void tsofiles_c_far3_close(TSOFilesCFAR3Archive *archive);
-int32_t tsofiles_c_far3_entry_count(const TSOFilesCFAR3Archive *archive, int64_t *count);
-int32_t tsofiles_c_far3_entry_at(
+int32_t far3_open(const uint8_t *bytes, int64_t byte_count, TSOFilesCFAR3Archive **archive);
+void far3_close(TSOFilesCFAR3Archive *archive);
+int32_t far3_entry_count(const TSOFilesCFAR3Archive *archive, int64_t *count);
+int32_t far3_entry_at(
     const TSOFilesCFAR3Archive *archive,
     int64_t index,
     uint32_t *file_id,
@@ -160,27 +160,27 @@ int32_t tsofiles_c_far3_entry_at(
     uint8_t *compression_flag,
     uint8_t *access_count
 );
-int32_t tsofiles_c_far3_find_entry_by_name(
+int32_t far3_find_entry_by_name(
     const TSOFilesCFAR3Archive *archive,
     const uint8_t *name,
     int64_t name_size,
     int64_t *index
 );
-int32_t tsofiles_c_far3_find_entry_by_asset_id(
+int32_t far3_find_entry_by_asset_id(
     const TSOFilesCFAR3Archive *archive,
     uint32_t file_id,
     uint32_t type_id,
     int64_t *index
 );
 /* Entry-name buffers contain UTF-8 bytes without a trailing NUL. Free with
- * tsofiles_c_buffer_free. */
-int32_t tsofiles_c_far3_entry_name(
+ * buffer_free. */
+int32_t far3_entry_name(
     const TSOFilesCFAR3Archive *archive,
     int64_t index,
     uint8_t **name,
     int64_t *name_size
 );
-int32_t tsofiles_c_far3_entry_data(
+int32_t far3_entry_data(
     const TSOFilesCFAR3Archive *archive,
     int64_t index,
     uint8_t **data,

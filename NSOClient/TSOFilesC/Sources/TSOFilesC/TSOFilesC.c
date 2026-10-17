@@ -103,7 +103,7 @@ extern int32_t tsofiles_swift_far3_entry_data(
     int64_t *data_size
 );
 
-int32_t tsofiles_c_refpack_decompress(
+int32_t refpack_decompress(
     const uint8_t *compressed,
     int64_t compressed_size,
     int64_t decompressed_size,
@@ -113,11 +113,11 @@ int32_t tsofiles_c_refpack_decompress(
     return tsofiles_swift_refpack_decompress(compressed, compressed_size, decompressed_size, output, output_size);
 }
 
-void tsofiles_c_buffer_free(uint8_t *buffer) {
+void buffer_free(uint8_t *buffer) {
     tsofiles_swift_buffer_free(buffer);
 }
 
-int32_t tsofiles_c_dbpf_open(const uint8_t *bytes, int64_t byte_count, TSOFilesCArchive **archive) {
+int32_t dbpf_open(const uint8_t *bytes, int64_t byte_count, TSOFilesCArchive **archive) {
     if (archive == NULL) {
         return TSOFILES_C_INVALID_ARGUMENT;
     }
@@ -130,11 +130,11 @@ int32_t tsofiles_c_dbpf_open(const uint8_t *bytes, int64_t byte_count, TSOFilesC
     return status;
 }
 
-void tsofiles_c_dbpf_close(TSOFilesCArchive *archive) {
+void dbpf_close(TSOFilesCArchive *archive) {
     tsofiles_swift_dbpf_close(archive);
 }
 
-int32_t tsofiles_c_dbpf_version(
+int32_t dbpf_version(
     const TSOFilesCArchive *archive,
     uint32_t *major_version,
     uint32_t *minor_version
@@ -142,11 +142,11 @@ int32_t tsofiles_c_dbpf_version(
     return tsofiles_swift_dbpf_version(archive, major_version, minor_version);
 }
 
-int32_t tsofiles_c_dbpf_entry_count(const TSOFilesCArchive *archive, int64_t *count) {
+int32_t dbpf_entry_count(const TSOFilesCArchive *archive, int64_t *count) {
     return tsofiles_swift_dbpf_entry_count(archive, count);
 }
 
-int32_t tsofiles_c_dbpf_entry_at(
+int32_t dbpf_entry_at(
     const TSOFilesCArchive *archive,
     int64_t index,
     uint32_t *type_id,
@@ -159,7 +159,7 @@ int32_t tsofiles_c_dbpf_entry_at(
         archive, index, type_id, group_id, instance_id, file_offset, file_size);
 }
 
-int32_t tsofiles_c_dbpf_find_entry(
+int32_t dbpf_find_entry(
     const TSOFilesCArchive *archive,
     uint32_t instance_id,
     uint32_t type_id,
@@ -168,7 +168,7 @@ int32_t tsofiles_c_dbpf_find_entry(
     return tsofiles_swift_dbpf_find_entry(archive, instance_id, type_id, index);
 }
 
-int32_t tsofiles_c_dbpf_entry_data(
+int32_t dbpf_entry_data(
     const TSOFilesCArchive *archive,
     int64_t index,
     uint8_t **data,
@@ -177,7 +177,7 @@ int32_t tsofiles_c_dbpf_entry_data(
     return tsofiles_swift_dbpf_entry_data(archive, index, data, data_size);
 }
 
-int32_t tsofiles_c_far1_open(
+int32_t far1_open(
     const uint8_t *bytes,
     int64_t byte_count,
     int32_t variant,
@@ -195,15 +195,15 @@ int32_t tsofiles_c_far1_open(
     return status;
 }
 
-void tsofiles_c_far1_close(TSOFilesCFAR1Archive *archive) {
+void far1_close(TSOFilesCFAR1Archive *archive) {
     tsofiles_swift_far1_close(archive);
 }
 
-int32_t tsofiles_c_far1_entry_count(const TSOFilesCFAR1Archive *archive, int64_t *count) {
+int32_t far1_entry_count(const TSOFilesCFAR1Archive *archive, int64_t *count) {
     return tsofiles_swift_far1_entry_count(archive, count);
 }
 
-int32_t tsofiles_c_far1_entry_at(
+int32_t far1_entry_at(
     const TSOFilesCFAR1Archive *archive,
     int64_t index,
     int64_t *data_length,
@@ -213,7 +213,7 @@ int32_t tsofiles_c_far1_entry_at(
     return tsofiles_swift_far1_entry_at(archive, index, data_length, compressed_length, data_offset);
 }
 
-int32_t tsofiles_c_far1_find_entry(
+int32_t far1_find_entry(
     const TSOFilesCFAR1Archive *archive,
     const uint8_t *name,
     int64_t name_size,
@@ -222,7 +222,7 @@ int32_t tsofiles_c_far1_find_entry(
     return tsofiles_swift_far1_find_entry(archive, name, name_size, index);
 }
 
-int32_t tsofiles_c_far1_entry_name(
+int32_t far1_entry_name(
     const TSOFilesCFAR1Archive *archive,
     int64_t index,
     uint8_t **name,
@@ -231,7 +231,7 @@ int32_t tsofiles_c_far1_entry_name(
     return tsofiles_swift_far1_entry_name(archive, index, name, name_size);
 }
 
-int32_t tsofiles_c_far1_entry_data(
+int32_t far1_entry_data(
     const TSOFilesCFAR1Archive *archive,
     int64_t index,
     uint8_t **data,
@@ -240,7 +240,7 @@ int32_t tsofiles_c_far1_entry_data(
     return tsofiles_swift_far1_entry_data(archive, index, data, data_size);
 }
 
-int32_t tsofiles_c_far3_open(
+int32_t far3_open(
     const uint8_t *bytes,
     int64_t byte_count,
     TSOFilesCFAR3Archive **archive
@@ -257,15 +257,15 @@ int32_t tsofiles_c_far3_open(
     return status;
 }
 
-void tsofiles_c_far3_close(TSOFilesCFAR3Archive *archive) {
+void far3_close(TSOFilesCFAR3Archive *archive) {
     tsofiles_swift_far3_close(archive);
 }
 
-int32_t tsofiles_c_far3_entry_count(const TSOFilesCFAR3Archive *archive, int64_t *count) {
+int32_t far3_entry_count(const TSOFilesCFAR3Archive *archive, int64_t *count) {
     return tsofiles_swift_far3_entry_count(archive, count);
 }
 
-int32_t tsofiles_c_far3_entry_at(
+int32_t far3_entry_at(
     const TSOFilesCFAR3Archive *archive,
     int64_t index,
     uint32_t *file_id,
@@ -282,7 +282,7 @@ int32_t tsofiles_c_far3_entry_at(
         data_offset, compression_flag, access_count);
 }
 
-int32_t tsofiles_c_far3_find_entry_by_name(
+int32_t far3_find_entry_by_name(
     const TSOFilesCFAR3Archive *archive,
     const uint8_t *name,
     int64_t name_size,
@@ -291,7 +291,7 @@ int32_t tsofiles_c_far3_find_entry_by_name(
     return tsofiles_swift_far3_find_entry_by_name(archive, name, name_size, index);
 }
 
-int32_t tsofiles_c_far3_find_entry_by_asset_id(
+int32_t far3_find_entry_by_asset_id(
     const TSOFilesCFAR3Archive *archive,
     uint32_t file_id,
     uint32_t type_id,
@@ -300,7 +300,7 @@ int32_t tsofiles_c_far3_find_entry_by_asset_id(
     return tsofiles_swift_far3_find_entry_by_asset_id(archive, file_id, type_id, index);
 }
 
-int32_t tsofiles_c_far3_entry_name(
+int32_t far3_entry_name(
     const TSOFilesCFAR3Archive *archive,
     int64_t index,
     uint8_t **name,
@@ -309,7 +309,7 @@ int32_t tsofiles_c_far3_entry_name(
     return tsofiles_swift_far3_entry_name(archive, index, name, name_size);
 }
 
-int32_t tsofiles_c_far3_entry_data(
+int32_t far3_entry_data(
     const TSOFilesCFAR3Archive *archive,
     int64_t index,
     uint8_t **data,

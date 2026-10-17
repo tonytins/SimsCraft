@@ -76,7 +76,7 @@ private func entryIndex<Entry: Equatable>(of entry: Entry, in entries: [Entry]) 
 /// Decompresses RefPack bytes through `TSOFiles.RefPack`.
 ///
 /// Returns `0` on success. Returned bytes belong to the caller and must be freed
-/// with ``tsofiles_c_buffer_free``.
+/// with ``buffer_free``.
 @_cdecl("tsofiles_swift_refpack_decompress")
 public func tsofilesCRefPackDecompress(
     _ compressed: UnsafePointer<UInt8>?,
@@ -113,7 +113,7 @@ public func tsofilesCBufferFree(_ buffer: UnsafeMutablePointer<UInt8>?) {
 /// Opens a DBPF archive through `TSOFiles.DBPFArchive`.
 ///
 /// Returns `0` on success. The returned handle must be released with
-/// ``tsofiles_c_dbpf_close``.
+/// ``dbpf_close``.
 @_cdecl("tsofiles_swift_dbpf_open")
 public func tsofilesCDBPFOpen(
     _ bytes: UnsafePointer<UInt8>?,
@@ -140,7 +140,7 @@ public func tsofilesCDBPFOpen(
     }
 }
 
-/// Releases a DBPF handle returned by ``tsofiles_c_dbpf_open``.
+/// Releases a DBPF handle returned by ``dbpf_open``.
 @_cdecl("tsofiles_swift_dbpf_close")
 public func tsofilesCDBPFClose(_ archive: UnsafeMutableRawPointer?) {
     guard let archive else { return }

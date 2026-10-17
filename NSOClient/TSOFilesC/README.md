@@ -13,8 +13,8 @@ lookup, while FAR3 supports lookup by its file and type IDs.
 
 Entry data and entry names are copied into library-allocated buffers. Names
 contain UTF-8 bytes without a trailing NUL. Release all returned buffers with
-`tsofiles_c_buffer_free`. Release archive handles with the matching close
-function: DBPF, FAR1, or FAR3. Byte-output pointers are initialized to null
+`buffer_free`. Release archive handles with their matching DBPF, FAR1, or FAR3
+close function. Byte-output pointers are initialized to null
 (and their sizes to zero) before work starts, so callers can safely clean up
 after an error.
 
