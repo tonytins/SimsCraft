@@ -68,7 +68,10 @@ public enum Review {
         ## Reading the results
 
         Each section below covers one copy of the game. *Production* is a 2002 release of the game
-        (FreeSO was built against a 2003 one), and *beta* is a 2002 beta. In each table:
+        (FreeSO was built against a 2003 one), and *beta* is a 2002 beta. *Mock* is
+        `NSOClient/MockInstall`, a small made-up install in the repository with no game data, so anyone
+        can reproduce its section without a copy of the game; its numbers are small, and grow as the mock
+        gains objects. In each table:
 
         - **Agree:** both programs recorded the same result.
         - **Disagree:** their results differ. Each disagreement is listed with both results, for
@@ -94,8 +97,8 @@ public enum Review {
     public static func updating(_ existing: String?, with run: Run) -> String {
         var sections = sections(of: existing ?? "")
         sections[run.install] = section(for: run)
-        // Production first, then the beta, then any others by name.
-        let order = ["production", "beta"]
+        // Production first, then the beta, then the mock install, then any others by name.
+        let order = ["production", "beta", "mock"]
         let names = sections.keys.sorted { (order.firstIndex(of: $0) ?? order.count, $0) < (order.firstIndex(of: $1) ?? order.count, $1) }
         return header + names.compactMap { sections[$0] }.joined(separator: "\n")
     }

@@ -68,10 +68,28 @@ In order:
      Object Out Of Idle, Get Distance To and Get Direction To, Transfer Funds, Remove Object Instance,
      Set Balloon Headline, Idle For Input, Breakpoint, Special Effect, Stop All Sounds, and Get
      Terrain Info. Both real lots run a full in-game day in step with FreeSO.
-2. **Queen Margaret's, fourth pass: Sims.** `VMAvatar`, person data and motives, the interaction
-   queue, and the primitives that only Sims reach (Snap, Relationship, animation). It pulls in the
-   avatar formats (Nichol's Notch) for the animations whose events drive timing, and routing
-   (Shannopolis). To be planned in phases with the owner, as the third pass was.
+2. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
+   with FreeSO (the alpha gate's lot job). Each phase ends with the oracles' experiments agreeing.
+   On the real installs, Sims come from the game's person template with a made-up identity defined
+   in the oracle (no player or released city data); the mock install gains a made-up Sim, grown
+   phase by phase, so every Sim experiment also runs on CI.
+   - [ ] A. Sims in the experiments: `fso-oracle` puts Sims on a lot through FreeSO's sandbox join,
+     the digest's version 1 adds Sims' state (person data, motives, animation, the queue),
+     `run-primitive` requests can name Sims, FreeSO with an idle Sim is shown repeatable, and the
+     mock install gets a made-up person object and appearance.
+   - [ ] B. The Sim entity: avatars from the person template, person data, motives and their decay,
+     running every tick; Set Motive Deltas, Test Sim Interacting With, and Look Towards.
+   - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
+     speed, and events; FreeSO's animation state; Animate Sim, Reach, Grab, Drop, and Change Suit
+     Or Accessory (as state). Made-up animations in the mock. One idle Sim runs in step.
+   - [ ] D. The interaction queue: interaction tables (`TTAB`), queued actions and priorities,
+     action and check trees; Push Interaction, Run Functional Tree, Find Best Object For Function,
+     and Change Action String. A made-up interaction table in the mock.
+   - [ ] E. Routing (Shannopolis): the routing frame, rectangle router, obstacles, and portals, with
+     FreeSO's floating point matched; Go To Routing Slot, Go To Relative Position, and Snap.
+   - [ ] F. Relationships and services: Relationship, Old Relationship, the dialogs (headless), the
+     Generic Sims Online Call, and the Online Jobs Call, against stand-in services.
+   - [ ] G. A lot with Sims (the house) runs a full in-game day in step.
 3. **Hyde Park:** sprite formats (`SPR2`, `SPR#`, `DGRP`), so the last part of loading one object works.
 
 ## Milestones

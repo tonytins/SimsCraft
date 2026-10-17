@@ -5,9 +5,10 @@
 #
 #   NSOClient/scripts/oracle-review.sh [--review | --mock] [OUTPUT_DIR]     (default: $TMPDIR/oracle-review)
 #
-# Installs come from TSO_GAME_DIR ("production") and TSO_BETA_DIR ("beta"); either or both.
-# --mock runs on NSOClient/MockInstall ("mock") alone, as CI does: it never writes the review, and
-# it fails if any comparison has a mismatch.
+# Installs come from TSO_GAME_DIR ("production") and TSO_BETA_DIR ("beta"); either or both, and with
+# --review, NSOClient/MockInstall ("mock") too, so the report has a section anyone can reproduce.
+# --mock runs on the mock install alone, as CI does: it never writes the review, and it fails on
+# any disagreement.
 # Needs the .NET SDK, Swift, and python3. Each install gets OUTPUT_DIR/NAME/fso/, FreeSO's
 # records from oracle-fixtures.sh (also a TSO_ORACLE_DIR for the NSOOracle tests), and
 # OUTPUT_DIR/NAME/nso/, NSOClient's records of the same experiments in the same files, each with
@@ -29,6 +30,7 @@ if $mock; then
 else
     [[ -n "${TSO_GAME_DIR:-}" ]] && installs+=("production=$TSO_GAME_DIR")
     [[ -n "${TSO_BETA_DIR:-}" ]] && installs+=("beta=$TSO_BETA_DIR")
+    if $review && (( ${#installs[@]} > 0 )); then installs+=("mock=$repository/NSOClient/MockInstall/TSOClient"); fi
 fi
 if (( ${#installs[@]} == 0 )); then
     echo "oracle-review: set TSO_GAME_DIR, TSO_BETA_DIR, or both, or pass --mock" >&2
@@ -53,7 +55,7 @@ for install in "${installs[@]}"; do
     rm -f "$folder"/*.jsonl "$folder"/*.digests "$folder"/*.tsv "$folder/log.txt"
 
     echo "[$name] FreeSO's side..."
-    if $mock; then
+    if [[ "$name" == mock ]]; then
         ORACLE_BUILT=1 "$repository/NSOClient/scripts/oracle-fixtures.sh" --mock "$fso_folder" | sed "s|^|[$name] |"
     else
         ORACLE_BUILT=1 TSO_GAME_DIR="$game" "$repository/NSOClient/scripts/oracle-fixtures.sh" "$fso_folder" | sed "s|^|[$name] |"

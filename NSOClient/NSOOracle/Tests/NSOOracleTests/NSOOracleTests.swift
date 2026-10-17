@@ -212,5 +212,9 @@ struct FixtureComparisonTests {
         #expect(rerun.contains("| Room maps | 62 |") && !rerun.contains("| Room maps | 61 |"))
         #expect(rerun.contains("| Room maps | 50 |"))                     // the beta's section stays
         #expect(Review.sections(of: rerun).count == 2)
+
+        let withMock = Review.updating(Review.updating(rerun, with: run("mock", matched: 9)), with: run("alpha", matched: 1))
+        let order = ["## Production", "## Beta", "## Mock", "## Alpha"].map { withMock.range(of: $0)!.lowerBound }
+        #expect(order == order.sorted())                                       // then the mock, then others by name
     }
 }
