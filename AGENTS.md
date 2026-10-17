@@ -90,6 +90,7 @@ NSOClient/                   Swift reimplementation of the engine-free libraries
   NSOOracle/                 nso-oracle: NSOClient's side of the same experiments, and the report on whether the two agree; depends on ../SimAntics, ../TSOContent, ../TSOFiles, and swift-argument-parser
   NSOClient.slnx             solution for the oracle only (pick this one in VS Code)
   TSOFiles/                  file format readers; no dependencies
+  TSOFilesC/                 C ABI over ../TSOFiles for RefPack and DBPF
   TSOFilesCheck/             tsofiles-check, which scans an install; depends on ../TSOFiles and swift-argument-parser
   TSOContent/                content system; depends on ../TSOFiles
   SimAntics/                 the VM; depends on ../TSOContent and ../TSOFiles
