@@ -25,6 +25,8 @@ let package = Package(
             .product(name: "SimsScript", package: "SimsScript"),
             .product(name: "TSOContent", package: "TSOContent"),
             .product(name: "TSOFiles", package: "TSOFiles"),
+        ], resources: [
+            .copy("Scenarios")
         ]),
         .testTarget(name: "ScriptOracleTests", dependencies: [
             "ScriptOracleCore",
