@@ -1,0 +1,34 @@
+name: Script Oracle
+
+# Runs nso-oracle (NSOClient) and sso-oracle (ScriptOracle) on NSOClient/MockInstall,
+# a made-up install with no game data, and stops on any disagreement between the two
+# sides' records, so someone looks at it before the change goes in. The unit tests are in swift.yml. Real installs are compared by hand with
+# NSOClient/scripts/script-oracle-review.sh, since no game data may be stored here.
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "NSOClient/**"
+      - ".github/workflows/script-oracle.yml"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "NSOClient/**"
+      - ".github/workflows/script-oracle.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  oracle:
+    name: Oracles on the mock install
+    runs-on: ubuntu-latest
+    container: swift:6.3
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run both oracles on the mock install and compare them
+        shell: bash
+        # --mock compares strictly: any mismatch fails the job.
+        run: NSOClient/scripts/script-oracle-review.sh --mock "$RUNNER_TEMP/oracle"
