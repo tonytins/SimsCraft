@@ -135,6 +135,25 @@ private struct RoutineGenerator {
     private let function: ScriptSyntax.Function
     private let attributes: [String: Int16]
     private let routines: [String: (id: UInt16, parameters: Int)]
+    private let primitives: [String: (opcode: UInt8, parameters: Int)] = [
+        "random_number": (8, 1),
+        "refresh": (7, 0),
+        "play_sound": (23, 1),
+        "set_to_next": (31, 0),
+        "test_object_type": (32, 2),
+        "find_location_for": (16, 4),
+        "idle_for_input": (17, 0),
+        "remove_object_instance": (18, 0),
+        "run_tree_by_name": (28, 2),
+        "get_distance_to": (11, 2),
+        "get_direction_to": (12, 1),
+        "transfer_funds": (25, 3),
+        "set_balloon_headline": (41, 2),
+        "special_effect": (35, 0),
+        "stop_all_sounds": (48, 0),
+        "get_terrain_info": (63, 2),
+        "breakpoint": (15, 0),
+    ]
     private var locals: [String: Int16] = [:]
     private var hiddenBase: Int16 = 0
     private var hiddenInUse: Int16 = 0
@@ -433,23 +452,48 @@ private struct RoutineGenerator {
     /// Emits a call. Plain-number arguments go in the operand; otherwise all four go through temps,
     /// with every argument -1, which FreeSO reads as "take the temp" when arguments 1 to 3 aren't all 0.
     private mutating func call(_ name: String, _ arguments: [ScriptExpression], _ position: SourcePosition) throws(ScriptError) -> (Edge, Edge) {
-        guard let routine = routines[name] else { throw ScriptCompiler.error("\(name) isn't a function", position) }
-        guard arguments.count == routine.parameters else {
-            throw ScriptCompiler.error("\(name) takes \(routine.parameters) arguments, not \(arguments.count)", position)
+        if let routine = routines[name] {
+            guard arguments.count == routine.parameters else {
+                throw ScriptCompiler.error("\(name) takes \(routine.parameters) arguments, not \(arguments.count)", position)
+            }
+            var literals: [Int16] = []
+            for argument in arguments {
+                guard let value = try leaf(argument), value.scope == .literal, value.data != -1 else { break }
+                literals.append(value.data)
+            }
+            if literals.count == arguments.count {
+                return emit(UInt16(routine.id), SubroutineOperand(arguments: literals).encoded())
+            }
+            let values = try arguments.map { (argument) throws(ScriptError) in try operand(argument) }
+            for (index, value) in values.enumerated() {
+                emitStep(2, expression(Variable(.temps, Int16(index)), 5, value))
+            }
+            return emit(UInt16(routine.id), SubroutineOperand(arguments: [-1, -1, -1, -1]).encoded())
         }
-        var literals: [Int16] = []
-        for argument in arguments {
-            guard let value = try leaf(argument), value.scope == .literal, value.data != -1 else { break }
-            literals.append(value.data)
+        if let primitive = primitives[name] {
+            guard arguments.count == primitive.parameters else {
+                throw ScriptCompiler.error("\(name) takes \(primitive.parameters) arguments, not \(arguments.count)", position)
+            }
+            var literals: [Int16] = []
+            for argument in arguments {
+                guard let value = try leaf(argument), value.scope == .literal, value.data != -1 else { break }
+                literals.append(value.data)
+            }
+            if literals.count == arguments.count {
+                var operandBytes = Data()
+                for lit in literals {
+                    operandBytes.append(contentsOf: withUnsafeBytes(of: Int16(lit).littleEndian) { Array($0) })
+                }
+                while operandBytes.count < 8 { operandBytes.append(0) }
+                return emit(UInt16(primitive.opcode), Array(operandBytes.prefix(8)))
+            }
+            let values = try arguments.map { (argument) throws(ScriptError) in try operand(argument) }
+            for (index, value) in values.enumerated() {
+                emitStep(2, expression(Variable(.temps, Int16(index)), 5, value))
+            }
+            return emit(UInt16(primitive.opcode), SubroutineOperand(arguments: [-1, -1, -1, -1]).encoded())
         }
-        if literals.count == arguments.count {
-            return emit(UInt16(routine.id), SubroutineOperand(arguments: literals).encoded())
-        }
-        let values = try arguments.map { (argument) throws(ScriptError) in try operand(argument) }
-        for (index, value) in values.enumerated() {
-            emitStep(2, expression(Variable(.temps, Int16(index)), 5, value))
-        }
-        return emit(UInt16(routine.id), SubroutineOperand(arguments: [-1, -1, -1, -1]).encoded())
+        throw ScriptCompiler.error("\(name) isn't a function", position)
     }
 
 }

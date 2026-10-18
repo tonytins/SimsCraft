@@ -44,8 +44,7 @@ default {                         // events are entry points: initialize, main, 
 ```
 
 Values are 16-bit integers with SimAntics arithmetic (it wraps; dividing by zero gives -1). A
-function returns only true or false, so a call can be a condition. Not yet: primitives as built-in
-functions, strings, `state`s, interactions, and a decompiler from existing objects.
+function returns only true or false, so a call can be a condition. Primitives are exposed as built-ins for common operations. Still missing: strings, `state`s, interactions, and a full decompiler.
 
 ## How feasibility is tested
 

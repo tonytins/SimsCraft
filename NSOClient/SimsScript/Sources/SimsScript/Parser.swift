@@ -25,11 +25,13 @@ indirect enum ScriptExpression {
     case unary(String, ScriptExpression, SourcePosition)
     case binary(String, ScriptExpression, ScriptExpression, SourcePosition)
     case call(String, [ScriptExpression], SourcePosition)
+    case primitive(String, [ScriptExpression], SourcePosition)
 
     var position: SourcePosition {
         switch self {
         case .integer(_, let position), .boolean(_, let position), .variable(_, let position),
-             .unary(_, _, let position), .binary(_, _, _, let position), .call(_, _, let position):
+             .unary(_, _, let position), .binary(_, _, _, let position), .call(_, _, let position),
+             .primitive(_, _, let position):
             position
         }
     }
