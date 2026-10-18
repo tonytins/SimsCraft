@@ -1,0 +1,34 @@
+// swift-tools-version: 6.2
+
+import PackageDescription
+
+let package = Package(
+    name: "ScriptOracle",
+    products: [
+        .executable(name: "sso-oracle", targets: ["ScriptOracle"]),
+        .library(name: "ScriptOracleCore", targets: ["ScriptOracleCore"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.0"),
+        .package(path: "../SimAntics"),
+        .package(path: "../TSOContent"),
+        .package(path: "../TSOFiles"),
+        .package(path: "../SimsScript"),
+    ],
+    targets: [
+        .executableTarget(name: "ScriptOracle", dependencies: [
+            "ScriptOracleCore",
+            .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        ]),
+        .target(name: "ScriptOracleCore", dependencies: [
+            .product(name: "SimAntics", package: "SimAntics"),
+            .product(name: "SimsScript", package: "SimsScript"),
+            .product(name: "TSOContent", package: "TSOContent"),
+            .product(name: "TSOFiles", package: "TSOFiles"),
+        ]),
+        .testTarget(name: "ScriptOracleTests", dependencies: [
+            "ScriptOracleCore",
+        ]),
+    ],
+    swiftLanguageModes: [.v6]
+)
