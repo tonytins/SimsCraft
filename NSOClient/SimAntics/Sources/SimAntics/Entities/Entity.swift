@@ -14,6 +14,12 @@ public final class Entity {
     public unowned let vm: VM
     /// The 80 object data values (see ``ObjectVariable``).
     public var objectData = [Int16](repeating: 0, count: ObjectVariable.count)
+    /// Whether this entity is a Sim (`VMAvatar`); Sims carry person and motive data.
+    public var isAvatar: Bool = false
+    /// Person data values (FreeSO's `PersonData`, 101 entries).
+    public var personData = [Int16](repeating: 0, count: 101)
+    /// Motive data values (FreeSO's `MotiveData`, 16 entries).
+    public var motiveData = [Int16](repeating: 0, count: 16)
     /// Attributes, grown with zeros whenever an index past the end is read or written, as in FreeSO.
     public private(set) var attributes: [Int16] = []
     /// The entity's list (`MyList`), front first.

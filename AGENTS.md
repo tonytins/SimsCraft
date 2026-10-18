@@ -516,3 +516,9 @@ The owner often reviews changes alone, so make review easy:
 - If you notice a risk in the snapshot, such as a security issue, a
   committed secret, or a licensing question for a third-party library,
   report it. Don't fix it in the source as part of a docs change.
+
+## Commit attribution
+
+If Kilo authored the changes, append `Co-authored-by: Kilo <kilo@local>` to
+the commit message, in the same area as other `Co-authored-by` trailers. Do
+not invent or impose attribution when Kilo did not author the changes.

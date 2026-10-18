@@ -48,14 +48,20 @@ enum VMMemory {
             throw .simantics("Not implemented...")
         case .neighborInStackObject, .neighborPersonData, .jobData, .neighborsObjectDefinition:
             throw .simantics("Only valid in TS1.")
-        case .myMotives, .myPersonData:
-            try simOnly(frame.caller) { data }
-        case .stackObjectMotives, .stackObjectPersonData:
-            try simOnly(frame.stackObject) { data }
-        case .stackObjectMotiveByTemp, .stackObjectPersonDataByTemp:
-            try simOnly(frame.stackObject) { () throws(SimAnticsError) in try element(thread.tempRegisters, data, "temp") }
+        case .myMotives:
+            return try simOnly(frame.caller, index: { data }, personData: false)
+        case .stackObjectMotives:
+            return try simOnly(frame.stackObject, index: { data }, personData: false)
+        case .stackObjectMotiveByTemp:
+            return try simOnly(frame.stackObject, index: { () throws(SimAnticsError) -> Int16 in try element(thread.tempRegisters, data, "temp") }, personData: false)
+        case .myPersonData:
+            return try simOnly(frame.caller, index: { data }, personData: true)
+        case .stackObjectPersonData:
+            return try simOnly(frame.stackObject, index: { data }, personData: true)
         case .myPersonDataByTemp:
-            try simOnly(frame.caller) { () throws(SimAnticsError) in try element(thread.tempRegisters, data, "temp") }
+            return try simOnly(frame.caller, index: { () throws(SimAnticsError) -> Int16 in try element(thread.tempRegisters, data, "temp") }, personData: true)
+        case .stackObjectPersonDataByTemp:
+            return try simOnly(frame.stackObject, index: { () throws(SimAnticsError) -> Int16 in try element(thread.tempRegisters, data, "temp") }, personData: true)
         case .roomByTemp0:
             // Temp 0 picks the room, clamped to the rooms there are.
             let rooms = frame.vm.architecture.rooms
@@ -163,14 +169,30 @@ enum VMMemory {
         case .stackObjectTemp, .roomByTemp0, .neighborInStackObject, .neighborPersonData, .jobData,
              .neighborhoodData, .tempXL, .myList, .stackObjectList, .featureEnableLevel, .stackObjectSlot, .mySlot:
             throw .simantics("Not implemented...")
-        case .myMotives, .myPersonData:
-            try simOnly(frame.caller) { data }
-        case .stackObjectMotives, .stackObjectPersonData:
-            try simOnly(frame.stackObject) { data }
-        case .stackObjectMotiveByTemp, .stackObjectPersonDataByTemp:
-            try simOnly(frame.stackObject) { () throws(SimAnticsError) in try element(thread.tempRegisters, data, "temp") }
+        case .myMotives:
+            try setSim(frame.caller, index: data, value: value, personData: false)
+            return true
+        case .myPersonData:
+            try setSim(frame.caller, index: data, value: value, personData: true)
+            return true
+        case .stackObjectMotives:
+            try setSim(frame.stackObject, index: data, value: value, personData: false)
+            return true
+        case .stackObjectPersonData:
+            try setSim(frame.stackObject, index: data, value: value, personData: true)
+            return true
+        case .stackObjectMotiveByTemp:
+            let i = try element(thread.tempRegisters, data, "temp")
+            try setSim(frame.stackObject, index: i, value: value, personData: false)
+            return true
+        case .stackObjectPersonDataByTemp:
+            let i = try element(thread.tempRegisters, data, "temp")
+            try setSim(frame.stackObject, index: i, value: value, personData: true)
+            return true
         case .myPersonDataByTemp:
-            try simOnly(frame.caller) { () throws(SimAnticsError) in try element(thread.tempRegisters, data, "temp") }
+            let i = try element(thread.tempRegisters, data, "temp")
+            try setSim(frame.caller, index: i, value: value, personData: true)
+            return true
         case .dynamicSpriteFlagForTempOfStackObject:
             let target = frame.stackObject
             let index = try element(thread.tempRegisters, data, "temp")
@@ -306,10 +328,34 @@ enum VMMemory {
     /// A scope only Sims have. FreeSO casts the entity to a Sim first, which fails for an
     /// object, then evaluates the index, then calls into the Sim, which fails for none.
     /// No Sims are ported yet, so this always fails.
-    private static func simOnly(_ entity: Entity?, index: () throws(SimAnticsError) -> Int16) throws(SimAnticsError) -> Never {
-        if entity != nil { throw .invalidCast("the entity isn't a Sim") }
-        _ = try index()
-        throw .nullReference("no entity")
+    private static func setSim(_ entity: Entity?, index: Int16, value: Int16, personData: Bool) throws(SimAnticsError) {
+        guard let entity else {
+            throw .nullReference("no entity")
+        }
+        guard entity.isAvatar else { throw .invalidCast("the entity isn't a Sim") }
+        if personData {
+            guard index >= 0, Int(index) < entity.personData.count else { throw .indexOutOfRange("person data \(index)") }
+            entity.personData[Int(index)] = value
+        } else {
+            guard index >= 0, Int(index) < entity.motiveData.count else { throw .indexOutOfRange("motive \(index)") }
+            entity.motiveData[Int(index)] = value
+        }
+    }
+
+    private static func simOnly(_ entity: Entity?, index: () throws(SimAnticsError) -> Int16, personData: Bool) throws(SimAnticsError) -> Int16 {
+        guard let entity else {
+            _ = try index()
+            throw .nullReference("no entity")
+        }
+        guard entity.isAvatar else { throw .invalidCast("the entity isn't a Sim") }
+        let i = try index()
+        if personData {
+            guard i >= 0, Int(i) < entity.personData.count else { throw .indexOutOfRange("person data \(i)") }
+            return entity.personData[Int(i)]
+        } else {
+            guard i >= 0, Int(i) < entity.motiveData.count else { throw .indexOutOfRange("motive \(i)") }
+            return entity.motiveData[Int(i)]
+        }
     }
 
     private static func caller(of frame: StackFrame) throws(SimAnticsError) -> Entity {

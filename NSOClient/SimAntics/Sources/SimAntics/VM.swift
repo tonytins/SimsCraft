@@ -213,7 +213,7 @@ public final class VM {
                              mainStackObjectID: Int16 = 0, mainParameter: Int16 = 0) throws(SimAnticsError) -> MultitileGroup? {
         guard let object = try gameObject(guid: guid) else { return nil }
         let definition = object.definition
-        guard definition.knownObjectType != .person else { throw .unsupported("creating a Sim needs Sims") }
+        let isAvatar = definition.knownObjectType == .person
 
         let group: MultitileGroup
         if definition.masterID != 0 && definition.subIndex == -1 {
@@ -241,6 +241,7 @@ public final class VM {
         for entity in group.objects {
             entity.mainStackObjectID = mainStackObjectID
             entity.mainParameter = mainParameter
+            entity.isAvatar = isAvatar
         }
         for entity in group.objects { try entity.initialize() }
         // FreeSO ignores whether this worked; an object that didn't fit stays out of the world.
