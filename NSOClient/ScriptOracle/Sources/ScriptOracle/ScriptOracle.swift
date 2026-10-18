@@ -12,5 +12,5 @@ struct ScriptOracle: ParsableCommand {
         discussion: """
             Hybrid oracle: uses SimsScript for scenario logic and Swift for orchestration.
             """,
-        subcommands: [])
+        subcommands: [ListObjects.self, RunObjects.self, RunLot.self, RunPrimitive.self, RoomMaps.self, Compare.self])
 }
