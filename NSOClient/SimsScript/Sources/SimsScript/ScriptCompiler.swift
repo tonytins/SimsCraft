@@ -153,6 +153,15 @@ private struct RoutineGenerator {
         "stop_all_sounds": (48, 0),
         "get_terrain_info": (63, 2),
         "breakpoint": (15, 0),
+        "create_object_instance": (42, 2),
+        "set_motive_deltas": (29, 4),
+        "look_towards": (22, 1),
+        "animate": (44, 2),
+        "goto_relative": (27, 2),
+        "goto_routing_slot": (45, 3),
+        "snap": (46, 1),
+        "reach": (47, 1),
+        "change_action_string": (50, 1),
     ]
     private var locals: [String: Int16] = [:]
     private var hiddenBase: Int16 = 0
