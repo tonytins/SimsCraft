@@ -1,0 +1,56 @@
+{
+  "name": "SimsScript",
+  "scopeName": "source.simsscript",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#numbers" },
+    { "include": "#strings" },
+    { "include": "#operators" },
+    { "include": "#types" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "name": "comment.line.double-slash.simsscript", "begin": "//", "end": "$" },
+        { "name": "comment.block.simsscript", "begin": "/\\*", "end": "\\*/" }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.simsscript",
+          "match": "\\b(if|else|while|for|return)\\b"
+        },
+        {
+          "name": "keyword.declaration.simsscript",
+          "match": "\\b(integer|string|default|state|interaction)\\b"
+        },
+        {
+          "name": "constant.language.simsscript",
+          "match": "\\b(TRUE|FALSE)\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.simsscript",
+      "match": "-?\\b\\d+\\b"
+    },
+    "strings": {
+      "name": "string.quoted.double.simsscript",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        { "name": "constant.character.escape.simsscript", "match": "\\\\." }
+      ]
+    },
+    "operators": {
+      "name": "keyword.operator.simsscript",
+      "match": "([+\\-*/%&|^!<>=]=?|==|!=|<=|>=|&&|\\|\\||\\+=|-=|\\*=|/=|%=|&=)"
+    },
+    "types": {
+      "name": "support.type.simsscript",
+      "match": "\\b(integer|string)\\b"
+    }
+  }
+}

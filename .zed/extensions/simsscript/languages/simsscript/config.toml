@@ -1,0 +1,17 @@
+name = "SimsScript"
+grammar = "simsscript"
+path_suffixes = ["s", "ss"]
+line_comments = ["//"]
+block_comments = ["/*", "*/"]
+brackets = [
+  { start = "{", end = "}", close = true, newline = true },
+  { start = "(", end = ")", close = true, newline = false },
+  { start = "[", end = "]", close = true, newline = false },
+]
+auto_closing_pairs = [
+  { open = "{", close = "}" },
+  { open = "(", close = ")" },
+  { open = "[", close = "]" },
+  { open = "\"", close = "\"" },
+  { open = "'", close = "'" },
+]

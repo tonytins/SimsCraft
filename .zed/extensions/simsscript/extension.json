@@ -1,0 +1,19 @@
+{
+  "name": "simsscript",
+  "version": "0.1.0",
+  "authors": ["SimsCraft"],
+  "description": "SimsScript syntax highlighting",
+  "languages": {
+    "simsscript": {
+      "grammar": "simsscript",
+      "extensions": [".s", ".ss"]
+    }
+  },
+  "grammars": {
+    "simsscript": {
+      "repository": {
+        "file": "simsscript.json"
+      }
+    }
+  }
+}

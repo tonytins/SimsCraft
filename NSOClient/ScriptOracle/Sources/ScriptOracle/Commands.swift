@@ -47,6 +47,14 @@ struct LotOptions: ParsableArguments {
         lot.objects.removeAll { guids.contains($0.guid) }
         return lot
     }
+    
+    func leaveOutGuids() throws -> [UInt32] {
+        return try leaveOut.map { text throws -> UInt32 in
+            let digits = text.lowercased().hasPrefix("0x") ? String(text.dropFirst(2)) : text
+            guard let guid = UInt32(digits, radix: 16) else { throw ValidationError("--leave-out \(text) isn't a hex GUID") }
+            return guid
+        }
+    }
 }
 
 extension ScriptOracle {
@@ -56,9 +64,11 @@ extension ScriptOracle {
         @OptionGroup var install: InstallOptions
 
         func run() throws {
-            // Delegates to Answers for now - to be enhanced with SimsScript scenarios
-            let answers = Answers(content: try install.load())
-            for line in answers.objectListing() { print(line) }
+            let content = try install.load()
+            let runner = ScenarioRunner(content: content)
+            let ctx = ScenarioContext(content: content)
+            let lines = try runner.run("list_objects", context: ctx)
+            for line in lines { print(line) }
         }
     }
 
@@ -72,10 +82,12 @@ extension ScriptOracle {
         @Option(help: "Also print a digest every this many ticks (0 for only the end).") var every = 0
 
         func run() throws {
-            let answers = Answers(content: try install.load())
+            let content = try install.load()
             let lotFile = blueprint.map { URL(fileURLWithPath: $0) }
                 ?? install.contentDirectory.appendingPathComponent("Blueprints/empty_lot_fso.xml")
             let lot = try Blueprint(xml: try Data(contentsOf: lotFile))
+            let runner = ScenarioRunner(content: content)
+            let ctx = ScenarioContext(content: content, blueprint: lot, ticks: ticks, every: every)
             while let line = readLine() {
                 let text = line.trimmingCharacters(in: .whitespaces)
                 guard !text.isEmpty else { continue }
@@ -84,9 +96,8 @@ extension ScriptOracle {
                     continue
                 }
                 let prefix = String(format: "%08x", guid)
-                for answer in answers.objectRun(guid: guid, on: lot, ticks: ticks, every: every) {
-                    print("\(prefix) \(answer)")
-                }
+                let lines = try runner.run("run_objects", context: ctx)
+                for answer in lines { print("\(prefix) \(answer)") }
             }
         }
     }
@@ -101,10 +112,11 @@ extension ScriptOracle {
         @Flag(help: "After each digest, print the digested fields of every entity, one line each.") var dump = false
 
         func run() throws {
-            let answers = Answers(content: try install.load())
-            for line in answers.lotRun(try lotOptions.lot(in: install), ticks: ticks, every: every, dump: dump) {
-                print(line)
-            }
+            let content = try install.load()
+            let lot = try lotOptions.lot(in: install)
+            let runner = ScenarioRunner(content: content)
+            let ctx = ScenarioContext(content: content, blueprint: lot, ticks: ticks, every: every, dump: dump, leaveOut: try lotOptions.leaveOutGuids())
+            for line in try runner.run("run_lot", context: ctx) { print(line) }
         }
     }
 
@@ -115,10 +127,12 @@ extension ScriptOracle {
         @OptionGroup var lotOptions: LotOptions
 
         func run() throws {
-            let runner = PrimitiveRunner(answers: Answers(content: try install.load()),
-                                        lot: try lotOptions.lot(in: install))
+            let content = try install.load()
+            let lot = try lotOptions.lot(in: install)
+            let runner = ScenarioRunner(content: content)
+            let ctx = ScenarioContext(content: content, blueprint: lot, leaveOut: try lotOptions.leaveOutGuids())
             while let line = readLine() {
-                if let answer = runner.answerLine(line) { print(answer) }
+                if let result = try runner.runPrimitive(line, context: ctx) { print(result) }
             }
         }
     }
@@ -129,14 +143,14 @@ extension ScriptOracle {
         @OptionGroup var install: InstallOptions
 
         func run() throws {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.sortedKeys]
+            let content = try install.load()
+            let runner = ScenarioRunner(content: content)
+            let ctx = ScenarioContext(content: content)
             while let line = readLine() {
                 let file = line.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !file.isEmpty else { continue }
-                let url = URL(fileURLWithPath: file)
-                let maps = Answers.roomMaps(of: url)
-                if let data = try? encoder.encode(AnyEncodable(maps)) {
+                let maps = try runner.runRoomMaps(file, context: ctx)
+                if let data = try? JSONEncoder().encode(AnyEncodable(maps)) {
                     print(String(decoding: data, as: UTF8.self))
                 }
             }
@@ -150,10 +164,11 @@ extension ScriptOracle {
         @Flag(name: .long, help: "Exit with non-zero if there are any disagreements.") var strict = false
 
         func run() throws {
-            let comparison = Comparison()
-            let result = comparison.compare()
+            let result = Comparison().compare()
             print(result)
-            if strict && result.contains("DISAGREE") || strict && result.contains("INCONCLUSIVE") { throw ExitCode.failure }
+            if strict && (result.contains("DISAGREE") || result.contains("INCONCLUSIVE")) {
+                throw ExitCode.failure
+            }
         }
     }
 }

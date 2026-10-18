@@ -5,7 +5,10 @@ public struct ScenarioLoader {
     public static func load(_ name: String) throws -> String {
         let candidates = [
             URL(fileURLWithPath: name),
+            URL(fileURLWithPath: "\(name).s"),
+            URL(fileURLWithPath: "Scenarios/\(name).s"),
             URL(fileURLWithPath: "Scenarios/\(name).ss"),
+            URL(fileURLWithPath: "NSOClient/ScriptOracle/Scenarios/\(name).s"),
             URL(fileURLWithPath: "NSOClient/ScriptOracle/Scenarios/\(name).ss"),
         ]
         for url in candidates {
@@ -19,7 +22,7 @@ public struct ScenarioLoader {
     public static func list() -> [String] {
         let dir = URL(fileURLWithPath: "NSOClient/ScriptOracle/Scenarios")
         if let urls = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) {
-            return urls.filter { $0.pathExtension == "ss" }.map { $0.deletingPathExtension().lastPathComponent }
+            return urls.filter { $0.pathExtension == "s" || $0.pathExtension == "ss" }.map { $0.deletingPathExtension().lastPathComponent }
         }
         return []
     }
