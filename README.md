@@ -13,7 +13,7 @@
   Backwards compatible with 1.0 and Beta
 </p>
 
-## Getting around
+## Getting Around
 
 | Folder | Holds |
 | --- | --- |
