@@ -20,7 +20,7 @@ It follows the layout of a real install, with only what the content system needs
 | --- | --- |
 | `packingslips/objecttable.xml` | The four objects below, by GUID |
 | `packingslips/catalog.xml` | Their catalog entries (made-up prices; the parts aren't for sale) |
-| `objectdata/objects/objiff.far` | `mockchair.iff`, `mocktable.iff`, `mocklamp.iff`, and `mockregister.iff` |
+| `objectdata/objects/objiff.far` | `mockchair.iff`, `mocktable.iff`, `mocklamp.iff`, `mockregister.iff`, and `mocksim.iff` |
 | `objectdata/globals/global.iff` | One global routine (256) that returns true |
 | `objectdata/globals/mockglobals.iff` | The objects' semi-global: one routine (8192) that returns true |
 
@@ -32,6 +32,7 @@ It follows the layout of a real install, with only what the content system needs
 | `0x4D4F4304` | Mock Table (right) | Its part one tile along x |
 | `0x4D4F4305` | Mock Lamp | A one-tile object whose main runs a routine by name |
 | `0x4D4F4306` | Mock Register | A one-tile object whose main moves money |
+| `0x4D4F4307` | Mock Sim | A one-tile person (object type `person`) whose main counts runs in attribute 0 |
 
 The GUIDs spell `MOC` followed by a number, so they can't be mistaken for a real object's.
 

@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   oracle:
-    name: Oracles on the mock install
+    name: Script Oracles on the mock install
     runs-on: ubuntu-latest
     container: swift:6.3
     steps:

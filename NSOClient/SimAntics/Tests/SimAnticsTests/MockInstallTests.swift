@@ -8,7 +8,7 @@ let mockInstall = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().appendingPathComponent("../../../MockInstall/TSOClient").standardizedFileURL
 let mockChairGUID: UInt32 = 0x4D4F_4301, mockTableGUID: UInt32 = 0x4D4F_4302
 let mockLeftGUID: UInt32 = 0x4D4F_4303, mockRightGUID: UInt32 = 0x4D4F_4304, mockLampGUID: UInt32 = 0x4D4F_4305
-let mockRegisterGUID: UInt32 = 0x4D4F_4306
+let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
 
 /// The VM on the mock install's objects (see its README): init sets object data 42 and 4,
 /// and main counts its runs in attribute 0.
@@ -153,10 +153,10 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306
         let lot = try Blueprint(xml: try Data(contentsOf: lotFile))
         let leftOut = try vm.load(lot)
         #expect(leftOut.map(\.object.guid) == [0x4D4F_43FF])
-        #expect(vm.entities.last?.object.guid == mockRegisterGUID)
+        #expect(vm.entities.last?.object.guid == mockSimGUID)
         #expect(vm.globalState[11] == -1)                                   // the job level
         #expect(vm.entities.map(\.object.guid) == [mockChairGUID, mockChairGUID, mockLeftGUID, mockRightGUID, mockLeftGUID, mockRightGUID,
-                                                  mockLampGUID, mockRegisterGUID])
+                                                   mockLampGUID, mockRegisterGUID, mockSimGUID])
 
         let (outside, inside) = (vm.entities[0], vm.entities[1])
         #expect(outside.position.isOutOfWorld)                              // level 0 stays out of the world
