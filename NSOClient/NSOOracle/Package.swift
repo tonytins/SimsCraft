@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../TSOFiles"),
-        .package(path: "../ConfigurationTOML"),
+        .package(url: "https://github.com/tonytins/SwiftConfigurationTOML", branch: "main"),
         .package(path: "../TSOContent"),
         .package(path: "../SimAntics"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
@@ -27,7 +27,7 @@ let package = Package(
             .product(name: "SimAntics", package: "SimAntics"),
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
             .product(name: "Configuration", package: "swift-configuration"),
-            .product(name: "ConfigurationTOML", package: "ConfigurationTOML"),
+            .product(name: "ConfigurationTOML", package: "SwiftConfigurationTOML"),
         ]),
         .testTarget(name: "NSOOracleTests", dependencies: [
             "NSOOracleCore",

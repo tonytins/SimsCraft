@@ -1,5 +1,5 @@
 {
-  "originHash" : "f4d55ea6ba8d7c7c14ac452835122e55b53fec86bdbbd285f5e552ce551a2492",
+  "originHash" : "693c8cddb2d2d5bbac7e286d1e79876fe9833c7c08fa89e35e0bde73bf3c08c8",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
@@ -47,6 +47,15 @@
       }
     },
     {
+      "identity" : "swift-metrics",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-metrics.git",
+      "state" : {
+        "revision" : "9467f9cc3c32b4386fad1ecc4618328887ef5758",
+        "version" : "2.12.0"
+      }
+    },
+    {
       "identity" : "swift-service-lifecycle",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-server/swift-service-lifecycle",
@@ -71,6 +80,15 @@
       "state" : {
         "revision" : "827506c90475e82d5a7f191f950fb3025cbdc0d6",
         "version" : "2.0.0"
+      }
+    },
+    {
+      "identity" : "swiftconfigurationtoml",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tonytins/SwiftConfigurationTOML",
+      "state" : {
+        "branch" : "main",
+        "revision" : "481c6f0d147b1a5cd1253ea0d590e42f371e4289"
       }
     }
   ],
