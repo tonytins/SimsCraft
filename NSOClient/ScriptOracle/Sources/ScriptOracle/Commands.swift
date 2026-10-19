@@ -1,4 +1,6 @@
 import ArgumentParser
+import ConfigurationTOML
+import Configuration
 import Foundation
 import ScriptOracleCore
 import SimAntics
@@ -14,8 +16,14 @@ struct InstallOptions: ParsableArguments {
     @Option(help: "FreeSO's Content folder, for patches and standalone objects (default: the one in this repository).")
     var content: String?
 
-    func load() throws -> GameContent {
-        guard let path = game ?? ProcessInfo.processInfo.environment["TSO_GAME_DIR"], !path.isEmpty else {
+    func load() async throws -> GameContent {
+        var providers: [any ConfigProvider] = [EnvironmentVariablesProvider()]
+        if let tp = try? await TOMLProvider(filePath: "oracle.toml") {
+            providers.append(tp)
+        }
+        let config = ConfigReader(providers: providers)
+        let envGame = config.string(forKey: "TSO_GAME_DIR")
+        guard let path = game ?? envGame, !path.isEmpty else {
             throw ValidationError("No --game given and TSO_GAME_DIR is not set.")
         }
         return try GameContent(.init(gameDirectory: URL(fileURLWithPath: path, isDirectory: true),
@@ -63,8 +71,8 @@ extension ScriptOracle {
                                                         abstract: "Print what NSOClient loads for every registered object.")
         @OptionGroup var install: InstallOptions
 
-        func run() throws {
-            let content = try install.load()
+        func run() async throws {
+            let content = try await install.load()
             let runner = ScenarioRunner(content: content)
             let ctx = ScenarioContext(content: content)
             let lines = try runner.run("list_objects", context: ctx)
@@ -81,8 +89,8 @@ extension ScriptOracle {
         @Option(help: "Ticks to run.") var ticks = 1800
         @Option(help: "Also print a digest every this many ticks (0 for only the end).") var every = 0
 
-        func run() throws {
-            let content = try install.load()
+        func run() async throws {
+            let content = try await install.load()
             let lotFile = blueprint.map { URL(fileURLWithPath: $0) }
                 ?? install.contentDirectory.appendingPathComponent("Blueprints/empty_lot_fso.xml")
             let lot = try Blueprint(xml: try Data(contentsOf: lotFile))
@@ -111,8 +119,8 @@ extension ScriptOracle {
         @Option(help: "Also print a digest every this many ticks (0 for only the end).") var every = 0
         @Flag(help: "After each digest, print the digested fields of every entity, one line each.") var dump = false
 
-        func run() throws {
-            let content = try install.load()
+        func run() async throws {
+            let content = try await install.load()
             let lot = try lotOptions.lot(in: install)
             let runner = ScenarioRunner(content: content)
             let ctx = ScenarioContext(content: content, blueprint: lot, ticks: ticks, every: every, dump: dump, leaveOut: try lotOptions.leaveOutGuids())
@@ -126,8 +134,8 @@ extension ScriptOracle {
         @OptionGroup var install: InstallOptions
         @OptionGroup var lotOptions: LotOptions
 
-        func run() throws {
-            let content = try install.load()
+        func run() async throws {
+            let content = try await install.load()
             let lot = try lotOptions.lot(in: install)
             let runner = ScenarioRunner(content: content)
             let ctx = ScenarioContext(content: content, blueprint: lot, leaveOut: try lotOptions.leaveOutGuids())
@@ -142,8 +150,8 @@ extension ScriptOracle {
             commandName: "room-maps", abstract: "Print a blueprint's room maps and rooms, one JSON line each per stdin path.")
         @OptionGroup var install: InstallOptions
 
-        func run() throws {
-            let content = try install.load()
+        func run() async throws {
+            let content = try await install.load()
             let runner = ScenarioRunner(content: content)
             let ctx = ScenarioContext(content: content)
             while let line = readLine() {

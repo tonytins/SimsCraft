@@ -1,4 +1,6 @@
 import ArgumentParser
+import ConfigurationTOML
+import Configuration
 import Foundation
 import NSOOracleCore
 import SimAntics
@@ -29,8 +31,14 @@ struct InstallOptions: ParsableArguments {
     @Option(help: "FreeSO's Content folder, for patches and standalone objects (default: the one in this repository).")
     var content: String?
 
-    func load() throws -> GameContent {
-        guard let path = game ?? ProcessInfo.processInfo.environment["TSO_GAME_DIR"], !path.isEmpty else {
+    func load() async throws -> GameContent {
+        var providers: [any ConfigProvider] = [EnvironmentVariablesProvider()]
+        if let tp = try? await TOMLProvider(filePath: "oracle.toml") {
+            providers.append(tp)
+        }
+        let config = ConfigReader(providers: providers)
+        let envGame = config.string(forKey: "TSO_GAME_DIR")
+        guard let path = game ?? envGame, !path.isEmpty else {
             throw ValidationError("No --game given and TSO_GAME_DIR is not set.")
         }
         return try GameContent(.init(gameDirectory: URL(fileURLWithPath: path, isDirectory: true),
@@ -71,8 +79,8 @@ extension NSOOracle {
                                                         abstract: "Print what NSOClient loads for every registered object.")
         @OptionGroup var install: InstallOptions
 
-        func run() throws {
-            for line in Answers(content: try install.load()).objectListing() { print(line) }
+        func run() async throws {
+            for line in Answers(content: try await install.load()).objectListing() { print(line) }
         }
     }
 
@@ -88,8 +96,8 @@ extension NSOOracle {
         @Option(help: "Ticks to run.") var ticks = 1800
         @Option(help: "Also print a digest every this many ticks (0 for only the end).") var every = 0
 
-        func run() throws {
-            let answers = Answers(content: try install.load())
+        func run() async throws {
+            let answers = Answers(content: try await install.load())
             let lotFile = blueprint.map { URL(fileURLWithPath: $0) }
                 ?? install.contentDirectory.appendingPathComponent("Blueprints/empty_lot_fso.xml")
             let lot = try Blueprint(xml: try Data(contentsOf: lotFile))
@@ -118,8 +126,8 @@ extension NSOOracle {
         @Option(help: "Also print a digest every this many ticks (0 for only the end).") var every = 0
         @Flag(help: "After each digest, print the digested fields of every entity, one line each.") var dump = false
 
-        func run() throws {
-            let answers = Answers(content: try install.load())
+        func run() async throws {
+            let answers = Answers(content: try await install.load())
             let lines = answers.lotRun(try lotOptions.lot(in: install), ticks: ticks, every: every, dump: dump) { leftOut in
                 FileHandle.standardError.write(Data("nso-oracle: object \(String(format: "0x%08X", leftOut.object.guid)) left out of the lot: \(leftOut.reason)\n".utf8))
             }
@@ -134,8 +142,8 @@ extension NSOOracle {
         @OptionGroup var install: InstallOptions
         @OptionGroup var lotOptions: LotOptions
 
-        func run() throws {
-            let runner = PrimitiveRunner(answers: Answers(content: try install.load()), lot: try lotOptions.lot(in: install))
+        func run() async throws {
+            let runner = PrimitiveRunner(answers: Answers(content: try await install.load()), lot: try lotOptions.lot(in: install))
             while let line = readLine() {
                 if let response = runner.answerLine(line) { print(response) }
             }
