@@ -1,7 +1,7 @@
 name: Swift
 
 # Builds and tests the NSOClient packages. Each package is independent, so
-# each one builds and tests on its own, as AGENTS.md section 4 asks.
+# each one builds and tests on its own, as AGENTS.md's "Before you finish" asks.
 # Real-install tests skip themselves here: CI has no TSO_GAME_DIR, and no
 # game data may be stored in the repository. oracle.yml compares NSOClient
 # with FreeSO on NSOClient/MockInstall, a made-up install, instead.
@@ -37,11 +37,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install X11 and GL headers for raylib (Interface)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev
+
       - name: Build and test each package
         shell: bash
         run: |
           set -euo pipefail
-          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle; do
+          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle Interface; do
             echo "::group::$package"
             swift build --package-path "NSOClient/$package"
             swift test --package-path "NSOClient/$package"
@@ -70,7 +76,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle; do
+          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle Interface; do
             echo "::group::$package"
             swift build --package-path "NSOClient/$package"
             swift test --package-path "NSOClient/$package"
