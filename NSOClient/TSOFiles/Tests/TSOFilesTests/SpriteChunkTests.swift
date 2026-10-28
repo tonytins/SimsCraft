@@ -223,6 +223,15 @@ private func pixel(_ image: SpriteImage, _ x: Int, _ y: Int) -> [UInt8] {
     #expect(image.depth == [7, 8])
 }
 
+@Test func alphaPastFiveBitsSaturates() throws {
+    // 40 × 8.2258… is 329: FreeSO's byte cast wraps it to 73; NewSO keeps it at 255 (DIFF-27).
+    var rows = SpriteRows()
+    rows.row([(2, 1, [7, 2, 40, 0xEE])])
+    rows.end()
+    let image = try SPR2(record: sprite(width: 1, height: 1, flags: 0x7, rows: rows)).decode(frameAt: 0, palette: try rampPalette())
+    #expect(pixel(image, 0, 0) == [2, 4, 6, 255])
+}
+
 @Test(arguments: [(UInt16(0), UInt16(9)), (0xA3A3, 9), (12, 12)])
 func framesFallBackToTheDefaultPalette(own: UInt16, used: UInt16) throws {
     var rows = SpriteRows()
@@ -356,19 +365,22 @@ private func olderFrame(bigEndian: Bool = false) -> [UInt8] {
     #expect(chunk.frames.count == 2)
 }
 
-@Test func bigEndianOlderSpritesKeepFreeSOsVersionQuirk() throws {
+@Test func bigEndianOlderSpritesReadTheirVersionCorrectly() throws {
+    // Version 1001, big-endian: sized frames. FreeSO's swap reads it as 1023 instead (DIFF-26).
     let frame = olderFrame(bigEndian: true)
-    // Version 1001 big-endian: FreeSO's mask makes it 1023, so it reads an offset table.
     let chunk = try SPR(record: record("SPR#") { w in
         w.raw([0, 0, 0x03, 0xE9])
         w.raw([0, 0, 0, 1]) // one frame
         w.raw([0, 0, 0, 7]) // palette 7
-        w.raw([0, 0, 0, 16]) // its offset
+        w.raw([0, 0, 0x03, 0xE9]) // the frame's version
+        w.raw([0, 0, 0, UInt8(frame.count)]) // its size
         w.raw(frame)
     })
-    #expect(chunk.byteOrder == .bigEndian && chunk.version == 0x03FF)
+    #expect(chunk.byteOrder == .bigEndian && chunk.version == 1001)
     #expect(chunk.paletteID == 7)
     #expect(chunk.frames.first.map { ($0.width, $0.height) } ?? (0, 0) == (3, 3))
+    let image = try chunk.decode(frameAt: 0, palette: try rampPalette())
+    #expect(pixel(image, 1, 0) == [5, 10, 15, 255])
 }
 
 @Test func olderSpritesWithoutAPaletteAreOpaqueBlack() throws {

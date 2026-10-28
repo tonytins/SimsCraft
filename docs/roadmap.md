@@ -105,8 +105,8 @@ In order:
      zoom, and world rotation.
    - [x] B. `SPR2`: frames decoded to RGBA, depth, and palette indices with FreeSO's quirks; the scan
      decodes every frame on both installs.
-   - [x] C. `SPR#`: both byte orders (with FreeSO's big-endian version quirk), its versions, and the
-     opaque black default palette; all 6,579 frames decode on both installs.
+   - [x] C. `SPR#`: both byte orders, its versions, and the opaque black default palette; all 6,579
+     frames decode on both installs.
    - [x] D. `fso-oracle sprites` and `nso-oracle sprites` compared frame for frame: every record
      agrees on both installs (93,265 production, 91,788 beta), and MockInstall has a made-up
      sprite archive for the comparison without game data.
@@ -222,6 +222,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-28 | minor | The parity stance revised, after CityLimits': NewSO is NewSO, not FreeSO. It keeps what TSO's files and content rely on and fixes FreeSO's bugs as known differences (AGENTS.md, "FreeSO"). First fixes: big-endian `SPR#` versions (DIFF-26) and `SPR2` alpha past 31 (DIFF-27), with MockInstall frames for each. NSOOracle gained `KnownDifference`, so a deliberate difference counts as "differs by design", and `fso-oracle sprites` reads chunks one at a time. |
 | 2026-10-28 | minor | Hyde Park, phase D: `fso-oracle sprites` decodes the install's object sprites with FreeSO's readers (its content leaves them out without a graphics device), and `nso-oracle sprites` with NSOClient's. Every frame and drawing group agrees: 93,265 records on production, 91,788 on the beta. MockInstall gained a made-up `objspf.far`; NSOOracle's test samples every tenth IFF, since decoding them all takes minutes in a debug build. |
 | 2026-10-28 | minor | Hyde Park, phase C: `SPR#` in both byte orders, keeping FreeSO's big-endian version quirk (a big-endian 1001 reads as 1023 and takes the offset table). All 6,579 frames decode on both installs, 0 failures. |
 | 2026-10-28 | minor | Hyde Park, phases A and B: `PALT`, `DGRP` (every version, world offsets, image lookup), and `SPR2` decoded to RGBA, depth, and palette indices. Every frame on both installs decodes (78,054 production, 76,782 beta), 0 failures; FreeSO's crash cases throw instead (DIFF-25). |

@@ -52,7 +52,11 @@ TSO was an MMOG. NewSO doesn't assume that. Its default is a handful of players 
 
 "FreeSO" on its own means the snapshot in ``TSOClient/``: FreeSO beta/update-46 (August 2017), written for .NET Framework 4.5 on Windows. Call it "FreeSO beta/update-46 (August 2017)" on a page's first mention and "update-46" after that. Don't write "2017" as a stand-in for it (that's easily confused with Visual Studio 2017). FreeSO has kept going since; name that work explicitly ("FreeSO's later branches", or its update names), as ``docs/fso/future/`` and ``docs/fso/releases.md`` do. Swift names kept only for FreeSO compatibility use ``fsoCompat``, and ones kept only for the TSO beta use ``compat``.
 
-FreeSO is the guide and the source of truth on the way to NewSO, not the limit. Where it's faithful to TSO (the file formats, content loading, the SimAntics VM, and lot simulation), NSOClient matches its **results**, quirks included, but not its code. Where FreeSO struggled, patched, or invented (its PIFF patches, server-side systems, its own workarounds), NewSO may choose its own way with the owner, and records each choice as a known difference in the scorecard.
+FreeSO is the guide and the reference on the way to NewSO, not the limit. **NewSO is NewSO, not FreeSO:** the two share a goal, bringing The Sims Online back, but have creative differences on getting there, and NewSO isn't beholden to FreeSO's design or its bugs. What matters is that NewSO achieves the same thing while meeting its own goals. Where FreeSO and NewSO's own design decisions disagree, NewSO's win.
+
+What NewSO must keep is what the game needs: TSO's file formats as the files actually are, and the behavior TSO's own objects and lots rely on, since they were scripted against TSO's original engine. FreeSO's results are the best evidence of that behavior, which is why the oracles measure against them. So before treating a FreeSO quirk as a bug, ask whether the game's content could depend on it; if it could, keep it, and when unsure, ask the owner.
+
+Everything else is NewSO's to get right. Fix FreeSO's bugs rather than port them: a crash, a wrong mask, a value that's plainly off, a workaround for a problem NewSO doesn't have. The same goes for what FreeSO struggled with, patched, or invented (its PIFF patches, server-side systems). Record each difference in the scorecard's "Known differences from FreeSO" with why, and teach the oracle comparison to expect it, so it reads as a known difference, not a disagreement.
 
 Two more baselines:
 
@@ -83,7 +87,7 @@ Locally, build and test only what changed: the packages you touched and the ones
 
 Treat them as two sides of an experiment, not an answer key and a student:
 
-- **A disagreement is a finding,** not a failure. Explain it before fixing it: it may be an NSOClient bug, a FreeSO quirk, or a deliberate difference.
+- **A disagreement is a finding,** not a failure. Explain it before fixing it: it may be an NSOClient bug, a FreeSO bug NewSO fixes (record it, and make the comparison expect it), a quirk the game relies on, or another deliberate difference.
 - **Inconclusive isn't agreement.** A case one side couldn't measure is counted by reason, never as a pass.
 - **Keep the experiments repeatable.** Where FreeSO's own code isn't, change the oracle as little as possible and document it in its README.
 - **The checks are a gate, not the goal.** They stop on a new disagreement so someone looks at it.
@@ -125,7 +129,7 @@ NSOClient reads files nobody controls: original installs, patched objects, user 
 The owner has TSO's 2002 production files and the 2002 beta, but FreeSO targets the 2003 files, and NewSO will meet more data newer than either: FreeSO's content, mods, and later saves of its own. So write every reader for data newer than what's on hand. Being ready for what comes next is also what keeps older data working.
 
 - **Port every version FreeSO reads,** not only the ones the installs hold. FreeSO is the only reference for the 2003 files, so its version branches are the spec. Test the versions the installs lack with synthetic files, and mark them in the scorecard as unverified on real data.
-- **Unknown isn't corrupt.** Data newer than a reader knows (a chunk type, a higher version, extra trailing fields, an enum value) is skipped or kept raw and reported wherever the format lets the rest be read. It's never a trap, and never dropped without a report. Data that is actually broken, such as a size past the end, is still an error. Where FreeSO does something else with unknown data (leaves it empty, say), match its results unless that crashes, and record the difference.
+- **Unknown isn't corrupt.** Data newer than a reader knows (a chunk type, a higher version, extra trailing fields, an enum value) is skipped or kept raw and reported wherever the format lets the rest be read. It's never a trap, and never dropped without a report. Data that is actually broken, such as a size past the end, is still an error. Where FreeSO does something else with unknown data (leaves it empty, say), do what serves NewSO, and record the difference.
 - **Keep what you don't understand.** Anything that rewrites a file (patching, saving, re-encoding a BHAV) carries the parts it can't read through unchanged instead of dropping them.
 - **NewSO's own formats stay readable by older NewSO.** When NewSO writes a format of its own, or extends one of FreeSO's, version it. Add new data as parts an older build can skip or keep, and say which is safe. A change an older build can't safely skip takes a new major version, which older builds refuse with a clear message. CityLimits' saves work this way (its ``docs/saving.md``, "Opening a newer save").
 

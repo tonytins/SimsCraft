@@ -20,8 +20,9 @@ namespace FSO.Oracle
     /// <c>SPR2</c>: width, height, x, y, palette, flags, then FNV-1a 64 hashes of the RGBA and the
     /// depth bytes (<c>-</c> when the frame has none). <c>SPR#</c>: width, height, palette, and the
     /// RGBA hash. <c>DGRP</c>: version, image count, and the hash of a listing of its images
-    /// (see <see cref="DrawGroupListing"/>). A frame or chunk that throws prints <c>error</c> and
-    /// the exception's type.
+    /// (see <see cref="DrawGroupListing"/>). A frame that throws prints <c>error</c> and the
+    /// exception's type; a chunk that throws while being read prints the same with <c>-</c> for its
+    /// frame. Chunks are read one at a time, so one that throws doesn't hide the rest.
     /// </summary>
     internal static class SpriteDump
     {
@@ -57,9 +58,28 @@ namespace FSO.Oracle
             }
         }
 
+        /// <summary>Each chunk of a type, read one at a time; one that throws is reported and skipped.</summary>
+        private static IEnumerable<T> Chunks<T>(IffFile iff, string name, string typeCode, TextWriter results) where T : IffChunk
+        {
+            var ids = iff.SilentListAll().OfType<T>().Select(chunk => chunk.ChunkID).OrderBy(id => id).ToList();
+            foreach (var id in ids)
+            {
+                T chunk = null;
+                try
+                {
+                    chunk = iff.Get<T>(id);
+                }
+                catch (Exception error)
+                {
+                    results.WriteLine($"{name}\t{typeCode}\t{id}\t-\terror\t{error.GetType().Name}");
+                }
+                if (chunk != null) yield return chunk;
+            }
+        }
+
         private static void Sprites2(IffFile iff, string name, TextWriter results)
         {
-            foreach (var sprite in (iff.List<SPR2>() ?? new List<SPR2>()).OrderBy(chunk => chunk.ChunkID))
+            foreach (var sprite in Chunks<SPR2>(iff, name, "SPR2", results))
             {
                 var frames = sprite.Frames ?? new SPR2Frame[0];
                 for (var index = 0; index < frames.Length; index++)
@@ -97,7 +117,7 @@ namespace FSO.Oracle
 
         private static void Sprites1(IffFile iff, string name, TextWriter results)
         {
-            foreach (var sprite in (iff.List<SPR>() ?? new List<SPR>()).OrderBy(chunk => chunk.ChunkID))
+            foreach (var sprite in Chunks<SPR>(iff, name, "SPR#", results))
             {
                 var frames = sprite.Frames ?? new List<SPRFrame>();
                 for (var index = 0; index < frames.Count; index++)
@@ -132,7 +152,7 @@ namespace FSO.Oracle
 
         private static void DrawGroups(IffFile iff, string name, TextWriter results)
         {
-            foreach (var group in (iff.List<DGRP>() ?? new List<DGRP>()).OrderBy(chunk => chunk.ChunkID))
+            foreach (var group in Chunks<DGRP>(iff, name, "DGRP", results))
             {
                 var key = $"{name}\tDGRP\t{group.ChunkID}\t-";
                 try

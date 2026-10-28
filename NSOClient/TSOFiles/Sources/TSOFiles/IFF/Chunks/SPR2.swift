@@ -153,7 +153,8 @@ enum SpriteDecoder {
     /// Kept from FreeSO: rows the data never reaches stay transparent black with depth 0; the
     /// unwritten end of a written row gets depth 255 and keeps its color; a run of transparent
     /// pixels takes the transparent color with alpha 0 and depth 255; 5-bit alpha is scaled by
-    /// 8.2258… and truncated to a byte; unknown commands do nothing. FreeSO's `FloorCopy` and
+    /// 8.2258… and truncated, saturating at 255 where FreeSO wraps (DIFF-27); unknown commands
+    /// do nothing. FreeSO's `FloorCopy` and
     /// `ZAsAlpha`, which floors and walls ask for, aren't ported yet.
     static func decodeSPR2(_ frame: SPR2.Frame, palette: PALT?) throws(SpriteError) -> SpriteImage {
         let width = frame.width
@@ -225,8 +226,9 @@ enum SpriteDecoder {
                             var c = try color(Int(index))
                             if withAlpha {
                                 let alpha = try byte()
-                                // A C# double-to-byte cast: truncated toward zero, then wrapped.
-                                c.3 = UInt8(truncatingIfNeeded: Int(Double(alpha) * 8.2258064516129032258064516129032))
+                                // 5 bits of alpha scaled to 8, truncated; past 31, where FreeSO's cast
+                                // wraps, it saturates (DIFF-27).
+                                c.3 = UInt8(clamping: Int(Double(alpha) * 8.2258064516129032258064516129032))
                                 bytes -= 1
                             }
                             let at = try offset(x, y)

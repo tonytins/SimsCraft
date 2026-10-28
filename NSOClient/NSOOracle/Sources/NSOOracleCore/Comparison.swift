@@ -14,6 +14,8 @@ public struct Comparison: Sendable, Equatable {
     public var skipped: [String: Int] = [:]
     /// Cases NSOClient measures where FreeSO couldn't, such as an object FreeSO fails to load.
     public var recovered = 0
+    /// Disagreements NewSO makes on purpose, by the known difference that explains them.
+    public var explained: [String: Int] = [:]
 
     public init(name: String) {
         self.name = name
@@ -26,8 +28,10 @@ public struct Comparison: Sendable, Equatable {
 
     public var summary: String {
         let skips = skipped.values.reduce(0, +)
+        let explanations = explained.values.reduce(0, +)
         return "\(name): \(matched) agree, \(mismatches.count) disagree, \(skips) inconclusive"
             + (recovered > 0 ? ", \(recovered) answered where FreeSO failed" : "")
+            + (explanations > 0 ? ", \(explanations) differ by design (\(explained.keys.sorted().joined(separator: ", ")))" : "")
     }
 
     mutating func skip(_ reason: String) {
@@ -240,7 +244,9 @@ public struct Comparison: Sendable, Equatable {
 
     /// `sprites`: each sprite frame's size, position, palette, flags, and pixel hashes, and
     /// each drawing group's listing, keyed by entry, chunk type, chunk ID, and frame. A frame
-    /// FreeSO fails on counts as matched if NSOClient fails too, and as recovered if it decodes.
+    /// FreeSO fails on counts as matched if NSOClient fails too, and as recovered if it decodes;
+    /// so does each frame of a chunk FreeSO can't read (its record has `-` for the frame).
+    /// A disagreement a ``KnownDifference`` covers counts as explained.
     public static func sprites(fso: [String], nso: [String]) -> Comparison {
         var result = Comparison(name: "Sprites")
         func keyed(_ lines: [String]) -> [String: [String]] {
@@ -252,9 +258,16 @@ public struct Comparison: Sendable, Equatable {
             }
             return records
         }
+        func chunk(_ key: String) -> String { key.split(separator: "\t").prefix(3).joined(separator: "\t") }
         let theirs = keyed(fso)
         let ours = keyed(nso)
+        // Chunks FreeSO couldn't read at all, and the frames NSOClient has from them.
+        let failedChunks = Set(theirs.filter { $0.key.hasSuffix("\t-") && $0.value.first == "error" }.map { chunk($0.key) })
+        let oursByChunk = Set(ours.keys.map(chunk))
         for (key, record) in theirs.sorted(by: { $0.key < $1.key }) {
+            if failedChunks.contains(chunk(key)), key.hasSuffix("\t-"), ours[key] == nil, oursByChunk.contains(chunk(key)) {
+                continue // Its frames are counted below.
+            }
             guard let mine = ours[key] else {
                 result.skip("NSOClient has no record")
                 continue
@@ -263,12 +276,18 @@ public struct Comparison: Sendable, Equatable {
                 if mine.first == "error" { result.matched += 1 } else { result.recovered += 1 }
             } else if mine == record {
                 result.matched += 1
+            } else if let difference = KnownDifference.covering(key, in: "Sprites") {
+                result.explained[difference.id, default: 0] += 1
             } else {
                 result.mismatches.append("\(key.replacingOccurrences(of: "\t", with: " ")): FreeSO \(record) NSOClient \(mine)")
             }
         }
         for key in ours.keys.sorted() where theirs[key] == nil {
-            result.skip("FreeSO has no record of \(key.split(separator: "\t").dropFirst().first ?? "a chunk")")
+            if failedChunks.contains(chunk(key)) {
+                result.recovered += 1
+            } else {
+                result.skip("FreeSO has no record of \(key.split(separator: "\t").dropFirst().first ?? "a chunk")")
+            }
         }
         return result
     }

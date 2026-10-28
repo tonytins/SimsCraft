@@ -2,17 +2,17 @@ import Foundation
 
 /// An older sprite with color only, from The Sims 1's formats: some TSO objects still use it.
 ///
-/// Ports FreeSO's `SPR` (type code `SPR#`). A file whose first 16-bit word is 0 is big-endian.
-/// FreeSO works out a big-endian file's version with a mask that keeps the low byte as 0xFF
-/// (`(version2 | 0xFF00) >> 8` where `&` was meant), so a big-endian file never reads as
-/// version 1001 and always takes the offset table; that's kept. Version 1001 reads frames
-/// until the data ends, each with its own size, ignoring the frame count.
+/// Ports FreeSO's `SPR` (type code `SPR#`). A file whose first 16-bit word is 0 is big-endian,
+/// and its version is the next word, byte-swapped. FreeSO swaps it with `(version2 | 0xFF00)
+/// >> 8` where `&` was meant, so its low byte is always 0xFF and a big-endian version 1001 reads
+/// as 1023 and takes the offset table; NewSO swaps it correctly (DIFF-26). Version 1001 reads
+/// frames until the data ends, each with its own size, ignoring the frame count.
 public struct SPR: IFFChunk {
     public static let typeCode = "SPR#"
 
     public let id: UInt16
     public let label: String
-    /// The version as FreeSO works it out, quirk included.
+    /// The version, byte-swapped for a big-endian file.
     public let version: UInt32
     public let byteOrder: ByteOrder
     /// The `PALT` every frame uses (the low 16 bits of a 32-bit field, as FreeSO casts it).
@@ -36,7 +36,7 @@ public struct SPR: IFFChunk {
             var version = UInt32(version1)
             if version1 == 0 {
                 reader.byteOrder = .bigEndian
-                version = UInt32((UInt32(version2) | 0xFF00) >> 8 | (UInt32(version2) & 0xFF) << 8)
+                version = UInt32(version2.byteSwapped)
             }
             let count = try reader.readUInt32()
             let paletteID = UInt16(truncatingIfNeeded: try reader.readUInt32())

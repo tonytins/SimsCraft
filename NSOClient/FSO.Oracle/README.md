@@ -68,8 +68,11 @@ frame (`-` for a `DGRP`):
 | `SPR#` | width, height, palette, and the RGBA hash |
 | `DGRP` | the image count and the hash of a listing of its images (`SpriteDump.DrawGroupListing`) |
 
-A frame or file that throws prints `error` and the exception's type. `nso-oracle sprites`
-prints the same from NSOClient, and `compare` reads both as `sprites.tsv`.
+A frame or file that throws prints `error` and the exception's type, and a chunk that throws
+while being read prints the same with `-` for its frame; chunks are read one at a time, so one
+that throws doesn't hide the rest. `nso-oracle sprites` prints the same from NSOClient, and
+`compare` reads both as `sprites.tsv`. Differences NewSO makes on purpose are listed in
+NSOOracle's `KnownDifference` and counted as such, not as disagreements.
 
 ## The state digest (version 0)
 

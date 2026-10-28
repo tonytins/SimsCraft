@@ -7,7 +7,7 @@ extension Answers {
     /// The same archives (each `objspf*.far` under the install, as FAR 1b), entries in name
     /// order, and for each IFF a line per `SPR2` and `SPR#` frame and per `DGRP`, with FNV-1a
     /// 64 hashes of the decoded pixels. A frame or file that fails prints `error` and the
-    /// error's case.
+    /// error's case; a chunk that can't be read prints the same with `-` for its frame.
     ///
     /// - Parameter every: decode only every this many IFFs across the archives, from the first,
     ///   for a quicker sample (the tests use it; the review decodes them all).
@@ -49,7 +49,7 @@ extension Answers {
         var lines: [String] = []
         for record in iff.chunks(ofType: SPR2.typeCode).sorted(by: { $0.id < $1.id }) {
             guard let sprite = try? SPR2(record: record) else {
-                lines.append("\(name)\tSPR2\t\(record.id)\t0\terror\tunreadable")
+                lines.append("\(name)\tSPR2\t\(record.id)\t-\terror\tunreadable")
                 continue
             }
             for (index, frame) in sprite.frames.enumerated() {
@@ -72,7 +72,7 @@ extension Answers {
         var lines: [String] = []
         for record in iff.chunks(ofType: SPR.typeCode).sorted(by: { $0.id < $1.id }) {
             guard let sprite = try? SPR(record: record) else {
-                lines.append("\(name)\tSPR#\t\(record.id)\t0\terror\tunreadable")
+                lines.append("\(name)\tSPR#\t\(record.id)\t-\terror\tunreadable")
                 continue
             }
             let palette = (try? iff.chunk(PALT.self, id: sprite.paletteID)) ?? nil

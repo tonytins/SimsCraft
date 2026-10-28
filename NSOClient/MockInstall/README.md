@@ -21,7 +21,7 @@ It follows the layout of a real install, with only what the content system needs
 | `packingslips/objecttable.xml` | The four objects below, by GUID |
 | `packingslips/catalog.xml` | Their catalog entries (made-up prices; the parts aren't for sale) |
 | `objectdata/objects/objiff.far` | `mockchair.iff`, `mocktable.iff`, `mocklamp.iff`, `mockregister.iff`, and `mocksim.iff` |
-| `objectdata/objects/objspf.far` | `mockchair.spf`: made-up sprites for the `sprites` comparison (a palette, `SPR2` versions 1000 and 1001 using every run command, `SPR#` in both byte orders, and `DGRP` versions 20000, 20001, and 20004) |
+| `objectdata/objects/objspf.far` | `mockchair.spf`: made-up sprites for the `sprites` comparison (a palette, `SPR2` versions 1000 and 1001 using every run command, `SPR#` in both byte orders, and `DGRP` versions 20000, 20001, and 20004). Two show NewSO's fixes: `SPR#` #201 is big-endian version 1001, which FreeSO misreads (DIFF-26), and `SPR2` #102 has alpha 40, which FreeSO wraps (DIFF-27) |
 | `objectdata/globals/global.iff` | One global routine (256) that returns true |
 | `objectdata/globals/mockglobals.iff` | The objects' semi-global: one routine (8192) that returns true |
 

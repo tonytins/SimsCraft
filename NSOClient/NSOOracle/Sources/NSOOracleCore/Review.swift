@@ -33,10 +33,11 @@ public enum Review {
         the game's files: each run reads a copy of the game installed on the machine running it.
 
         This page is a report for peer review. It asks one question: **given the same game files and the
-        same inputs, do NSOClient and FreeSO behave the same?** It doesn't assume they do. NSOClient aims
-        to agree with FreeSO, whose results are its source of truth for the simulation, but each
-        experiment below measures whether it does, and a disagreement is a finding to explain, not a
-        foregone failure. Some findings even go NSOClient's way, as where it loads objects FreeSO can't.
+        same inputs, do NSOClient and FreeSO behave the same?** It doesn't assume they do. FreeSO is
+        NSOClient's reference, not its limit: NSOClient keeps what the game relies on, and FreeSO's
+        results are the best evidence of that, but it fixes FreeSO's bugs rather than porting them. Each
+        experiment below measures where the two agree, and a disagreement is a finding to explain, not a
+        foregone failure. Some findings go NSOClient's way, as where it loads objects FreeSO can't.
 
         ## Method
 
@@ -60,6 +61,8 @@ public enum Review {
           The lot as loaded, the result, and every change the primitive makes are recorded.
         - **Room maps:** for each test lot, how its walls divide it into rooms. The lots are generated
           layouts, FreeSO's empty lot, a house built in-game, and a small made-up lot.
+        - **Sprites:** every object graphic in the game's sprite archives, decoded: each frame's size,
+          position, palette, and checksums of its pixels and depth, and each drawing group's layout.
 
         Every experiment is repeatable: the same install, inputs, and random seed give the same records.
         Where FreeSO's own code wasn't (its lot loading, and its money transactions' timing), `fso-oracle`
@@ -76,10 +79,13 @@ public enum Review {
         - **Agree:** both programs recorded the same result.
         - **Disagree:** their results differ. Each disagreement is listed with both results, for
           someone to explain: a bug in NSOClient, a quirk of FreeSO, or a deliberate difference.
+        - **Differ by design:** disagreements NSOClient makes on purpose, each a known difference listed
+          in its scorecard, most often a FreeSO bug it fixes.
         - **Inconclusive:** cases where one side couldn't take the measurement, by reason: FreeSO itself
           failed, or NSOClient doesn't support something yet (such as one of the game's instructions, its
           *primitives*). Agreement on these is unknown, not assumed.
-        - **Answered where FreeSO failed:** objects NSOClient loads that FreeSO can't.
+        - **Answered where FreeSO failed:** cases NSOClient measures that FreeSO can't, such as objects
+          it loads or sprites it decodes.
 
         The last table shows how long each program took for each experiment.
 
@@ -109,10 +115,11 @@ public enum Review {
                                               formatOptions: [.withFullDate])
         var lines = ["<!-- install: \(run.install) -->", "## \(run.install.prefix(1).uppercased() + run.install.dropFirst())", "",
                      "Run on \(day) at commit `\(run.commit)`.", "",
-                     "| Experiment | Agree | Disagree | Inconclusive | Answered where FreeSO failed |",
-                     "| --- | ---: | ---: | ---: | ---: |"]
+                     "| Experiment | Agree | Disagree | Differ by design | Inconclusive | Answered where FreeSO failed |",
+                     "| --- | ---: | ---: | ---: | ---: | ---: |"]
         for comparison in run.comparisons {
             lines.append("| \(comparison.name) | \(comparison.matched) | \(comparison.mismatches.count) | "
+                         + "\(comparison.explained.values.reduce(0, +)) | "
                          + "\(comparison.skipped.values.reduce(0, +)) | \(comparison.recovered) |")
         }
         for comparison in run.comparisons where !comparison.skipped.isEmpty {

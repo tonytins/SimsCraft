@@ -136,7 +136,7 @@ struct FixtureComparisonTests {
         let fso = try lines("sprites.tsv").filter { entries.contains($0.split(separator: "\t").first.map(String.init) ?? "") }
         let comparison = Comparison.sprites(fso: fso, nso: nso)
         print(comparison.summary)
-        #expect(comparison.matched >= (onMockInstall ? 8 : 5_000))
+        #expect(comparison.matched >= (onMockInstall ? 7 : 5_000))
         #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
         #expect(comparison.skipped.isEmpty, "\(comparison.skipsByCount)")
     }
@@ -217,6 +217,24 @@ extension ComparisonTests {
         #expect(comparison.mismatches.first?.contains("SPR2 100 3") == true)
         #expect(comparison.skipped == ["FreeSO has no record of SPR2": 1])
     }
+
+    @Test func spriteChunksFreeSOCantReadCountTheirFramesAsRecovered() {
+        let chunk = "a.far/b.spf\tSPR#\t201"
+        let comparison = Comparison.sprites(fso: ["\(chunk)\t-\terror\tArgumentOutOfRangeException"],
+                                            nso: ["\(chunk)\t0\t2\t1\t1\taaaa", "\(chunk)\t1\t2\t1\t1\tbbbb"])
+        #expect(comparison.recovered == 2)
+        #expect(comparison.mismatches.isEmpty && comparison.skipped.isEmpty)
+    }
+
+    @Test func knownDifferencesAreExplainedNotDisagreements() throws {
+        let difference = try #require(KnownDifference.all.first { $0.id == "DIFF-27" })
+        let key = difference.keyPrefix + "0"
+        let comparison = Comparison.sprites(fso: ["\(key)\t1\t1\t0\t0\t1\t7\taaaa\tdddd"],
+                                            nso: ["\(key)\t1\t1\t0\t0\t1\t7\tbbbb\tdddd"])
+        #expect(comparison.explained == ["DIFF-27": 1])
+        #expect(comparison.mismatches.isEmpty)
+        #expect(comparison.summary.contains("1 differ by design (DIFF-27)"))
+    }
 }
 
 @Suite struct ReviewTests {
@@ -233,7 +251,7 @@ extension ComparisonTests {
         let first = Review.updating(nil, with: run("production", matched: 61))
         #expect(first.hasPrefix("# NSOClient review"))
         #expect(first.contains("## Production") && first.contains("Run on 1970-01-01 at commit `abc1234`."))
-        #expect(first.contains("| Room maps | 61 | 1 | 2 | 0 |"))
+        #expect(first.contains("| Room maps | 61 | 1 | 0 | 2 | 0 |"))
         #expect(first.contains("- b.xml: maps \\| differs") && first.contains("| `fso room-maps` | 2.5 |"))
 
         let both = Review.updating(first, with: run("beta", matched: 50))
