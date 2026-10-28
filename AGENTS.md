@@ -16,6 +16,7 @@ Key entrypoints:
   - ``SimAntics/`` - the VM
   - ``SimsScript/`` - BHAV text assembly and an LSL-like compiler (proof of concept)
   - ``Interface/`` - the client's windows and controls on raylib-swift (see [The client](#the-client))
+  - ``Client/`` - ``newso``, NewSO's client, which loads, runs, and shows a lot
   - ``FSO.Oracle/``, ``NSOOracle/``, ``ScriptOracle/`` - the oracles (see [The oracles](#the-oracles))
   - ``MockInstall/`` - a tiny made-up TSO install for tests and CI
   - ``Lots/`` - the owner's lots as blueprint XML
@@ -146,7 +147,7 @@ These apply to the NSOClient libraries. Tools (``tsofiles-check``, the oracles) 
 
 ### The client
 
-The client is starting with ``NSOClient/Interface``. It's built on [raylib-swift](https://github.com/tonytins/raylib-swift), the owner's own raylib binding, which keeps raylib's function names and adds Swift enums (``IsKeyDown(.space)``) and colors (``.rayWhite``). It will reuse the generalized parts of the owner's [CityLimits](https://github.com/tonytins/citylimits) interface library (``WindowFrame``, ``TextField``, ``TextArea``, ``ButtonRow``, its loading screen, and its map view), translated from C# and Raylib-cs by the owner's [cs2swift](https://github.com/tonytins/cs2swift). Its output is regenerated, never edited: change the C# in CityLimits and run cs2swift again, and keep Swift-only code in files of its own.
+The client is ``NSOClient/Client`` (``newso``), built on ``NSOClient/Interface``. ``swift run --package-path NSOClient/Client newso`` opens a lot from ``TSO_GAME_DIR`` (or the beta, or MockInstall); ``--lot`` picks another, and ``--screenshot <file.png>`` saves a frame after ``--ticks`` ticks. What it shows is worked out in its ``LotScene`` target, without raylib, so it's tested without a window. It's built on [raylib-swift](https://github.com/tonytins/raylib-swift), the owner's own raylib binding, which keeps raylib's function names and adds Swift enums (``IsKeyDown(.space)``) and colors (``.rayWhite``). It will reuse the generalized parts of the owner's [CityLimits](https://github.com/tonytins/citylimits) interface library (``WindowFrame``, ``TextField``, ``TextArea``, ``ButtonRow``, its loading screen, and its map view), translated from C# and Raylib-cs by the owner's [cs2swift](https://github.com/tonytins/cs2swift). Its output is regenerated, never edited: change the C# in CityLimits and run cs2swift again, and keep Swift-only code in files of its own.
 
 - **Syncing.** ``NSOClient/scripts/sync-interface.sh <CityLimits> <cs2swift>`` rewrites ``Interface/Sources/Interface/CityLimits/`` from CityLimits' files; NewSO's own Swift goes in ``Interface/Sources/Interface/NewSO/``. Read cs2swift's warnings at each sync.
 - **Generated code is a temporary exception to "never crash".** cs2swift's output may hold force unwraps (after a null check such as ``x is null || x.Count``, which C#'s own checks prove safe, and for ``.Value``, which cs2swift warns about) and debug-only ``assert``s where the C# threw. It's a byproduct of the generator, not a license: fix each case to match the guidelines sooner rather than later, preferably by changing the C# in CityLimits (or cs2swift) so the next sync comes out clean.

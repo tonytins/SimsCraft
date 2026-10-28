@@ -1,0 +1,24 @@
+{
+  "originHash" : "c7c2bc0323a90c0d5574e0cecb19eb82ca27768278aeba466cc6148f1150b0ca",
+  "pins" : [
+    {
+      "identity" : "raylib-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tonytins/raylib-swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1446a8a204f72118579d6980af02ce4cb2535281"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser",
+      "state" : {
+        "revision" : "6a52f3251125d74daf04fcbd5e6f08a75d074382",
+        "version" : "1.8.2"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -47,7 +47,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle Interface; do
+          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle Interface Client; do
             echo "::group::$package"
             swift build --package-path "NSOClient/$package"
             swift test --package-path "NSOClient/$package"
@@ -76,7 +76,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle Interface; do
+          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle Interface Client; do
             echo "::group::$package"
             swift build --package-path "NSOClient/$package"
             swift test --package-path "NSOClient/$package"

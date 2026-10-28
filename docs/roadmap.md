@@ -68,7 +68,16 @@ In order:
      Object Out Of Idle, Get Distance To and Get Direction To, Transfer Funds, Remove Object Instance,
      Set Balloon Headline, Idle For Input, Breakpoint, Special Effect, Stop All Sounds, and Get
      Terrain Info. Both real lots run a full in-game day in step with FreeSO.
-2. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
+2. **A first client, before the fourth pass,** so the work so far can be seen instead of only
+   compared. `NSOClient/Client` (`newso`) loads a lot from the install (or MockInstall), runs it in
+   the VM at TSO's 30 ticks a second, and draws it through the 3D camera of decision 7 with
+   stand-ins until sprites decode: floors tinted by room, walls and fences (cut down or full), and
+   each object's footprint. Clicking an object opens an inspector with its GUID, tile, facing, and
+   running stack. Outside the alpha gate; the fourth pass resumes after it.
+   - [x] A. The schematic lot view, the inspector, time controls (pause, three speeds), rotation,
+     zoom, pan, and floors; `--screenshot` for checks. The owner's house loads and runs.
+   - [ ] B. Sprites in place of the boxes, as Hyde Park lands.
+3. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
    with FreeSO (the alpha gate's lot job). Each phase ends with the oracles' experiments agreeing.
    On the real installs, Sims come from the game's person template with a made-up identity defined
    in the oracle (no player or released city data); the mock install gains a made-up Sim, grown
@@ -90,7 +99,7 @@ In order:
    - [ ] F. Relationships and services: Relationship, Old Relationship, the dialogs (headless), the
      Generic Sims Online Call, and the Online Jobs Call, against stand-in services.
    - [ ] G. A lot with Sims (the house) runs a full in-game day in step.
-3. **Hyde Park:** sprite formats (`SPR2`, `SPR#`, `DGRP`), so the last part of loading one object works.
+4. **Hyde Park:** sprite formats (`SPR2`, `SPR#`, `DGRP`), so the last part of loading one object works.
 
 ## Milestones
 
@@ -200,6 +209,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-28 | minor | First client: `NSOClient/Client`, whose `newso` loads a lot, runs it in the VM in real time, and draws it schematically through the 3D camera (floors by room, walls, object footprints) with an object inspector showing each object's running stack. The owner's house loads and runs in about two seconds. Put ahead of Queen Margaret's fourth pass in the current focus, so the work can be seen; 9 tests on MockInstall. |
 | 2026-10-28 | minor | Decision 7: the client draws lots through raylib's 3D camera with one depth buffer shared by Sims and sprites, with SPR2 depth made global from DGRP `ObjectOffset` as FreeSO's `vsZSprite` does. The raylib-swift skill gained the rules that follow from it. Fixed the decision list's numbering. |
 | 2026-10-28 | minor | First client package: `NSOClient/Interface`, NewSO's windows and controls on raylib-swift. Ten of CityLimits' generic interface files (window frame, title editing, toolbar, button row, text field and area, confirm and notice pop-ups, window placement, camera) are translated by cs2swift with `NSOClient/scripts/sync-interface.sh`; NewSO's theme and HUD hook are hand-written beside them. CityLimits' map view, news ticker, and loading screen are built on its city and aren't ported. 8 tests, plus `interface-demo` to look at them. Outside the alpha gate; no milestone or scorecard row changed. |
 | 2026-10-19 | minor | The mock install gained a made-up person object (Mock Sim, GUID `0x4D4F4307`, object type `person`) in `objiff.far`, `objecttable.xml`, `catalog.xml`, and `mock-lot.xml`, with `TSOContent` and `SimAntics` mock tests updated for seven objects. This prepares Queen Margaret's fourth pass (Sims); the Sim's appearance waits for Nichol's Notch (Vitaboy) and Sims VM support waits for Queen Margaret's fourth pass B-G. No scorecard status changed: Sims remain missing in the VM (VM-4, VM-6). |
