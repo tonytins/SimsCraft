@@ -27,7 +27,7 @@ Key entrypoints:
   - ``nso/`` - how NSOClient behaves
   - ``results/`` - how NSOClient measures up against FreeSO
   - ``simantics/`` - the SimAntics Wiki in Markdown (CC BY-SA 3.0)
-- ``.agents/skills/`` - Swift, C, and .NET conventions
+- ``.agents/skills/`` - Swift, C, and .NET conventions, and the ``raylib-swift`` skill for the client
 
 ``Charvatia/``, ``FSOInstaller/``, and ``Other/`` belong to the snapshot too. Build output (``.build/``, ``bin/``, ``obj/``, ``packages/``) is never committed.
 
@@ -154,6 +154,7 @@ The client is starting with ``NSOClient/Interface``. It's built on [raylib-swift
 - **Seeing it.** ``swift run --package-path NSOClient/Interface interface-demo`` opens a window with the controls; ``--screenshot <file.png>`` draws a few frames hidden and saves the last, for checking a change without anyone at the screen.
 - **Building on Linux** needs the X11 and GL headers (``libx11-dev`` and friends, as in CI). On the owner's Atomic host they come from Homebrew: ``export CPATH="$(brew --prefix)/include:$(brew --prefix xorgproto)/include" LIBRARY_PATH="$(brew --prefix)/lib"``.
 
+- **Use the ``raylib-swift`` skill** in ``.agents/skills/raylib-swift/`` for any work that imports Raylib: it covers the API's Swift shapes, the lifecycle, the frame, textures, render textures, input, the examples to read, and how to check a visual change on a private display. These rules win where the two disagree.
 - **The libraries never import raylib.** Rendering reads simulation state and never writes it. If something can't be tested without a window, it belongs in the client.
 - **raylib's examples are the reference.** Read the one closest to what you're writing. A frame is ``BeginDrawing``, the drawing, ``EndDrawing``; textures load after ``InitWindow`` and unload before ``CloseWindow``, never inside the frame loop.
 

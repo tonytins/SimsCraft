@@ -165,8 +165,18 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
    the result unchanged and objects can be edited on any platform as text. It's a later milestone
    (Yatesport); for now a proof of concept tests feasibility: a text assembly that round-trips every
    routine in the install, operand encoders, and a small compiler whose output runs on the Swift VM.
-5. **Real-file tests.** Decided (2026-10-15): tests read `TSO_GAME_DIR` and are skipped when it isn't set (`RealInstallTests`).
-   `TSO_GAME_DIR` and are skipped when it isn't set.
+6. **Real-file tests.** Decided (2026-10-15): tests read `TSO_GAME_DIR` and are skipped when it isn't set (`RealInstallTests`).
+7. **How the client draws a lot.** Decided (2026-10-28): through raylib's 3D camera (`Camera3D`) and
+   one depth buffer for everything, not FreeSO's screen-space 2D batches. Sims are skinned models;
+   objects, walls, and floors are sprites drawn as quads in the same 3D pass, so a Sim sitting on a
+   couch is hidden behind the couch's front edge without sorting tricks. SPR2 depth is local to
+   each sprite, so it's made global the way FreeSO's `vsZSprite`
+   (`TSOClient/tso.content/ContentSrc/Effects/2DWorldBatch.fx`) does: from the draw group's
+   `ObjectOffset` (`TSOClient/tso.files/formats/iff/chunks/DGRP.cs`), in a shader that writes the
+   fragment depth. Vitaboy models are built from TSOFiles' decoded data at run time, with TSO's
+   blend weights (`TSOClient/tso.vitaboy.model/Mesh.cs`), never converted ahead of time, since NewSO
+   reads the player's own install. FreeSO's 2D approach stays the reference for what a lot should
+   look like.
 
 ## Risks most likely to push estimates up
 
@@ -190,6 +200,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-28 | minor | Decision 7: the client draws lots through raylib's 3D camera with one depth buffer shared by Sims and sprites, with SPR2 depth made global from DGRP `ObjectOffset` as FreeSO's `vsZSprite` does. The raylib-swift skill gained the rules that follow from it. Fixed the decision list's numbering. |
 | 2026-10-28 | minor | First client package: `NSOClient/Interface`, NewSO's windows and controls on raylib-swift. Ten of CityLimits' generic interface files (window frame, title editing, toolbar, button row, text field and area, confirm and notice pop-ups, window placement, camera) are translated by cs2swift with `NSOClient/scripts/sync-interface.sh`; NewSO's theme and HUD hook are hand-written beside them. CityLimits' map view, news ticker, and loading screen are built on its city and aren't ported. 8 tests, plus `interface-demo` to look at them. Outside the alpha gate; no milestone or scorecard row changed. |
 | 2026-10-19 | minor | The mock install gained a made-up person object (Mock Sim, GUID `0x4D4F4307`, object type `person`) in `objiff.far`, `objecttable.xml`, `catalog.xml`, and `mock-lot.xml`, with `TSOContent` and `SimAntics` mock tests updated for seven objects. This prepares Queen Margaret's fourth pass (Sims); the Sim's appearance waits for Nichol's Notch (Vitaboy) and Sims VM support waits for Queen Margaret's fourth pass B-G. No scorecard status changed: Sims remain missing in the VM (VM-4, VM-6). |
 | 2026-10-17 | minor | Ported every primitive that blocked objects or lots without Sims (21 of 49 now agree with FreeSO on every case). Both real lots agree with FreeSO at every game hour over a full in-game day on both installs, and the lot experiment now runs a full day. Re-estimated Rancho Rizzo (43%) and Queen Margaret's (75%); Sims are next. |
