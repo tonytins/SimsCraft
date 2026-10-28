@@ -126,6 +126,20 @@ struct FixtureComparisonTests {
         #expect(comparison.matched > 1)
         #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
     }
+
+    /// Every tenth sprite IFF on a real install (all of MockInstall's), as decoding them all in a
+    /// debug build takes minutes; `oracle-review.sh` compares every one.
+    @Test func spritesMatchFreeSO() throws {
+        let every = onMockInstall ? 1 : 10
+        let nso = Answers.sprites(in: try required(gameDirectory), every: every)
+        let entries = Set(nso.map { $0.split(separator: "\t").first.map(String.init) ?? "" })
+        let fso = try lines("sprites.tsv").filter { entries.contains($0.split(separator: "\t").first.map(String.init) ?? "") }
+        let comparison = Comparison.sprites(fso: fso, nso: nso)
+        print(comparison.summary)
+        #expect(comparison.matched >= (onMockInstall ? 8 : 5_000))
+        #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
+        #expect(comparison.skipped.isEmpty, "\(comparison.skipsByCount)")
+    }
 }
 
 @Suite struct ComparisonTests {
@@ -184,6 +198,24 @@ struct FixtureComparisonTests {
                    #"{"file":"b.xml","size":[4,4],"maps":[[2]],"rooms":[]}"#]
         let rooms = Comparison.roomMaps(fso: fso, nso: nso)
         #expect(rooms.matched == 1 && rooms.mismatches == ["b.xml: maps differs"] && rooms.skipped == ["FreeSO couldn't load it": 1])
+    }
+}
+
+extension ComparisonTests {
+    @Test func comparesSpritesRecordByRecord() {
+        let key = "a.far/b.spf\tSPR2\t100"
+        let fso = ["\(key)\t0\t4\t4\t0\t0\t1\t7\taaaa\tbbbb", "\(key)\t1\terror\tIndexOutOfRangeException",
+                   "\(key)\t2\terror\tNullReferenceException", "\(key)\t3\t1\t1\t0\t0\t1\t1\tcccc\t-"]
+        let nso = ["\(key)\t0\t4\t4\t0\t0\t1\t7\taaaa\tbbbb", "\(key)\t1\terror\tpixelOutOfBounds",
+                   "\(key)\t2\t1\t1\t0\t0\t1\t1\tdddd\t-", "\(key)\t3\t1\t1\t0\t0\t1\t1\teeee\t-",
+                   "\(key)\t4\t1\t1\t0\t0\t1\t1\teeee\t-"]
+        let comparison = Comparison.sprites(fso: fso, nso: nso)
+        // Frame 0 agrees, frame 1 fails on both sides, frame 2 decodes where FreeSO failed.
+        #expect(comparison.matched == 2)
+        #expect(comparison.recovered == 1)
+        #expect(comparison.mismatches.count == 1)
+        #expect(comparison.mismatches.first?.contains("SPR2 100 3") == true)
+        #expect(comparison.skipped == ["FreeSO has no record of SPR2": 1])
     }
 }
 

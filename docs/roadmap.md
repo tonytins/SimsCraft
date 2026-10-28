@@ -107,8 +107,9 @@ In order:
      decodes every frame on both installs.
    - [x] C. `SPR#`: both byte orders (with FreeSO's big-endian version quirk), its versions, and the
      opaque black default palette; all 6,579 frames decode on both installs.
-   - [ ] D. `fso-oracle sprites` and `nso-oracle sprites` compared frame for frame, with a made-up
-     sprite IFF in MockInstall for CI.
+   - [x] D. `fso-oracle sprites` and `nso-oracle sprites` compared frame for frame: every record
+     agrees on both installs (93,265 production, 91,788 beta), and MockInstall has a made-up
+     sprite archive for the comparison without game data.
    - [ ] E. Objects in the client: an object's draw group for its graphic state, drawn by `newso` in
      place of the boxes, first as flat quads, then with decision 7's depth.
    - [ ] F. Images (`BMP_`, `THMB`, BMP, TGA, PNG), when the interface and walls need them.
@@ -130,7 +131,7 @@ criteria met, not lines written.
 | Albertstown | Scaffolding: three packages, Swift 6 mode, Swift Testing | 0 | 1–2 | 100% | 0 | Path dependencies TSOContent → TSOFiles, SimAntics → TSOContent, TSOFiles. No `platforms:` (owner decision). |
 | Xanadu | Binary reading and containers: ByteReader, FAR1, FAR3, RefPack, IFF container, DBPF, install scanner | 1,859 | 12–19 | 100% | 0 | Done: all containers, plus `InstallScanner` and the `tsofiles-check` command (exit 0 clean, 1 failures, 2 usage); 55 test cases. Kept quirks: RefPack short input and growth, 0xFD to 0xFF, FAR3 duplicate IDs, IFF trailing byte, DBPF version arithmetic and first-wins IDs. Real install: 0 failures over 82,131 entries. |
 | Pixie Point | Typed IFF chunks for TSO: behavior, strings, objects, interactions, slots | 2,042 | 14–20 | 100% | 0 | Done: `BHAV`, `BCON`, `TRCN`, `TPRP`, `STR#`, `CTSS`, `TTAs`, `OBJD`, `OBJf`, `GLOB`, `SLOT`, `TTAB`, `FWAV`, the field-encoded number reader, and chunk parsing in `tsofiles-check`; 100 tests, 2 against the real install. Real install: 51,620 chunks, 0 failures. The TS1-only chunks moved to Charvatia. |
-| Hyde Park | Sprites and images: `SPR#`, `SPR2`, `PALT`, `DGRP`, `BMP_`, `THMB`, BMP, TGA, PNG to RGBA | 3,543 | 24–35 | 45% | 13–19 | Decode to plain RGBA plus SPR2 depth, no textures. Done: `PALT`, `DGRP`, `SPR2`, `SPR#` (phases A to C). Includes TargaImagePCL's TGA reader. |
+| Hyde Park | Sprites and images: `SPR#`, `SPR2`, `PALT`, `DGRP`, `BMP_`, `THMB`, BMP, TGA, PNG to RGBA | 3,543 | 24–35 | 60% | 10–14 | Decode to plain RGBA plus SPR2 depth, no textures. Done: `PALT`, `DGRP`, `SPR2`, `SPR#`, and the oracle comparison (phases A to D). Includes TargaImagePCL's TGA reader. |
 | King Canyons | Patching and tables: PIFF apply, OTF, `tuning.dat`, `datadefinition.dat`, INI | 802 | 5–8 | 100% | 0 | Done: PIFF chunk and patch application with FreeSO's index rules, `PatchRegistry`, `OTFFile`, `TuningFile`, `DataDefinition`, `INIFile`; 125 tests, 6 against the real install. PIFF encoding (237 C# lines) isn't ported; decision 4 is still open. |
 | Landry Lakes | Audio formats: UTK, XA, HIT, HOT, EVT, HSM, FSC, TLO, hitlists | 1,651 | 11–17 | 0% | 11–17 | Decoding only; playback is a client concern. |
 | Nichol's Notch | Vitaboy model formats: mesh, skeleton, animation, appearance, binding, outfit, hand groups, BCF/CFP | 1,511 | 10–15 | 0% | 10–15 | Package placement is decision 1. |
@@ -221,6 +222,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-28 | minor | Hyde Park, phase D: `fso-oracle sprites` decodes the install's object sprites with FreeSO's readers (its content leaves them out without a graphics device), and `nso-oracle sprites` with NSOClient's. Every frame and drawing group agrees: 93,265 records on production, 91,788 on the beta. MockInstall gained a made-up `objspf.far`; NSOOracle's test samples every tenth IFF, since decoding them all takes minutes in a debug build. |
 | 2026-10-28 | minor | Hyde Park, phase C: `SPR#` in both byte orders, keeping FreeSO's big-endian version quirk (a big-endian 1001 reads as 1023 and takes the offset table). All 6,579 frames decode on both installs, 0 failures. |
 | 2026-10-28 | minor | Hyde Park, phases A and B: `PALT`, `DGRP` (every version, world offsets, image lookup), and `SPR2` decoded to RGBA, depth, and palette indices. Every frame on both installs decodes (78,054 production, 76,782 beta), 0 failures; FreeSO's crash cases throw instead (DIFF-25). |
 | 2026-10-28 | minor | First client: `NSOClient/Client`, whose `newso` loads a lot, runs it in the VM in real time, and draws it schematically through the 3D camera (floors by room, walls, object footprints) with an object inspector showing each object's running stack. The owner's house loads and runs in about two seconds. Put ahead of Queen Margaret's fourth pass in the current focus, so the work can be seen; 9 tests on MockInstall. |

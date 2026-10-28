@@ -31,6 +31,7 @@
     <Compile Include="PrimitiveRunner.cs" />
     <Compile Include="LotLoader.cs" />
     <Compile Include="SynchronousGlobalLink.cs" />
+    <Compile Include="SpriteDump.cs" />
     <Compile Include="Stubs/**/*.cs" />
   </ItemGroup>
 

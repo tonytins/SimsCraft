@@ -54,6 +54,23 @@ thread timing. `SynchronousGlobalLink.cs` is the same stub with that one call ma
 calling thread, so the answer always arrives on the next tick, as the background thread almost
 always did.
 
+## Sprites: `sprites`
+
+FreeSO's content loads object sprites only when there's a graphics device, so `sprites` opens
+them itself: each `objspf*.far` under the install, as TSO's FAR 1b, and each IFF in it in name
+order. It decodes every `SPR2` and `SPR#` frame and reads every `DGRP` with FreeSO's own
+readers, and prints one tab-separated line for each, keyed by entry, chunk type, chunk ID, and
+frame (`-` for a `DGRP`):
+
+| Chunk | Then |
+| --- | --- |
+| `SPR2` | width, height, x, y, palette, flags, and FNV-1a 64 hashes of the RGBA and the depth bytes (`-` when the frame has none) |
+| `SPR#` | width, height, palette, and the RGBA hash |
+| `DGRP` | the image count and the hash of a listing of its images (`SpriteDump.DrawGroupListing`) |
+
+A frame or file that throws prints `error` and the exception's type. `nso-oracle sprites`
+prints the same from NSOClient, and `compare` reads both as `sprites.tsv`.
+
 ## The state digest (version 0)
 
 SHA-256 over little-endian values, in this order:

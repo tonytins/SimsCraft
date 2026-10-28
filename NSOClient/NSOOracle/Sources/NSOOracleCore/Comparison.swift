@@ -238,6 +238,41 @@ public struct Comparison: Sendable, Equatable {
 
     // MARK: Parsing
 
+    /// `sprites`: each sprite frame's size, position, palette, flags, and pixel hashes, and
+    /// each drawing group's listing, keyed by entry, chunk type, chunk ID, and frame. A frame
+    /// FreeSO fails on counts as matched if NSOClient fails too, and as recovered if it decodes.
+    public static func sprites(fso: [String], nso: [String]) -> Comparison {
+        var result = Comparison(name: "Sprites")
+        func keyed(_ lines: [String]) -> [String: [String]] {
+            var records: [String: [String]] = [:]
+            for line in lines {
+                let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+                guard fields.count >= 4 else { continue }
+                records[fields.prefix(4).joined(separator: "\t")] = Array(fields.dropFirst(4))
+            }
+            return records
+        }
+        let theirs = keyed(fso)
+        let ours = keyed(nso)
+        for (key, record) in theirs.sorted(by: { $0.key < $1.key }) {
+            guard let mine = ours[key] else {
+                result.skip("NSOClient has no record")
+                continue
+            }
+            if record.first == "error" {
+                if mine.first == "error" { result.matched += 1 } else { result.recovered += 1 }
+            } else if mine == record {
+                result.matched += 1
+            } else {
+                result.mismatches.append("\(key.replacingOccurrences(of: "\t", with: " ")): FreeSO \(record) NSOClient \(mine)")
+            }
+        }
+        for key in ours.keys.sorted() where theirs[key] == nil {
+            result.skip("FreeSO has no record of \(key.split(separator: "\t").dropFirst().first ?? "a chunk")")
+        }
+        return result
+    }
+
     /// A JSON value as text, with sorted keys, or `null`.
     private static func plain(_ value: Any?) -> String {
         guard let value, let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .fragmentsAllowed]) else {

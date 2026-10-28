@@ -25,6 +25,11 @@ namespace FSO.Oracle
        fso-oracle list-objects [options]
        fso-oracle run-objects [options] [--ticks N] [--every N]
        fso-oracle room-maps [options]
+       fso-oracle sprites [--game DIR]
+
+sprites decodes every SPR2, SPR#, and DGRP in the install's objspf*.far archives with
+FreeSO's readers and prints one line per frame or drawing group, with hashes of the
+pixels (see SpriteDump.cs).
 
 run-lot loads a lot from blueprint XML into a headless FreeSO VM, as FreeSO's lot
 server does, ticks it, and prints a state digest.
@@ -57,7 +62,7 @@ options:
 
         public static int Main(string[] args)
         {
-            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps" }.Contains(args[0]))
+            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "sprites" }.Contains(args[0]))
             {
                 Console.Error.WriteLine(Usage);
                 return 2;
@@ -77,6 +82,13 @@ options:
             // FreeSO's code writes diagnostics to standard output; keep that for results only.
             var results = Console.Out;
             Console.SetOut(Console.Error);
+
+            // Sprites need no content: FreeSO's content leaves them out without a graphics device.
+            if (args[0] == "sprites")
+            {
+                SpriteDump.Run(options.GameDirectory, results);
+                return 0;
+            }
 
             // Content: the game files (through an overlay that fills in files older installs lack),
             // plus FreeSO's own folder for patches and standalone objects.

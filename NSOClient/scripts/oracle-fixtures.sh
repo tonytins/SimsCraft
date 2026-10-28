@@ -20,6 +20,7 @@
 #   blueprints/, rooms.lots       synthetic lots (OracleCases/make_blueprints.py), and every lot
 #                                 room-maps reads
 #   rooms.jsonl                   room-maps for them
+#   sprites.tsv                   sprites: every object sprite frame and drawing group, decoded
 #   timings.tsv, *.log            seconds per command, and fso-oracle's messages
 set -euo pipefail
 
@@ -112,5 +113,8 @@ python3 -I "$repository/NSOClient/SimAntics/OracleCases/make_blueprints.py" "$ou
 { cat "$output/blueprints/blueprints.txt"; echo "$empty_lot"
   ls "$repository"/NSOClient/Lots/*.xml "$repository"/NSOClient/MockInstall/Lots/*.xml; } >"$output/rooms.lots"
 timed room-maps oracle room-maps <"$output/rooms.lots" >"$output/rooms.jsonl" 2>"$output/rooms.log"
+
+echo "Sprites..."
+timed sprites oracle sprites >"$output/sprites.tsv" 2>"$output/sprites.log"
 
 echo "Done. Compare with: TSO_ORACLE_DIR=$output swift test --package-path NSOClient/NSOOracle"
