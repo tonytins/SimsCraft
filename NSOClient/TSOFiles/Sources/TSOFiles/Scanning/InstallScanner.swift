@@ -163,6 +163,8 @@ public struct InstallScanner: Sendable {
                 report.chunkCounts[record.typeCode, default: 0] += 1
                 if let sprite = chunk as? SPR2 {
                     decodeFrames(of: sprite, in: iff, path: path, entryPrefix: entryPrefix, into: &report)
+                } else if let sprite = chunk as? SPR {
+                    decodeFrames(of: sprite, in: iff, path: path, entryPrefix: entryPrefix, into: &report)
                 }
             } catch {
                 let chunk = "\(record.typeCode) #\(record.id)"
@@ -186,6 +188,21 @@ public struct InstallScanner: Sendable {
                 report.chunkCounts["SPR2 frames", default: 0] += 1
             } catch {
                 let chunk = "SPR2 #\(sprite.id) frame \(index)"
+                let entry = entryPrefix.map { "\($0): \(chunk)" } ?? chunk
+                report.failures.append(ScanFailure(path: path, entry: entry, message: String(describing: error)))
+            }
+        }
+    }
+
+    /// Decodes every frame of an older sprite with the chunk's palette.
+    private func decodeFrames(of sprite: SPR, in iff: IFFFile, path: String, entryPrefix: String?, into report: inout ScanReport) {
+        let palette = (try? iff.chunk(PALT.self, id: sprite.paletteID)) ?? nil
+        for index in sprite.frames.indices {
+            do {
+                _ = try sprite.decode(frameAt: index, palette: palette)
+                report.chunkCounts["SPR# frames", default: 0] += 1
+            } catch {
+                let chunk = "SPR# #\(sprite.id) frame \(index)"
                 let entry = entryPrefix.map { "\($0): \(chunk)" } ?? chunk
                 report.failures.append(ScanFailure(path: path, entry: entry, message: String(describing: error)))
             }

@@ -306,3 +306,99 @@ func badRunsAreErrors(flags: UInt32, runs: [SpriteRun], expected: SpriteError) t
     #expect(throws: SpriteError.paletteIndexOutOfRange(9)) { try chunk.decode(frameAt: 0, palette: short) }
     #expect(throws: SpriteError.noSuchFrame(1)) { try chunk.decode(frameAt: 1, palette: short) }
 }
+
+// MARK: SPR#
+
+/// A `SPR#` frame's header and run-length data: a 3×3 frame whose rows are a skip then a fill,
+/// two skipped rows, and nothing past them.
+private func olderFrame(bigEndian: Bool = false) -> [UInt8] {
+    var w = ByteWriter()
+    w.uint32(0) // Reserved.
+    if bigEndian { w.raw([0, 3, 0, 3]) } else { w.uint16(3); w.uint16(3) } // height, width
+    // Row 0: one transparent pixel, then two pixels of palette color 5.
+    w.raw([0x04, 8, 0x01, 1, 0x02, 2, 5, 0])
+    // Rows 1 and 2 skipped.
+    w.raw([0x09, 2])
+    w.raw([0x05, 0])
+    return Array(w.bytes)
+}
+
+@Test func olderSpritesReadLittleEndianOffsetTables() throws {
+    let frame = olderFrame()
+    let chunk = try SPR(record: record("SPR#") { w in
+        w.uint16(505); w.uint16(0)
+        w.uint32(1)
+        w.uint32(0x0001_0007) // Palette 7 in the low 16 bits.
+        w.uint32(16)
+        w.raw(frame)
+    })
+    #expect(chunk.version == 505 && chunk.byteOrder == .littleEndian && chunk.paletteID == 7)
+    let image = try chunk.decode(frameAt: 0, palette: try rampPalette())
+    #expect(image.width == 3 && image.height == 3 && image.depth == nil)
+    #expect(pixel(image, 0, 0) == [0, 0, 0, 0])
+    #expect(pixel(image, 1, 0) == [5, 10, 15, 255])
+    #expect(pixel(image, 2, 0) == [5, 10, 15, 255])
+    #expect(pixel(image, 0, 1) == [0, 0, 0, 0])
+}
+
+@Test func olderSpritesVersion1001ReadSizedFramesUntilTheEnd() throws {
+    let frame = olderFrame()
+    let chunk = try SPR(record: record("SPR#") { w in
+        w.uint16(1001); w.uint16(0)
+        w.uint32(99) // Ignored: frames run to the end.
+        w.uint32(7)
+        for _ in 0..<2 {
+            w.uint32(1001)
+            w.uint32(UInt32(frame.count))
+            w.raw(frame)
+        }
+    })
+    #expect(chunk.frames.count == 2)
+}
+
+@Test func bigEndianOlderSpritesKeepFreeSOsVersionQuirk() throws {
+    let frame = olderFrame(bigEndian: true)
+    // Version 1001 big-endian: FreeSO's mask makes it 1023, so it reads an offset table.
+    let chunk = try SPR(record: record("SPR#") { w in
+        w.raw([0, 0, 0x03, 0xE9])
+        w.raw([0, 0, 0, 1]) // one frame
+        w.raw([0, 0, 0, 7]) // palette 7
+        w.raw([0, 0, 0, 16]) // its offset
+        w.raw(frame)
+    })
+    #expect(chunk.byteOrder == .bigEndian && chunk.version == 0x03FF)
+    #expect(chunk.paletteID == 7)
+    #expect(chunk.frames.first.map { ($0.width, $0.height) } ?? (0, 0) == (3, 3))
+}
+
+@Test func olderSpritesWithoutAPaletteAreOpaqueBlack() throws {
+    let chunk = try SPR(record: record("SPR#") { w in
+        w.uint16(505); w.uint16(0); w.uint32(1); w.uint32(7); w.uint32(16)
+        w.raw(olderFrame())
+    })
+    let image = try chunk.decode(frameAt: 0, palette: nil)
+    #expect(pixel(image, 1, 0) == [0, 0, 0, 255])
+    #expect(pixel(image, 0, 0) == [0, 0, 0, 0])
+}
+
+@Test func olderSpritesWithoutAnEndAreErrors() throws {
+    var frame = olderFrame()
+    frame.removeLast(2)
+    let chunk = try SPR(record: record("SPR#") { w in
+        w.uint16(505); w.uint16(0); w.uint32(1); w.uint32(7); w.uint32(16)
+        w.raw(frame)
+    })
+    #expect(throws: SpriteError.truncated) { try chunk.decode(frameAt: 0, palette: nil) }
+}
+
+@Test func olderSpriteRunsPastTheFrameAreErrors() throws {
+    var w = ByteWriter()
+    w.uint32(0); w.uint16(1); w.uint16(1)
+    w.raw([0x04, 6, 0x02, 2, 5, 0, 0x05, 0]) // Two pixels in a one-pixel frame.
+    let frame = w.bytes
+    let chunk = try SPR(record: record("SPR#") { w in
+        w.uint16(505); w.uint16(0); w.uint32(1); w.uint32(7); w.uint32(16)
+        w.raw(frame)
+    })
+    #expect(throws: SpriteError.pixelOutOfBounds(row: 0, column: 1)) { try chunk.decode(frameAt: 0, palette: try rampPalette()) }
+}
