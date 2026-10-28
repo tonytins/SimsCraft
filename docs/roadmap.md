@@ -99,7 +99,18 @@ In order:
    - [ ] F. Relationships and services: Relationship, Old Relationship, the dialogs (headless), the
      Generic Sims Online Call, and the Online Jobs Call, against stand-in services.
    - [ ] G. A lot with Sims (the house) runs a full in-game day in step.
-4. **Hyde Park:** sprite formats (`SPR2`, `SPR#`, `DGRP`), so the last part of loading one object works.
+4. **Hyde Park:** sprite formats, so objects can be drawn. Each phase ends with the install scan
+   clean on both installs, and, from D, the oracles agreeing.
+   - [x] A. `PALT` and `DGRP`: every version, the world offsets, and the image lookup by direction,
+     zoom, and world rotation.
+   - [x] B. `SPR2`: frames decoded to RGBA, depth, and palette indices with FreeSO's quirks; the scan
+     decodes every frame on both installs.
+   - [ ] C. `SPR#`: both byte orders, its versions, and the default black palette.
+   - [ ] D. `fso-oracle sprites` and `nso-oracle sprites` compared frame for frame, with a made-up
+     sprite IFF in MockInstall for CI.
+   - [ ] E. Objects in the client: an object's draw group for its graphic state, drawn by `newso` in
+     place of the boxes, first as flat quads, then with decision 7's depth.
+   - [ ] F. Images (`BMP_`, `THMB`, BMP, TGA, PNG), when the interface and walls need them.
 
 ## Milestones
 
@@ -118,7 +129,7 @@ criteria met, not lines written.
 | Albertstown | Scaffolding: three packages, Swift 6 mode, Swift Testing | 0 | 1–2 | 100% | 0 | Path dependencies TSOContent → TSOFiles, SimAntics → TSOContent, TSOFiles. No `platforms:` (owner decision). |
 | Xanadu | Binary reading and containers: ByteReader, FAR1, FAR3, RefPack, IFF container, DBPF, install scanner | 1,859 | 12–19 | 100% | 0 | Done: all containers, plus `InstallScanner` and the `tsofiles-check` command (exit 0 clean, 1 failures, 2 usage); 55 test cases. Kept quirks: RefPack short input and growth, 0xFD to 0xFF, FAR3 duplicate IDs, IFF trailing byte, DBPF version arithmetic and first-wins IDs. Real install: 0 failures over 82,131 entries. |
 | Pixie Point | Typed IFF chunks for TSO: behavior, strings, objects, interactions, slots | 2,042 | 14–20 | 100% | 0 | Done: `BHAV`, `BCON`, `TRCN`, `TPRP`, `STR#`, `CTSS`, `TTAs`, `OBJD`, `OBJf`, `GLOB`, `SLOT`, `TTAB`, `FWAV`, the field-encoded number reader, and chunk parsing in `tsofiles-check`; 100 tests, 2 against the real install. Real install: 51,620 chunks, 0 failures. The TS1-only chunks moved to Charvatia. |
-| Hyde Park | Sprites and images: `SPR#`, `SPR2`, `PALT`, `DGRP`, `BMP_`, `THMB`, BMP, TGA, PNG to RGBA | 3,543 | 24–35 | 0% | 24–35 | Decode to plain RGBA plus SPR2 depth, no textures. Includes TargaImagePCL's TGA reader. |
+| Hyde Park | Sprites and images: `SPR#`, `SPR2`, `PALT`, `DGRP`, `BMP_`, `THMB`, BMP, TGA, PNG to RGBA | 3,543 | 24–35 | 35% | 16–23 | Decode to plain RGBA plus SPR2 depth, no textures. Done: `PALT`, `DGRP`, `SPR2` (phases A and B). Includes TargaImagePCL's TGA reader. |
 | King Canyons | Patching and tables: PIFF apply, OTF, `tuning.dat`, `datadefinition.dat`, INI | 802 | 5–8 | 100% | 0 | Done: PIFF chunk and patch application with FreeSO's index rules, `PatchRegistry`, `OTFFile`, `TuningFile`, `DataDefinition`, `INIFile`; 125 tests, 6 against the real install. PIFF encoding (237 C# lines) isn't ported; decision 4 is still open. |
 | Landry Lakes | Audio formats: UTK, XA, HIT, HOT, EVT, HSM, FSC, TLO, hitlists | 1,651 | 11–17 | 0% | 11–17 | Decoding only; playback is a client concern. |
 | Nichol's Notch | Vitaboy model formats: mesh, skeleton, animation, appearance, binding, outfit, hand groups, BCF/CFP | 1,511 | 10–15 | 0% | 10–15 | Package placement is decision 1. |
@@ -209,6 +220,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-28 | minor | Hyde Park, phases A and B: `PALT`, `DGRP` (every version, world offsets, image lookup), and `SPR2` decoded to RGBA, depth, and palette indices. Every frame on both installs decodes (78,054 production, 76,782 beta), 0 failures; FreeSO's crash cases throw instead (DIFF-25). |
 | 2026-10-28 | minor | First client: `NSOClient/Client`, whose `newso` loads a lot, runs it in the VM in real time, and draws it schematically through the 3D camera (floors by room, walls, object footprints) with an object inspector showing each object's running stack. The owner's house loads and runs in about two seconds. Put ahead of Queen Margaret's fourth pass in the current focus, so the work can be seen; 9 tests on MockInstall. |
 | 2026-10-28 | minor | Decision 7: the client draws lots through raylib's 3D camera with one depth buffer shared by Sims and sprites, with SPR2 depth made global from DGRP `ObjectOffset` as FreeSO's `vsZSprite` does. The raylib-swift skill gained the rules that follow from it. Fixed the decision list's numbering. |
 | 2026-10-28 | minor | First client package: `NSOClient/Interface`, NewSO's windows and controls on raylib-swift. Ten of CityLimits' generic interface files (window frame, title editing, toolbar, button row, text field and area, confirm and notice pop-ups, window placement, camera) are translated by cs2swift with `NSOClient/scripts/sync-interface.sh`; NewSO's theme and HUD hook are hand-written beside them. CityLimits' map view, news ticker, and loading screen are built on its city and aren't ported. 8 tests, plus `interface-demo` to look at them. Outside the alpha gate; no milestone or scorecard row changed. |

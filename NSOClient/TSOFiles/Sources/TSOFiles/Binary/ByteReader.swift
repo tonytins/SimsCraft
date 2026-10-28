@@ -83,6 +83,11 @@ public struct ByteReader: Sendable {
         Int32(bitPattern: try readUInt32())
     }
 
+    /// Reads a 32-bit IEEE 754 float in the reader's byte order, as .NET's `ReadSingle` does.
+    public mutating func readFloat32() throws(EndOfDataError) -> Float {
+        Float(bitPattern: try readUInt32())
+    }
+
     /// Reads a 24-bit unsigned integer, as used by FAR3 and RefPack headers.
     public mutating func readUInt24() throws(EndOfDataError) -> UInt32 {
         UInt32(truncatingIfNeeded: try readUnsigned(byteCount: 3))

@@ -159,8 +159,11 @@ public struct InstallScanner: Sendable {
         for record in iff.chunks {
             guard let chunkType = IFFChunkTypes.type(forCode: record.typeCode) else { continue }
             do {
-                _ = try chunkType.init(record: record)
+                let chunk = try chunkType.init(record: record)
                 report.chunkCounts[record.typeCode, default: 0] += 1
+                if let sprite = chunk as? SPR2 {
+                    decodeFrames(of: sprite, in: iff, path: path, entryPrefix: entryPrefix, into: &report)
+                }
             } catch {
                 let chunk = "\(record.typeCode) #\(record.id)"
                 let entry = entryPrefix.map { "\($0): \(chunk)" } ?? chunk
@@ -170,6 +173,21 @@ public struct InstallScanner: Sendable {
                 } else {
                     report.failures.append(failure)
                 }
+            }
+        }
+    }
+
+    /// Decodes every frame of a sprite with the palette it names, as drawing it would.
+    private func decodeFrames(of sprite: SPR2, in iff: IFFFile, path: String, entryPrefix: String?, into report: inout ScanReport) {
+        for (index, frame) in sprite.frames.enumerated() {
+            do {
+                let palette = try? iff.chunk(PALT.self, id: frame.paletteID)
+                _ = try sprite.decode(frameAt: index, palette: palette ?? nil)
+                report.chunkCounts["SPR2 frames", default: 0] += 1
+            } catch {
+                let chunk = "SPR2 #\(sprite.id) frame \(index)"
+                let entry = entryPrefix.map { "\($0): \(chunk)" } ?? chunk
+                report.failures.append(ScanFailure(path: path, entry: entry, message: String(describing: error)))
             }
         }
     }

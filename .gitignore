@@ -436,4 +436,3 @@ FodyWeavers.xsd
 
 # Game files extracted next to the installer script (EA data, never versioned)
 NSOClient/scripts/tso/
-.memory/

@@ -5,7 +5,7 @@ Maintained by hand from the source tree and `swift test` in each package under
 page and [roadmap.md](roadmap.md) disagree, this page wins and the roadmap gets re-estimated. Every
 `done` row names the code or test that proves it.
 
-**As of:** 2026-10-16 · Swift 6.3.3 on Linux x86_64 · `swift test`: TSOFiles 131 passed (8 need
+**As of:** 2026-10-28 · Swift 6.3.3 on Linux x86_64 · `swift test`: TSOFiles 147 passed (8 need
 `TSO_GAME_DIR`), TSOFilesCheck 12 passed, TSOContent 40 passed (4 need `TSO_GAME_DIR`),
 SimAntics 104 passed (1 needs `TSO_GAME_DIR`), SimsScript 12
 passed (1 needs `TSO_GAME_DIR`), NSOOracle 11 passed (5 need `TSO_GAME_DIR` and `TSO_ORACLE_DIR`). Tests that need either variable are skipped without it. The
@@ -21,7 +21,7 @@ Status values: `done` (works and is tested), `partial` (works with gaps, named i
 
 | Area | Done | Partial | Missing | Key numbers |
 |---|---:|---:|---:|---|
-| [Formats](#formats) | 13 | 0 | 8 | 128 test cases; real install (2002 beta): 94 containers, 82,131 entries, 51,620 typed chunks, tuning, data definition, and OTFs, 0 failures |
+| [Formats](#formats) | 13 | 1 | 7 | 128 test cases; real install (2002 beta): 94 containers, 82,131 entries, 51,620 typed chunks, tuning, data definition, and OTFs, 0 failures |
 | [Content](#content) | 3 | 2 | 4 | real install: 2,694 objects registered, 2,693 load (the beta lacks one IFF), 19 semi-globals; matches FreeSO on all 2,649 objects FreeSO loads, and loads 44 more it can't |
 | [SimAntics](#simantics) | 2 | 6 | 7 | 21 primitives match FreeSO on every oracle case they can run; 2,782 objects run alone (production) match FreeSO digest for digest over 30 ticks; both real lots, the house included, run a full in-game day in step |
 | [Fidelity](#fidelity) | 8 | 5 | 1 | install scan and real-data invariants clean; content and entry points match FreeSO object for object; Expression matches on 3,809 cases; single-object runs and both real lots (over a full in-game day) match digest for digest |
@@ -30,7 +30,7 @@ Status values: `done` (works and is tested), `partial` (works with gaps, named i
 | [Tests and tooling](#tests-and-tooling) | 5 | 2 | 0 | |
 | [Platforms](#platforms) | 3 | 0 | 1 | |
 | [Scripting](#scripting) | 3 | 1 | 3 | proof of concept: all 15,723 routines round-trip through assembly; compiled scripts run on the VM |
-| [Known differences from FreeSO](#known-differences-from-freeso) | | | | 24 deliberate |
+| [Known differences from FreeSO](#known-differences-from-freeso) | | | | 25 deliberate |
 | [Open bugs](#open-bugs) | 0 | 0 | 0 | none filed |
 
 ## Formats
@@ -51,7 +51,7 @@ Package: [TSOFiles](../NSOClient/TSOFiles/). Ports `TSOClient/tso.files` (see
 | FMT-9 | String chunks: `STR#`, `CTSS`, `TTAs` with language sets | done | `IFF/Chunks/StringTable.swift`; `StringTableTests` (formats 0, -1, -2, -3, -4, language fallback, default language, empty and unknown formats) and `ByteReaderStringTests`. Text decoding matches each FreeSO reader: Latin-1 C strings, ASCII Pascal strings, UTF-8, and .NET length-prefixed strings. Real install: 3,401 STR#, 905 CTSS, 910 TTAs |
 | FMT-10 | Object chunks: `OBJD`, `OBJf`, `GLOB`, `SLOT`, `TTAB`, `FWAV` | done | Done: `OBJD` (word layout per version, 90 named fields generated from the C# field list, type attribute fallback), `OBJf`, `GLOB`, `SLOT` (per-version defaults and scaling), `TTAB` (plain and field-encoded, via `IFF/FieldEncodedReader.swift`), `FWAV`; `ObjectChunkTests`, `FieldEncodedReaderTests`. Real install: 2,706 OBJD, 1,755 OBJf, 206 GLOB, 790 SLOT, 898 TTAB, 5,408 FWAV; every loaded interaction fits its pie menu strings where the IFF has them. |
 | FMT-11 | TS1 house and neighborhood chunks: `OBJT`, `OBJM`, `ARRY`, `WALm`, `FLRm`, `CARR`, `FAMI`, `FAMs`, `NBRS`, `NGBH`, `SIMI`, `TATT` | missing | Charvatia milestone, deferred by the owner. Only TS1 hybrid mode reads them; a TSO install contains none (checked 2026-10-15) |
-| FMT-12 | Sprite chunks decoded to RGBA plus depth: `SPR#`, `SPR2`, `PALT`, `DGRP` | missing | Hyde Park |
+| FMT-12 | Sprite chunks decoded to RGBA plus depth: `SPR#`, `SPR2`, `PALT`, `DGRP` | partial | `IFF/Chunks/PALT.swift`, `DGRP.swift` (every version from 20000 to 20004, the world offsets, and FreeSO's image lookup by direction, zoom, and world rotation), `SPR2.swift` (versions 1000 and 1001, frames decoded to RGBA, depth, and palette indices with FreeSO's quirks kept); `SpriteChunkTests`. Real installs: production 13,506 DGRP, 3,798 PALT, 8,823 SPR2 with all 78,054 frames decoded; beta 13,301 DGRP, 3,780 PALT, 8,625 SPR2 with all 76,782 frames decoded; 0 failures. Missing: `SPR#`, floor and wall frames (FreeSO's `FloorCopy` and `ZAsAlpha`), and the oracle comparison |
 | FMT-13 | Images: `BMP_`, `THMB`, BMP, TGA, PNG with magenta masking | missing | Hyde Park |
 | FMT-14 | PIFF: apply patches to an IFF, `User/` precedence | done | PIFF is FreeSO's own format (fixes for objects its engine mishandled), written against the 2003 production files. `IFF/Chunks/PIFF.swift` (the chunk and `Entry.apply(to:)`, including FreeSO's rule that a final removal may run past the end when nothing remains), `IFFFile.applying(_:)` (deletions, deferred ID swaps, added chunks grouped by type, with FreeSO's "first chunk per type and ID" index), `Patching/PatchRegistry.swift` (discovery, `User/` precedence, patches applied only where they fit). `PIFFTests`, `PatchRegistryTests`. Real install: FreeSO's 36 shipped patches from the snapshot (35 load; one is empty). Of the 27 that target objects in `objiff.far`, 17 apply to the beta and 10 don't fit and are skipped (a C#-faithful simulation confirms FreeSO would fail on 7 of them too), and no patch leaves a chunk unparsable. The snapshot's `skillobjects_10xmultiplier.piff` is empty. Encoding PIFFs is not ported (roadmap decision 4) |
 | FMT-15 | OTF tuning tables and `tuning.dat` | done | `Tables/OTFFile.swift` (`T` elements anywhere, comments skipped, .NET-style integer parsing), `Tables/TuningFile.swift` (Persist header, RefPack, strings offset by 13, lower-case names). `OTFFileTests`, `TuningFileTests`. Real install: `tuning.dat` and all 12 OTFs read |
@@ -217,6 +217,7 @@ Deliberate, documented in the code. Each keeps valid-file behavior the same.
 | DIFF-22 | Loading a lot leaves out an object the content doesn't have or can't load, and returns it | `VM.load(_:)` | FreeSO's activator fails on it; `fso-oracle` leaves such objects out beforehand, and `nso-oracle run-lot --leave-out` matches its choice |
 | DIFF-23 | Loading a lot keeps entities already on the VM | `VM.load(_:)` | FreeSO replaces the context and starts with none; tests add entities and then load architecture under them |
 | DIFF-24 | A routine Run Tree By Name runs to completion stops after 500,000 instructions with an infinite-loop error | `VMThread.runInMyStack` | FreeSO's `RunInMyStack` has no limit, so a tree that loops or waits hangs the whole lot |
+| DIFF-25 | A sprite frame FreeSO would crash on throws a `SpriteError`: a run past the frame's end, color or depth runs in a frame whose flags lack them, or a palette index past the palette | `SPR2.decode(frameAt:palette:)` | FreeSO's `SPR2Frame.Decode` throws `IndexOutOfRangeException` or `NullReferenceException`. Also, a version 1000 frame whose header doesn't fit fails when the chunk is read, where FreeSO fails when the frame is first drawn. No frame on either install hits these |
 
 ## Open bugs
 
