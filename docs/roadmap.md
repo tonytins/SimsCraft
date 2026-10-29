@@ -205,7 +205,9 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
    fragment depth. Vitaboy models are built from TSOFiles' decoded data at run time, with TSO's
    blend weights (`TSOClient/tso.vitaboy.model/Mesh.cs`), never converted ahead of time, since NewSO
    reads the player's own install. FreeSO's 2D approach stays the reference for what a lot should
-   look like.
+   look like. Sprites without depth (every `SPR#` frame) aren't drawn in the world, as FreeSO's
+   `DGRPRenderer` leaves them out; the owner checked the house drawn this way (2026-10-28) and it's
+   complete, so this is taken as the game's intent.
 
 ## Risks most likely to push estimates up
 
