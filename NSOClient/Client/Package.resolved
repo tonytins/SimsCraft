@@ -1,5 +1,5 @@
 {
-  "originHash" : "38b086514a499f6f25f7c6a750da72a093c7ab16e84d75b4d8d4c73969c02f39",
+  "originHash" : "cbb964215aa76c4d952ea4672c2c8b67dd29bf550522c853b3f29e8434b25335",
   "pins" : [
     {
       "identity" : "raylib-swift",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/tonytins/raylib-swift",
       "state" : {
         "branch" : "main",
-        "revision" : "1446a8a204f72118579d6980af02ce4cb2535281"
+        "revision" : "3fe725b204bf30913366a82203566ab316941f2e"
       }
     },
     {
