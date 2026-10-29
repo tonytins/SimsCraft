@@ -13,7 +13,7 @@ import Foundation
 ///   being skipped silently.
 ///
 /// PIFF is FreeSO's own format: ad hoc fixes for objects its engine didn't run
-/// correctly, written against TSO's 2003 production files. Other versions of
+/// correctly, written against TSO's EA-Land-era files. Other versions of
 /// the game (such as the 2002 beta) may not match them, so
 /// ``applyingPatches(to:fileName:)`` applies each patch only if it fits; see there.
 public struct PatchRegistry: Sendable {

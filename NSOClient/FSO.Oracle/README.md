@@ -254,7 +254,7 @@ types; no window or graphics device is ever created.
 
 ## Older installs: the game overlay
 
-FreeSO was built against TSO's 2003 production files. An older install, such as the
+FreeSO was built against TSO's EA-Land-era files (EA's final download). An older install, such as the
 2002 beta, lacks some files and has a different shape for others, and FreeSO's
 content system stops on both. `GameOverlay` builds a temporary folder of links to
 the install, adds placeholders or adapted copies only where needed, and reports
