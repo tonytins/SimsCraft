@@ -85,6 +85,12 @@ private func mockSession() throws -> LotSession {
     #expect(session.advance(seconds: 1.0 / 60) == 5)
 }
 
+@Test func floorsAreNamedAsTheTopBarShowsThem() {
+    #expect((1...5).map(LotSession.floorName) == ["1st Floor", "2nd Floor", "3rd Floor", "4th Floor", "5th Floor"])
+    #expect([11, 12, 13, 21, 22, 103, 111].map(LotSession.floorName)
+            == ["11th Floor", "12th Floor", "13th Floor", "21st Floor", "22nd Floor", "103rd Floor", "111th Floor"])
+}
+
 @Test func theInspectorNamesWhatAnObjectIsAndDoes() throws {
     let session = try mockSession()
     let entity = try #require(session.vm.entities.first { $0.position != .outOfWorld })

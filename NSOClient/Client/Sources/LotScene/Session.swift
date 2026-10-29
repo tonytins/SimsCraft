@@ -120,6 +120,18 @@ public final class LotSession {
         return count
     }
 
+    /// A story's name as the top bar shows it: 1 is "1st Floor", 2 "2nd Floor", and so on.
+    public static func floorName(_ level: Int) -> String {
+        let suffix = switch (level % 100, level % 10) {
+        case (11...13, _): "th"
+        case (_, 1): "st"
+        case (_, 2): "nd"
+        case (_, 3): "rd"
+        default: "th"
+        }
+        return "\(level)\(suffix) Floor"
+    }
+
     /// The game time as `h:mm`.
     public var clockText: String {
         let clock = vm.clock

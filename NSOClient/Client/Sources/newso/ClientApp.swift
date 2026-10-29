@@ -9,6 +9,7 @@ final class ClientApp {
     private var scene = LotScene()
     private let view = LotView()
     private let inspector = Inspector()
+    private let help = HelpWindow()
     private let library = SpriteLibrary()
     private let textures: SpriteTextures
     // Kept between frames, so drawing doesn't allocate.
@@ -90,16 +91,28 @@ final class ClientApp {
         if IsKeyPressed(.w) { view.wallsCut.toggle() }
         if IsKeyPressed(.pageUp) { view.level = min(view.level + 1, Architecture.stories) }
         if IsKeyPressed(.pageDown) { view.level = max(view.level - 1, 1) }
-        if IsKeyPressed(.escape) { inspector.close() }
+        if IsKeyPressed(.escape) {
+            if help.isOpen { help.isOpen = false } else { inspector.close() }
+        }
 
         let mouse = GetMousePosition()
-        let overInspector = inspector.contains(mouse)
-        if !overInspector { view.zoom(by: GetMouseWheelMove()) }
+        let overInterface = TopBar.contains(mouse) || inspector.contains(mouse) || help.contains(mouse)
+        if !overInterface { view.zoom(by: GetMouseWheelMove()) }
         if IsMouseButtonDown(.right) { view.pan(by: GetMouseDelta()) }
-        hovered = overInspector ? nil : view.object(at: mouse, in: scene, camera: view.camera(screenHeight: Int(GetScreenHeight())))
-        // The inspector takes the click when it wants it; otherwise a click picks what's under the pointer.
-        if !inspector.update(), IsMouseButtonPressed(.left), !overInspector {
-            inspector.selected = hovered
+        hovered = overInterface ? nil : view.object(at: mouse, in: scene, camera: view.camera(screenHeight: Int(GetScreenHeight())))
+        // The windows take the click when they want it, then the bar; otherwise a click picks
+        // what's under the pointer.
+        let usedByWindow = help.update() || inspector.update()
+        if !usedByWindow, IsMouseButtonPressed(.left) {
+            switch TopBar.click(at: mouse, topBarState) {
+            case .speed(let index):
+                session.setSpeed(index: index)
+                session.isPaused = false
+            case .help:
+                help.isOpen.toggle()
+            case nil:
+                if !overInterface { inspector.selected = hovered }
+            }
         }
         if let id = inspector.selected, session.vm.entity(id: id) == nil { inspector.close() }
     }
@@ -121,28 +134,20 @@ final class ClientApp {
         ClearBackground(Color(r: 34, g: 44, b: 58, a: 255))
         view.draw(scene, camera: camera, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
         view.drawSprites(sprites, camera: camera, textures: textures, order: &drawOrder, selected: inspector.selected, hovered: hovered)
-        drawStatusBar()
-        drawHelp()
+        TopBar.draw(topBarState)
         if let id = inspector.selected, let entity = session.vm.entity(id: id) {
             inspector.draw(entity)
         } else if let id = hovered, let entity = session.vm.entity(id: id) {
             let mouse = GetMousePosition()
             DrawText(Inspection(entity).title, Int(mouse.x) + 14, Int(mouse.y) + 10, 16, Theme.text)
         }
+        help.draw()
         EndDrawing()
     }
 
-    private func drawStatusBar() {
-        var status = "\(session.lotName)   \(session.clockText)   "
-        status += session.isPaused ? "paused" : "x\(session.speed)"
-        status += "   floor \(view.level)   \(scene.objects.count) objects"
-        if !session.vm.reportedErrors.isEmpty { status += "   \(session.vm.reportedErrors.count) errors" }
-        DrawRectangle(0, 0, Int(GetScreenWidth()), 28, Theme.panel)
-        DrawText(status, 10, 7, 16, Theme.text)
-    }
-
-    private func drawHelp() {
-        let help = "Space pause   1-3 speed   Q/E rotate   wheel zoom   right-drag pan   PgUp/PgDn floor   W walls   click an object"
-        DrawText(help, 10, Int(GetScreenHeight()) - 22, 14, Theme.textDim)
+    private var topBarState: TopBar.State {
+        TopBar.State(lotName: session.lotName, speedIndex: session.speedIndex, isPaused: session.isPaused,
+                     clock: session.clockText, level: view.level, errors: session.vm.reportedErrors.count,
+                     objects: scene.objects.count)
     }
 }
