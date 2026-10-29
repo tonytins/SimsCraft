@@ -85,6 +85,15 @@ private func mockSession() throws -> LotSession {
     #expect(session.advance(seconds: 1.0 / 60) == 5)
 }
 
+@Test func systemMessagesSayWhatWentWrongInWords() throws {
+    #expect(SystemMessages.text(tick: 30, objectID: 12, objectName: "Lamp", error: .unsupported("animate"))
+            == "Tick 30: Lamp (#12) reached behavior NewSO doesn't run yet: animate")
+    #expect(SystemMessages.text(tick: 2, objectID: 7, objectName: nil, error: .infiniteLoop)
+            == "Tick 2: Object #7 ran too many instructions in one tick and was reset")
+    let session = try mockSession()
+    #expect(SystemMessages.messages(of: session.vm).count == session.vm.reportedErrors.count)
+}
+
 @Test func floorsAreNamedAsTheTopBarShowsThem() {
     #expect((1...5).map(LotSession.floorName) == ["1st Floor", "2nd Floor", "3rd Floor", "4th Floor", "5th Floor"])
     #expect([11, 12, 13, 21, 22, 103, 111].map(LotSession.floorName)

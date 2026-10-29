@@ -10,6 +10,7 @@ final class ClientApp {
     private let view = LotView()
     private let inspector = Inspector()
     private let help = HelpWindow()
+    private let momi = MomiWindow()
     private let library = SpriteLibrary()
     private let textures: SpriteTextures
     // Kept between frames, so drawing doesn't allocate.
@@ -92,17 +93,17 @@ final class ClientApp {
         if IsKeyPressed(.pageUp) { view.level = min(view.level + 1, Architecture.stories) }
         if IsKeyPressed(.pageDown) { view.level = max(view.level - 1, 1) }
         if IsKeyPressed(.escape) {
-            if help.isOpen { help.isOpen = false } else { inspector.close() }
+            if help.isOpen { help.isOpen = false } else if momi.isOpen { momi.isOpen = false } else { inspector.close() }
         }
 
         let mouse = GetMousePosition()
-        let overInterface = TopBar.contains(mouse) || inspector.contains(mouse) || help.contains(mouse)
+        let overInterface = TopBar.contains(mouse) || inspector.contains(mouse) || help.contains(mouse) || momi.contains(mouse)
         if !overInterface { view.zoom(by: GetMouseWheelMove()) }
         if IsMouseButtonDown(.right) { view.pan(by: GetMouseDelta()) }
         hovered = overInterface ? nil : view.object(at: mouse, in: scene, camera: view.camera(screenHeight: Int(GetScreenHeight())))
         // The windows take the click when they want it, then the bar; otherwise a click picks
         // what's under the pointer.
-        let usedByWindow = help.update() || inspector.update()
+        let usedByWindow = help.update() || momi.update() || inspector.update()
         if !usedByWindow, IsMouseButtonPressed(.left) {
             switch TopBar.click(at: mouse, topBarState) {
             case .speed(let index):
@@ -110,6 +111,8 @@ final class ClientApp {
                 session.isPaused = false
             case .help:
                 help.isOpen.toggle()
+            case .messages:
+                momi.isOpen.toggle()
             case nil:
                 if !overInterface { inspector.selected = hovered }
             }
@@ -141,6 +144,7 @@ final class ClientApp {
             let mouse = GetMousePosition()
             DrawText(Inspection(entity).title, Int(mouse.x) + 14, Int(mouse.y) + 10, 16, Theme.text)
         }
+        momi.draw(SystemMessages.messages(of: session.vm))
         help.draw()
         EndDrawing()
     }

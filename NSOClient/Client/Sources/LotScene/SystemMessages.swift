@@ -1,0 +1,36 @@
+import SimAntics
+
+/// The system messages the client's MOMI window shows: for now, each error a thread reported.
+///
+/// MOMI was TSO's in-universe name for its game masters, who sent players messages. NewSO uses
+/// the name for its own messages, as the owner's prototype interface lays out.
+public enum SystemMessages {
+    /// One message per error the VM has reported, oldest first, naming the object when it's
+    /// still on the lot.
+    public static func messages(of vm: VM) -> [String] {
+        vm.reportedErrors.map { report in
+            text(tick: report.tick, objectID: report.objectID,
+                 objectName: vm.entity(id: report.objectID).map { Inspection($0).title }, error: report.error)
+        }
+    }
+
+    /// A message about an error, such as "Tick 30: Lamp (#12) reached behavior NewSO doesn't run
+    /// yet: animate".
+    public static func text(tick: UInt32, objectID: Int16, objectName: String?, error: SimAnticsError) -> String {
+        let object = objectName.map { "\($0) (#\(objectID))" } ?? "Object #\(objectID)"
+        return "Tick \(tick): \(object) \(sentence(for: error))"
+    }
+
+    static func sentence(for error: SimAnticsError) -> String {
+        switch error {
+        case .unsupported(let what): "reached behavior NewSO doesn't run yet: \(what)"
+        case .infiniteLoop: "ran too many instructions in one tick and was reset"
+        case .simantics(let what): "hit a SimAntics error and was reset: \(what)"
+        case .indexOutOfRange(let what): "read past the end of something and was reset: \(what)"
+        case .nullReference(let what): "used something that isn't there and was reset: \(what)"
+        case .invalidCast(let what): "used the wrong kind of object and was reset: \(what)"
+        case .overflow(let what): "overflowed a calculation and was reset: \(what)"
+        case .content(let error): "needed content that couldn't load and was reset: \(error)"
+        }
+    }
+}
