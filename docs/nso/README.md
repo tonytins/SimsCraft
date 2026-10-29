@@ -1,19 +1,20 @@
 # NSOClient
 
-NSOClient is a Swift reimplementation of the parts of FreeSO that don't depend on a game engine
-(no graphics, sound, user interface, or networking): the file formats, the content system, and the
-SimAntics virtual machine that runs object behavior. It aims to get the same results as FreeSO, as
-its code stood at beta/update-46, in August 2017 (in [`TSOClient/`](../../TSOClient/)), without copying that code. It also
-keeps working on a 2002 beta of the game, whose files differ from the release FreeSO expects.
+NSOClient is the Swift code of NewSO. At its core are libraries that reimplement the parts of
+FreeSO that don't depend on a game engine: the file formats, the content system, and the SimAntics
+virtual machine that runs object behavior. They aim to get the same results as FreeSO, as its code
+stood at beta/update-46, in August 2017 (in [`TSOClient/`](../../TSOClient/)), without copying that
+code. Around them are NewSO's own client, `newso`, which shows a lot running, and the tools that
+check the libraries against FreeSO. It all keeps working on older copies of the game, a 2002 copy
+and a 2002 beta, whose files differ from the ones FreeSO expects.
 
 This folder describes how the code behaves today. For what's finished and the evidence for it, see
 the [scorecard](../scorecard.md); for what comes next, the [roadmap](../roadmap.md). Unfamiliar
 terms are explained in the [docs index](../README.md#terms).
 
-These pages cover the four libraries and two tools: the file checker and `nso-oracle`. Two things
-are left out: `fso-oracle`, which runs FreeSO's code through the experiments NSOClient is measured
-against (see [its README](../../NSOClient/FSO.Oracle/README.md)), and SimsScript, an experimental
-scripting language.
+These pages cover the libraries, the client, and the tools. `fso-oracle`, which runs FreeSO's code
+through the experiments NSOClient is measured against, has [its own README](../../NSOClient/FSO.Oracle/README.md),
+and so does [SimsScript](../../NSOClient/SimsScript/README.md), the scripting language in progress.
 
 ## The packages
 
@@ -21,10 +22,16 @@ Each package is an independent Swift package under [`NSOClient/`](../../NSOClien
 point one way:
 
 ```text
-TSOFiles  ──▶  TSOContent  ──▶  SimAntics
-    │
-    └──────▶  TSOFilesCheck (tsofiles-check)
+TSOFiles ──▶ TSOContent ──▶ SimAntics ──▶ SimsScript ──▶ ScriptOracle (sso-oracle)
+                                │
+                                ├──▶ NSOOracle (nso-oracle)
+                                └──▶ Client (newso) ◀── Interface ◀── raylib-swift
+
+TSOFiles and TSOContent ──▶ TSOFilesCheck (tsofiles-check)
 ```
+
+TSOContent's `TSOConfig` product reads the installs through swift-configuration, for the tools and
+the client; the libraries themselves take no configuration library.
 
 | Package | What it does | Page |
 | --- | --- | --- |
@@ -32,8 +39,12 @@ TSOFiles  ──▶  TSOContent  ──▶  SimAntics
 | TSOContent | Finds an install and loads objects, globals, and patches from it | [content.md](content.md) |
 | SimAntics | Runs object behavior: the VM, entities, threads, primitives, and variables | [simantics.md](simantics.md) |
 | SimAntics (lot model) | Positions, the tile index, walls, floors, rooms, and blueprints | [lot.md](lot.md) |
-| TSOFilesCheck | `tsofiles-check`, which opens everything in one or two installs and compares them | [tools.md](tools.md) |
+| SimsScript | Routines as readable listings and text assembly, and a small compiler; `simsscript list` | [tools.md](tools.md#simsscript) |
+| Interface | The client's windows and controls on raylib-swift, from CityLimits through cs2swift | [client.md](client.md) |
+| Client | `newso`: shows a lot running, or runs it headless and logs it | [client.md](client.md) |
+| TSOFilesCheck | `tsofiles-check`, which opens everything in each install and compares two | [tools.md](tools.md) |
 | NSOOracle | `nso-oracle`, which runs `fso-oracle`'s experiments on NSOClient and reports whether the two agree | [tools.md](tools.md#nso-oracle) |
+| ScriptOracle | `sso-oracle`, which runs SimsScript scenarios on both VMs | [tools.md](tools.md#sso-oracle) |
 
 ## How the code behaves
 
@@ -42,6 +53,9 @@ A few rules hold everywhere. Knowing them makes each package easier to follow.
 - **Same results as FreeSO, not the same code.** Doc comments name FreeSO's type each Swift type
   corresponds to (for example, `Entity` ports `VMEntity`). Where results deliberately differ,
   the comment says so, and the scorecard lists the difference under "Known differences from FreeSO".
+- **The libraries have no engine.** Only the client draws, takes input, or logs, and its drawing
+  reads the simulation without changing it. The libraries decode to plain values and report through
+  errors, so they test and run anywhere, the client's headless runs included.
 - **Errors are values.** Readers throw typed errors (`FAR1Error`, `IFFChunkError`,
   `ContentError`, `SimAnticsError`) instead of crashing. Where FreeSO would read past the end of an
   array, NSOClient throws. Nothing in the libraries uses `try!`, `as!`, or `fatalError`.
@@ -64,7 +78,8 @@ Every package builds and tests on its own:
 swift test --package-path NSOClient/SimAntics
 ```
 
-You need Swift 6 and, for the comparisons with FreeSO, the .NET 10 SDK. You don't need the game:
+You need Swift 6, the X11 and GL headers on Linux for the client, and, for the comparisons with
+FreeSO, the .NET 10 SDK. You don't need the game:
 without it, the tests use [`NSOClient/MockInstall`](../../NSOClient/MockInstall/README.md), a tiny
 made-up install, and the tests that need the real game are skipped. To run those too, set these
 environment variables:

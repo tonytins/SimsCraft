@@ -11,7 +11,7 @@ They hold counts, object IDs (GUIDs), file and chunk names, and values, never th
 | File | What it shows | Written by | When |
 | --- | --- | --- | --- |
 | [nso-review.md](nso-review.md) | Whether NSOClient and FreeSO behave the same, experiment by experiment: where they agree, every disagreement, and what's inconclusive | `NSOClient/scripts/oracle-review.sh --review` | After each phase of work |
-| [install-differences.md](install-differences.md) | How the two copies of the game used here differ, file by file | `tsofiles-check` | Once |
+| [install-differences.md](install-differences.md) | How two copies of the game used here differ, file by file | `tsofiles-check` | Once |
 
 ## nso-review.md
 
@@ -29,7 +29,11 @@ but the report doesn't assume it. A disagreement is a finding to explain: a bug 
 quirk of FreeSO, or a deliberate difference. Some findings go NSOClient's way, such as objects it
 loads that FreeSO can't.
 
-Each copy of the game gets its own section, with the date and the commit it was run on. A new run
+Each copy of the game gets its own section, with the date and the commit it was run on:
+*Production* is 1.1097.1.0 (`TSO_GAME_DIR`), the copy closest to the files FreeSO expects;
+*Classic* is the 2002 copy (1.145.1.0, `TSO_CLASSIC_DIR`); *Beta* is the 2002 beta (1.3.2.121,
+`TSO_BETA_DIR`); and *Mock* is `NSOClient/MockInstall`, a small made-up install anyone can run the
+experiments on. Until 2026-10-29, the Production section was measured on the 2002 copy. A new run
 replaces only the sections of the copies it covered, and earlier reports are in the file's git
 history. Results can differ from one copy of the game to another.
 

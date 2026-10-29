@@ -6,9 +6,10 @@ of that work:
 - **FreeSO**, the open-source C# reimplementation of the game that SimsCraft learns from, as its
   source stood at its beta/update-46 build (August 2017). That copy of the code is in
   [`TSOClient/`](../TSOClient/), and [fso/releases.md](fso/releases.md) places it among FreeSO's updates.
-- **NSOClient**, the new Swift code, in [`NSOClient/`](../NSOClient/). It covers the parts of
-  FreeSO that don't depend on a game engine (no graphics, sound, user interface, or networking):
-  reading the game's files, loading its content, and running its object behavior.
+- **NSOClient**, the new Swift code of NewSO, in [`NSOClient/`](../NSOClient/). Its libraries cover
+  the parts of FreeSO that don't depend on a game engine: reading the game's files, loading its
+  content, and running its object behavior. Its client, `newso`, shows a lot running on them, or
+  runs one with no window and logs what happens.
 
 It also holds a copy of the community SimAntics reference, which explains the scripting language
 the game's objects are written in.
@@ -21,6 +22,7 @@ are in [`AGENTS.md`](../AGENTS.md); they apply to people and AI assistants alike
 - **To understand FreeSO's code:** [fso/README.md](fso/README.md), then
   [fso/architecture.md](fso/architecture.md).
 - **To understand how NSOClient's code behaves:** [nso/README.md](nso/README.md).
+- **To run the client:** [nso/client.md](nso/client.md).
 - **To see where NSOClient stands:** the [scorecard](scorecard.md) for what's done and the evidence
   for it, the [roadmap](roadmap.md) for what comes next, and the [results](results/README.md) for how
   closely NSOClient matches FreeSO.
@@ -31,7 +33,9 @@ are in [`AGENTS.md`](../AGENTS.md); they apply to people and AI assistants alike
 | --- | --- |
 | *The Sims Online* (TSO) | Maxis and EA's online Sims game, released in 2002 and renamed *EA-Land* before it closed in 2008 |
 | FreeSO | An open-source C# reimplementation of TSO, built on MonoGame. NSOClient is checked against it |
-| NSOClient | SimsCraft's Swift reimplementation of FreeSO's engine-independent libraries (also called NewSO) |
+| NewSO | The game SimsCraft is making: TSO playable again, small and LAN-first |
+| NSOClient | NewSO's Swift code: the libraries that reimplement FreeSO's engine-independent parts, the client, and the tools |
+| `newso` | NewSO's client. It shows a lot running; `--headless` runs one with no window and logs it |
 | Install | A copy of TSO's game files on disk (a `TSOClient` folder). The repository holds none; tests that need one read the `TSO_GAME_DIR` environment variable, or use [`NSOClient/MockInstall`](../NSOClient/MockInstall/README.md), a tiny made-up install |
 | Production, classic, beta | The installs the project is tested on: 1.1097.1.0 (January 2005), a 2002 copy (1.145.1.0), and the 2002 beta (1.3.2.121). FreeSO was built against TSO after its New & Improved update (October 2003), likely around 1.1097.1.0 |
 | SimAntics | The virtual machine that runs object behavior in The Sims games |
@@ -43,6 +47,7 @@ are in [`AGENTS.md`](../AGENTS.md); they apply to people and AI assistants alike
 | Semi-global | A library of routines shared by a family of objects, such as all chairs |
 | Lot, tick | A property Sims live on and objects are placed on; one step of the simulation |
 | Oracle | `fso-oracle` runs FreeSO's code and `nso-oracle` runs NSOClient's, through the same experiments on the same install; the report on whether their records agree is how NSOClient is measured |
+| MOMI | TSO's in-universe name for its game masters; in `newso`, the window of system messages |
 
 - **To look up what a SimAntics primitive, scope, or data field means:**
   [simantics/README.md](simantics/README.md).
@@ -64,9 +69,9 @@ scorecard and the roadmap disagree, the scorecard wins.
 
 ### [nso/](nso/README.md): how NSOClient works
 
-How the Swift libraries behave today, with code examples. `fso-oracle` (see
-[its README](../NSOClient/FSO.Oracle/README.md)) and SimsScript, an experimental scripting language,
-aren't covered.
+How the Swift libraries, the client, and the tools behave today, with code examples. `fso-oracle`
+and SimsScript have READMEs of their own ([fso-oracle](../NSOClient/FSO.Oracle/README.md),
+[SimsScript](../NSOClient/SimsScript/README.md)).
 
 | Page | Covers |
 | --- | --- |
@@ -75,7 +80,8 @@ aren't covered.
 | [content.md](nso/content.md) | TSOContent: finding an install, loading objects, globals, and patches |
 | [simantics.md](nso/simantics.md) | SimAntics: the VM, entities, threads, variables, primitives, scheduling |
 | [lot.md](nso/lot.md) | The lot model: positions, the tile index, walls, floors, rooms, blueprints |
-| [tools.md](nso/tools.md) | `tsofiles-check` and the install differences report |
+| [client.md](nso/client.md) | `newso`: the window, its interface, screenshots, and headless and verbose runs |
+| [tools.md](nso/tools.md) | `tsofiles-check`, the install differences report, `nso-oracle`, `sso-oracle`, and `simsscript` |
 
 ### [results/](results/README.md): how NSOClient measures up
 
