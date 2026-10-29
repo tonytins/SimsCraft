@@ -77,8 +77,8 @@ PIFF is FreeSO's own format, not TSO's: an ad hoc way to fix objects that
 didn't work properly in FreeSO's engine without shipping modified game
 files. FreeSO ships its patches in `Content/Patch/` (the snapshot has them in
 [`tso.content/Content/Patch`](../../TSOClient/tso.content/Content/Patch/),
-with copies for the mobile projects). They were written against TSO's 2003
-production files, so they may not fit other versions of the game.
+with copies for the mobile projects). They were written against TSO after its
+New & Improved update (October 2003), so they may not fit older versions of the game.
 
 A PIFF is an IFF that holds a `PIFF` chunk naming a source IFF and a list
 of byte-level patches. [`PIFFRegistry.Init`](../../TSOClient/tso.files/formats/iff/PIFFRegistry.cs)

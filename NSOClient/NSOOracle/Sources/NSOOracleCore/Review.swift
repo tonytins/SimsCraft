@@ -70,8 +70,8 @@ public enum Review {
 
         ## Reading the results
 
-        Each section below covers one copy of the game. *Production* is a 2002 release of the game
-        (FreeSO was built against a 2003 one), and *beta* is a 2002 beta. *Mock* is
+        Each section below covers one copy of the game. *Production* is the copy in `TSO_GAME_DIR` (1.1097.1.0
+        since 2026-10-28, a 2002 copy before then), and *beta* is a 2002 beta. *Mock* is
         `NSOClient/MockInstall`, a small made-up install in the repository with no game data, so anyone
         can reproduce its section without a copy of the game; its numbers are small, and grow as the mock
         gains objects. In each table:

@@ -8,7 +8,7 @@ namespace FSO.Oracle
 {
     /// <summary>
     /// A temporary game folder: symbolic links to every file of a TSO install, plus empty
-    /// placeholders for production files an older install (such as the 2002 beta) or a
+    /// placeholders for New & Improved files an older install (such as the 2002 beta) or a
     /// mock install (NSOClient/MockInstall) lacks.
     /// </summary>
     /// <remarks>

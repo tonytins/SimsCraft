@@ -104,7 +104,7 @@ struct RealInstallTests {
     }
 
     /// FreeSO's own patches, which ship in the snapshot (PIFF is FreeSO's format, not TSO's).
-    /// They were written against TSO's 2003 production files, so on another version of
+    /// They were written against TSO's New & Improved files, so on an older version of
     /// the game (such as the owner's 2002 beta) some don't fit and are skipped. Every
     /// patched file must still parse, and most patches must apply.
     @Test func appliesFreeSOsShippedPatchesThatFitTheInstall() throws {

@@ -186,8 +186,8 @@ func chunkSummary(_ iff: IFFFile) -> [String] {
         #expect(outcome.skipped.isEmpty)
     }
 
-    /// A patch written for another version of the file (FreeSO's patches target the
-    /// 2003 production files) is skipped as a whole, and later patches still apply.
+    /// A patch written for another version of the file (FreeSO's patches target
+    /// TSO's New & Improved files) is skipped as a whole, and later patches still apply.
     @Test func skipsAPatchThatDoesntFitTheFile() throws {
         let original = try IFFFile(bytes: makeIFF([
             ChunkFixture(type: "BCON", id: 1, label: "", contents: Data([0, 0])), // no constants

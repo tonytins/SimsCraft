@@ -334,7 +334,7 @@ options:
         /// Reads blueprint XML, dropping objects the install doesn't have or FreeSO can't load.
         /// </summary>
         /// <remarks>
-        /// FreeSO's blueprints assume TSO's 2003 production files. On an older install
+        /// FreeSO's blueprints assume TSO's New & Improved files. On an older install
         /// (such as the 2002 beta) some objects don't exist, or carry a FreeSO patch that doesn't
         /// fit them, and FreeSO's activator fails on either, so they're left out and reported.
         /// The Swift side must load the same adapted lot.
@@ -353,7 +353,7 @@ options:
                 }
                 catch (Exception error)
                 {
-                    // Such as a FreeSO patch written for the 2003 files that doesn't fit this install.
+                    // Such as a FreeSO patch written for New & Improved that doesn't fit this install.
                     problem = $"FreeSO can't load ({error.GetType().Name}) object";
                 }
                 if (problem == null) continue;

@@ -13,7 +13,7 @@ swift run --package-path NSOClient/TSOFilesCheck -c release tsofiles-check
 ### Which installs it checks
 
 - **With a folder argument,** it checks that folder.
-- **Without one,** it checks every install named by `TSO_GAME_DIR` (the 2002 production copy) and
+- **Without one,** it checks every install named by `TSO_GAME_DIR` (1.1097.1.0 since 2026-10-28; the 2002 copy before that) and
   `TSO_BETA_DIR` (the 2002 beta), in that order. `--install game` or `--install beta` picks one.
   Two variables naming the same folder check it once.
 

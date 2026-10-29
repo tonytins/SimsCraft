@@ -14,7 +14,7 @@ Run Tree By Name, Set To Next, Test Object Type, Special Effect, Set Balloon Hea
 Object Instance, Stop All Sounds, Notify Stack Object Out Of Idle, and Get Terrain Info). Balloon headlines aren't drawn, but each counts down and keeps its entity running every
 tick while it's up, as in FreeSO. Money is a stand-in for now: each
 entity has a budget, moved as FreeSO's standalone global link moves it, with each answer a tick
-later; NewSO's economy waits for the lot server. On the production install, 2,743
+later; NewSO's economy waits for the lot server. On the 2002 copy, 2,743
 objects created alone on an empty lot match FreeSO's state tick for tick over 30 ticks (the
 [review](../results/nso-review.md) has the latest numbers). Sims, routing, and lot loading come
 later; see the [roadmap](../roadmap.md). The lot model (positions, walls, and rooms) has its own page,

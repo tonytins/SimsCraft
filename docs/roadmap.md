@@ -218,9 +218,9 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
   over; one slip causes desyncs or a crashed lot.
 - **Real files:** synthetic tests pass, but the original install may hold variants FreeSO's code
   only handled by accident.
-- **Game version:** the owner's install is a 2002 beta, while FreeSO targets the 2003 production
-  files. Real-file checks can't confirm production-only behavior, and beta differences must be told
-  apart from port bugs (a C#-faithful simulation does that).
+- **Game version:** FreeSO targets TSO after New & Improved, likely around 1.1097.1.0, which the
+  owner has had since 2026-10-28. Results before that come from the 2002 copy and the beta, and
+  their differences must be told apart from port bugs (a C#-faithful simulation does that).
 - **Floating point in routing and animation** may need fixed-point rewrites to stay deterministic
   across x86_64 and ARM64.
 - **Foundation `Data` performance** on large archives under swift-corelibs-foundation is
@@ -231,6 +231,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-28 | minor | The version record corrected: FreeSO targets TSO after its New & Improved update (October 2003), likely around 1.1097.1.0 (January 2005), not "the 2003 files". The owner's installs are now 1.1097.1.0 (`TSO_GAME_DIR`), the 2002 copy (1.145.1.0, `TSO_CLASSIC_DIR`, formerly `TSO_GAME_DIR`), and the 2002 beta. Real-install results before today were measured on the 2002 copy; the scorecard says so. The tooling doesn't read `TSO_CLASSIC_DIR` yet. |
 | 2026-10-28 | minor | Hyde Park, phase E1: objects draw with their sprites in `newso`. TSOContent finds an object's drawing group, `LotScene.objectSprites` places each sprite as FreeSO's `DGRPRenderer` does (graphic state, facing, world rotation, zoom, dynamic sprites, object offsets), and the client draws them back to front through an orthographic camera that matches TSO's 30° view at its three zooms. The owner's house draws in all four rotations; `--zoom`, `--focus`, and `--rotation` set up screenshots. Per-pixel depth (E2) is next. |
 | 2026-10-28 | minor | The parity stance revised, after CityLimits': NewSO is NewSO, not FreeSO. It keeps what TSO's files and content rely on and fixes FreeSO's bugs as known differences (AGENTS.md, "FreeSO"). First fixes: big-endian `SPR#` versions (DIFF-26) and `SPR2` alpha past 31 (DIFF-27), with MockInstall frames for each. NSOOracle gained `KnownDifference`, so a deliberate difference counts as "differs by design", and `fso-oracle sprites` reads chunks one at a time. |
 | 2026-10-28 | minor | Hyde Park, phase D: `fso-oracle sprites` decodes the install's object sprites with FreeSO's readers (its content leaves them out without a graphics device), and `nso-oracle sprites` with NSOClient's. Every frame and drawing group agrees: 93,265 records on production, 91,788 on the beta. MockInstall gained a made-up `objspf.far`; NSOOracle's test samples every tenth IFF, since decoding them all takes minutes in a debug build. |

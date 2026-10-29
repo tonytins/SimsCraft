@@ -40,8 +40,8 @@ stops a change that introduces a new disagreement until someone has looked at it
 
 ## install-differences.md
 
-The project uses two copies of the game: a 2002 production release (FreeSO was built against a
-2003 one) and a 2002 beta. This file lists the files only one of them has and, for files in both
+It compares the 2002 copy (1.145.1.0, `TSO_GAME_DIR` when it was written, `TSO_CLASSIC_DIR` now)
+with the 2002 beta (1.3.2.121). It lists the files only one of them has and, for files in both
 that differ, which objects and resources inside changed. When NSOClient or FreeSO behaves
 differently on the two copies, it shows what changed in the game's files, before anyone looks for a
 bug in the code. It's written once; deleting it and running `tsofiles-check` on both copies
