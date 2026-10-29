@@ -14,7 +14,7 @@ import Foundation
 /// `$XDG_DATA_HOME` (or `~/.local/share`) before FreeSO's `game/TSOClient` next to the
 /// working directory.
 public struct GameLocator: Sendable {
-    public static let environmentVariable = "TSO_GAME_DIR"
+    public static let environmentVariable = InstallKind.game.environmentVariable
 
     /// A folder chosen by the user, checked first.
     public var configuredDirectory: URL?

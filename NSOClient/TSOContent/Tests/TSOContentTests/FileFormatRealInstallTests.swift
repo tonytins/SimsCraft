@@ -1,11 +1,7 @@
 import Foundation
 import Testing
+import TSOContent
 @testable import TSOFiles
-
-/// The TSO install named by `TSO_GAME_DIR`, or `nil` when it isn't set.
-let gameDirectory: URL? = ProcessInfo.processInfo.environment["TSO_GAME_DIR"].map {
-    URL(fileURLWithPath: $0, isDirectory: true)
-}
 
 /// Every object IFF in the install's `objiff.far`, by file name.
 func installObjects() throws -> [(name: String, iff: IFFFile)] {
@@ -19,9 +15,11 @@ func installObjects() throws -> [(name: String, iff: IFFFile)] {
     }
 }
 
-/// Checks against a real TSO install. Skipped unless `TSO_GAME_DIR` is set; no game data is in the repository.
+/// TSOFiles' readers against a real TSO install. They live here, not in TSOFiles, so the
+/// installs are listed in one place (``InstallKind``) without a package cycle. Skipped unless
+/// `TSO_GAME_DIR` is set; no game data is in the repository.
 @Suite(.enabled(if: gameDirectory != nil, "TSO_GAME_DIR is not set"))
-struct RealInstallTests {
+struct FileFormatRealInstallTests {
     @Test func everyBranchTargetIsAnInstructionOrAnExitCode() throws {
         var checked = 0
         var problems: [String] = []

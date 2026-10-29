@@ -4,9 +4,8 @@ import TSOFiles
 @testable import TSOContent
 
 /// The TSO install named by `TSO_GAME_DIR`, or `nil` when it isn't set.
-let gameDirectory: URL? = ProcessInfo.processInfo.environment["TSO_GAME_DIR"].map {
-    URL(fileURLWithPath: $0, isDirectory: true)
-}
+let gameDirectory: URL? = InstallKind.installs(in: ProcessInfo.processInfo.environment)
+    .first { $0.kind == .game }?.directory
 
 /// FreeSO's own content folder in the snapshot (update-46): shipped patches and standalone objects.
 let freeSOContentDirectory = URL(fileURLWithPath: #filePath)
