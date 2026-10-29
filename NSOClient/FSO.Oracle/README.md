@@ -196,6 +196,20 @@ an object's thread and resets the object, so such an error doesn't show in the r
 
 `NSOClient/scripts/scenario-oracle.sh` builds, runs, and compares (`sso-oracle compare`).
 
+## Operands: `operands`
+
+```sh
+dotnet run --project NSOClient/FSO.Oracle -c Release -- operands > operands.tsv
+```
+
+Reads every instruction of a primitive NSOClient decodes but doesn't run yet (the opcodes in
+`OperandDump.cs`, which must match SimAntics' `PrimitiveTable.unportedOperands`; an NSOOracle test
+checks) in the install's `objiff.far` and `objectdata/globals`, with the operand class FreeSO
+registers for it in TSO mode. Each line is the entry, BHAV ID, instruction index, opcode, and the
+operand's public numeric, enum, and boolean fields and properties as `Name=value`, in name order.
+`nso-oracle operands` prints the same from NSOClient's decoders, and the comparison checks every
+field NSOClient decodes; FreeSO's derived properties (flags read as booleans) aren't compared.
+
 ## Rooms: `room-maps`
 
 ```sh

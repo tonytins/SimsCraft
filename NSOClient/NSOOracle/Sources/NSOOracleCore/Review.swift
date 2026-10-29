@@ -63,6 +63,8 @@ public enum Review {
           layouts, FreeSO's empty lot, a house built in-game, and a small made-up lot.
         - **Sprites:** every object graphic in the game's sprite archives, decoded: each frame's size,
           position, palette, and checksums of its pixels and depth, and each drawing group's layout.
+        - **Operands:** every instruction of a primitive NSOClient can read but doesn't run yet, in the
+          game's objects and globals: each field of what it asks for, as FreeSO's own code reads it.
 
         Every experiment is repeatable: the same install, inputs, and random seed give the same records.
         Where FreeSO's own code wasn't (its lot loading, and its money transactions' timing), `fso-oracle`

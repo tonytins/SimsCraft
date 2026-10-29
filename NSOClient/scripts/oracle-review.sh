@@ -95,6 +95,7 @@ for install in "${installs[@]}"; do
     done
     timed room-maps "$nso_binary" room-maps <"$fso_folder/rooms.lots" >"$folder/rooms.jsonl"
     timed sprites nso sprites >"$folder/sprites.tsv"
+    timed operands nso operands >"$folder/operands.tsv"
 
     arguments=(compare --fso "$fso_folder" --nso "$folder" --install "$name")
     if $mock; then arguments+=(--strict); fi

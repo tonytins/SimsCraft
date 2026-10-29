@@ -140,6 +140,16 @@ struct FixtureComparisonTests {
         #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
         #expect(comparison.skipped.isEmpty, "\(comparison.skipsByCount)")
     }
+
+    /// Every operand of a primitive NSOClient decodes but doesn't run. MockInstall's objects use
+    /// none, so there it only checks that both sides agree on having none.
+    @Test func operandsMatchFreeSO() throws {
+        let comparison = Comparison.operands(fso: try lines("operands.tsv"), nso: Answers.operands(in: try required(gameDirectory)))
+        print(comparison.summary)
+        #expect(comparison.matched >= (onMockInstall ? 0 : 20_000))
+        #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
+        #expect(comparison.skipped.isEmpty, "\(comparison.skipsByCount)")
+    }
 }
 
 @Suite struct ComparisonTests {
@@ -224,6 +234,30 @@ extension ComparisonTests {
                                             nso: ["\(chunk)\t0\t2\t1\t1\taaaa", "\(chunk)\t1\t2\t1\t1\tbbbb"])
         #expect(comparison.recovered == 2)
         #expect(comparison.mismatches.isEmpty && comparison.skipped.isEmpty)
+    }
+
+    @Test func comparesOperandsFieldByField() {
+        let fso = ["a.iff\t4096\t0\t44\tAnimationID=3;Flags=32;PlayBackwards=0", "a.iff\t4096\t1\t44\tAnimationID=4;Flags=0",
+                   "a.iff\t4096\t2\t29\terror\tIndexOutOfRangeException", "a.iff\t4097\t0\t13\tInteraction=1"]
+        let nso = ["a.iff\t4096\t0\t44\tAnimationID=3;Flags=32", "a.iff\t4096\t1\t44\tAnimationID=5;Flags=0",
+                   "a.iff\t4096\t2\t29\tMotive=2", "a.iff\t4098\t0\t13\tInteraction=1"]
+        let comparison = Comparison.operands(fso: fso, nso: nso)
+        // FreeSO's derived PlayBackwards isn't compared; AnimationID 4 against 5 is a finding.
+        #expect(comparison.matched == 1)
+        #expect(comparison.mismatches == ["a.iff 4096 1 44: AnimationID FreeSO 4 NSOClient 5"])
+        #expect(comparison.recovered == 1)
+        #expect(comparison.skipped == ["FreeSO has no record": 1, "NSOClient has no record": 1])
+    }
+
+    /// fso-oracle's `operands` must read the same opcodes NSOClient decodes, or one side's
+    /// records go missing without anyone noticing.
+    @Test func fsoOracleReadsTheOpcodesNSOClientDecodes() throws {
+        let source = try String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../../FSO.Oracle/OperandDump.cs").standardizedFileURL, encoding: .utf8)
+        let block = try #require(source.range(of: "new HashSet<ushort>").map { source[$0.upperBound...] })
+        let list = try #require(block.range(of: "{").flatMap { start in block.range(of: "}").map { block[start.upperBound..<$0.lowerBound] } })
+        let opcodes = Set(list.split(separator: ",").compactMap { UInt8($0.trimmingCharacters(in: .whitespacesAndNewlines)) })
+        #expect(opcodes == Set(PrimitiveTable.unportedOperands.keys))
     }
 
     @Test func knownDifferencesAreExplainedNotDisagreements() throws {

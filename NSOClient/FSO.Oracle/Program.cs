@@ -26,6 +26,7 @@ namespace FSO.Oracle
        fso-oracle run-objects [options] [--ticks N] [--every N]
        fso-oracle room-maps [options]
        fso-oracle run-scenarios [options] --scenarios DIR
+       fso-oracle operands [options]
        fso-oracle sprites [--game DIR]
 
 sprites decodes every SPR2, SPR#, and DGRP in the install's objspf*.far archives with
@@ -46,6 +47,10 @@ after creation and as it ticks (see README.md).
 run-scenarios runs the SimsScript scenarios sso-oracle build wrote to DIR: each object
 created out of the world on an empty lot, ticked as long as its scenario says, then its
 attributes printed by name, as sso-oracle run --records-only prints them (see README.md).
+
+operands reads every instruction of a primitive NSOClient decodes but doesn't run yet,
+in the install's objiff.far and globals, with FreeSO's operand class for it, and prints
+its fields by name (see OperandDump.cs).
 
 room-maps reads blueprint XML paths from standard input, one per line, loads each lot,
 and prints its room map and rooms as one JSON line (see README.md).
@@ -68,7 +73,7 @@ options:
 
         public static int Main(string[] args)
         {
-            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "run-scenarios", "sprites" }.Contains(args[0]))
+            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "run-scenarios", "operands", "sprites" }.Contains(args[0]))
             {
                 Console.Error.WriteLine(Usage);
                 return 2;
@@ -116,6 +121,11 @@ options:
             if (args[0] == "list-objects")
             {
                 ListObjects(results);
+                return 0;
+            }
+            if (args[0] == "operands")
+            {
+                OperandDump.Run(options.GameDirectory, results);
                 return 0;
             }
             if (args[0] == "room-maps")

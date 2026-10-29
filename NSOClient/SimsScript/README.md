@@ -12,8 +12,10 @@ idea is feasible; it isn't a usable language yet.
 `Listing` writes routines to be read, one line per instruction, with the names the files give
 their numbers: calls by the called routine's label, parameters and locals by the routine's `TPRP`,
 the object's attributes by its `STR#` 256, and constants by their `TRCN` labels with their
-values. Primitives NSOClient has ported show their operands in words; the rest keep their bytes,
-marked "not ported yet". A made-up example:
+values. Primitives show their operands in words, both the ones NSOClient runs and
+the ones it only decodes so far (SimAntics' `PrimitiveTable.unportedOperands`, checked field by
+field against FreeSO); an opcode FreeSO registers no layout for keeps its bytes, marked "not
+ported yet". A made-up example:
 
 ```text
 4096 "init": 1 parameter (brightness)

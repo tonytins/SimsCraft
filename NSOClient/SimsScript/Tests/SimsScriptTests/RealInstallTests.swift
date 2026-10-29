@@ -42,17 +42,25 @@ struct RealListingTests {
         let content = try GameContent(.init(gameDirectory: try #require(gameDirectory)))
         let global = try content.global()
         var seen = Set<String>(), routines = 0, unported = 0, problems: [String] = []
+        var byPrimitive: [String: Int] = [:]
         for reference in content.objects.references where seen.insert(reference.fileName).inserted {
             guard let object = try? content.objects.object(guid: reference.guid) else { continue }
             let names = RoutineNames(owner: object.resource, global: global)
             for routine in try object.resource.mainFile.chunks(BHAV.self) {
                 let lines = Listing.text(of: routine, names: names).split(separator: "\n")
                 if lines.count != routine.instructions.count + 1 { problems.append("\(reference.fileName) BHAV #\(routine.id)") }
-                unported += lines.filter { $0.contains("(not ported yet)") || $0.contains("(unknown)") }.count
+                for line in lines where line.contains("(not ported yet)") || line.contains("(unknown)") {
+                    unported += 1
+                    let body = line.drop { $0 != ":" }.dropFirst().drop { $0 == " " }
+                    byPrimitive[String(body.prefix { $0 != "(" }).trimmingCharacters(in: .whitespaces), default: 0] += 1
+                }
                 routines += 1
             }
         }
         print("Listing: \(routines) routines, \(unported) instructions with operands not yet spelled out")
+        for (name, count) in byPrimitive.sorted(by: { ($1.value, $0.key) < ($0.value, $1.key) }) {
+            print("  \(count)\t\(name)")
+        }
         #expect(routines > 5_000)
         #expect(problems.isEmpty, "\(problems.prefix(5))")
     }

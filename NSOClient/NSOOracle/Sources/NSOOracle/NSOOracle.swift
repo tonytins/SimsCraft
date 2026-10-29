@@ -18,7 +18,7 @@ struct NSOOracle: AsyncParsableCommand {
             commands of the same names (see NSOClient/FSO.Oracle/README.md). compare reads both sides' \
             records and reports whether they agree, and with --review writes docs/results/nso-review.md.
             """,
-        subcommands: [ListObjects.self, RunObjects.self, RunLot.self, RunPrimitive.self, RoomMaps.self, Sprites.self, Compare.self])
+        subcommands: [ListObjects.self, RunObjects.self, RunLot.self, RunPrimitive.self, RoomMaps.self, Sprites.self, Operands.self, Compare.self])
 }
 
 /// The folder of FreeSO's content in the snapshot (update-46), which `fso-oracle` uses too.
@@ -180,13 +180,27 @@ extension NSOOracle {
         }
     }
 
+    struct Operands: ParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Print the operands of primitives NSOClient decodes but doesn't run yet, field by field.")
+
+        @Option(help: "The TSO install. Defaults to $TSO_GAME_DIR.") var game: String?
+
+        func run() throws {
+            guard let path = game ?? ProcessInfo.processInfo.environment["TSO_GAME_DIR"], !path.isEmpty else {
+                throw ValidationError("No --game given and TSO_GAME_DIR is not set.")
+            }
+            for line in Answers.operands(in: URL(fileURLWithPath: path, isDirectory: true)) { print(line) }
+        }
+    }
+
     struct Compare: ParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Report whether fso-oracle's and nso-oracle's records agree, and optionally write the review.",
             discussion: """
                 Each folder holds the same files from its side: objects.tsv (list-objects), \
                 objects.digests (run-objects), lots.digests (run-lot, each line prefixed with the lot's \
-                file name), PRIMITIVE.responses.jsonl (run-primitive), rooms.jsonl (room-maps), sprites.tsv (sprites), and optionally timings.tsv \
+                file name), PRIMITIVE.responses.jsonl (run-primitive), rooms.jsonl (room-maps), sprites.tsv (sprites), operands.tsv (operands), and optionally timings.tsv \
                 (command, tab, seconds). Missing files are left out of the comparison.
                 """)
 
@@ -225,6 +239,9 @@ extension NSOOracle {
             }
             if let theirs = lines(fso, "sprites.tsv"), let ours = lines(nso, "sprites.tsv") {
                 comparisons.append(.sprites(fso: theirs, nso: ours))
+            }
+            if let theirs = lines(fso, "operands.tsv"), let ours = lines(nso, "operands.tsv") {
+                comparisons.append(.operands(fso: theirs, nso: ours))
             }
             for comparison in comparisons { print(comparison.summary) }
             if strict {

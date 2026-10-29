@@ -96,7 +96,8 @@ public struct RoutineNames: Sendable {
 ///        2: sleep (argument: count)                                      then 2, else 3
 ///        3: animate (not ported yet) 0a00000100000000                    then 4, else return false
 ///
-/// A primitive NSOClient has ported shows its decoded operand; one it hasn't shows its 8 bytes.
+/// A primitive shows its decoded operand, whether NSOClient runs it yet or only decodes it
+/// (``PrimitiveTable/unportedOperands``); one whose layout isn't known shows its 8 bytes.
 /// A branch to 253 reads as `unset`: FreeSO's `VMThread` then goes on along the other branch,
 /// and errors only if both are unset, while the SimAntics Wiki describes an unset branch as an
 /// error in the original engine (**Unverified** against TSO itself).
@@ -157,7 +158,10 @@ public enum Listing {
             case .primitive(let prepared):
                 return "\(words(prepared.name)) (\(fields(of: prepared.operand)))"
             case .unportedPrimitive(let name):
-                return "\(words(name)) (not ported yet) \(raw)"
+                guard let operand = PrimitiveTable.unportedOperand(opcode: instruction.opcode, bytes: bytes) else {
+                    return "\(words(name)) (not ported yet) \(raw)"
+                }
+                return "\(words(name)) (\(fields(of: operand)))"
             default:
                 return "primitive \(instruction.opcode) (unknown) \(raw)"
             }

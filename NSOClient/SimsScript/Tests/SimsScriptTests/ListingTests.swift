@@ -71,7 +71,7 @@ private func namedObject() throws -> ObjectResource {
               1: call "Add Charge" (temp 0, 7)                                   then return true, else unset
               2: amount > 3                                                      then 3, else 4
               3: my room has flag 2                                              then return true, else return false
-              4: animate (not ported yet) 0100020000000000                       then 4, else unset
+              4: animate (animation id: 1, local event number: 2, source: 0, flags: 0x0, expected event count: 0) then 4, else unset
 
             """)
     }

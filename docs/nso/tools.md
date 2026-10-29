@@ -125,3 +125,5 @@ can read. The first two cover SimAntics' 16-bit arithmetic, which FreeSO's VM co
 `Listing` writes them: one line per instruction, with routines, parameters, locals, attributes,
 and constants named from the object's files, its semi-global, and the global file, and ported
 primitives' operands in words. See [SimsScript's README](../../NSOClient/SimsScript/README.md).
+Primitives NSOClient doesn't run yet still read in words: their operands are decoded, and
+`fso-oracle operands` checks every field against FreeSO's own decoding.
