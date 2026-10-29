@@ -1,5 +1,8 @@
 import ArgumentParser
+import Configuration
 import Foundation
+import TSOConfig
+import TSOContent
 import TSOFiles
 
 /// `tsofiles-check`: opens every container in a TSO install and reports failures.
@@ -9,9 +12,9 @@ struct TSOFilesCheck: ParsableCommand {
         commandName: "tsofiles-check",
         abstract: "Open every FAR1, FAR3, DBPF, and IFF file in a TSO install and read every entry.",
         discussion: """
-            Without a folder, checks every install named by $TSO_GAME_DIR and $TSO_BETA_DIR, \
-            one after the other. When both are checked and the differences file doesn't exist \
-            yet, it compares the two installs once and writes how they differ there. Exits with 0 when everything reads, 1 when anything fails, and \
+            Without a folder, checks every install named by $TSO_GAME_DIR, $TSO_CLASSIC_DIR, and \
+            $TSO_BETA_DIR, one after the other. When exactly two are checked and the differences \
+            file doesn't exist yet, it compares them once and writes how they differ there. Exits with 0 when everything reads, 1 when anything fails, and \
             2 when a folder isn't an install or can't be listed.
             """)
 
@@ -36,23 +39,21 @@ struct TSOFilesCheck: ParsableCommand {
     @Option(help: "List at most this many failures; all of them are counted.")
     var maxFailures = 50
 
-    /// Which of the installs in the environment to check.
-    enum InstallChoice: String, ExpressibleByArgument, CaseIterable {
-        case all, game, beta
-    }
-
-    @Option(help: "Without a folder: which installs to check, game ($TSO_GAME_DIR), beta ($TSO_BETA_DIR), or all that are set.")
-    var install: InstallChoice = .all
+    @Option(help: """
+        Without a folder: an install to check, game ($TSO_GAME_DIR), classic ($TSO_CLASSIC_DIR), \
+        or beta ($TSO_BETA_DIR). Repeatable; without it, every one that's set.
+        """)
+    var install: [InstallKind] = []
 
     @Option(help: "Where to note how the two installs differ, if it doesn't exist yet.")
     var differences = "docs/results/install-differences.md"
 
-    @Argument(help: "The install folder. Defaults to $TSO_GAME_DIR and $TSO_BETA_DIR.")
+    @Argument(help: "The install folder. Defaults to the installs the environment names.")
     var directory: String?
 
     func validate() throws {
         guard maxFailures >= 0 else { throw ValidationError("--max-failures takes a number of 0 or more.") }
-        guard directory == nil || install == .all else {
+        guard directory == nil || install.isEmpty else {
             throw ValidationError("--install picks from the environment; give it or a folder, not both.")
         }
     }
@@ -64,34 +65,35 @@ struct TSOFilesCheck: ParsableCommand {
         var directory: URL
     }
 
-    /// The installs to check: the argument, else each set variable `--install` picks, in the
-    /// order `TSO_GAME_DIR`, `TSO_BETA_DIR`. Two variables naming one folder check it once.
-    func installs(environment: [String: String]) throws(ValidationError) -> [Install] {
+    /// The installs to check: the argument, else each one the configuration names that
+    /// `--install` picks, in ``InstallKind`` order. Two settings naming one folder check it once.
+    func installs(in config: ConfigReader) throws(ValidationError) -> [Install] {
         if let directory {
             guard !directory.isEmpty else { throw ValidationError("The folder can't be empty.") }
             return [Install(source: nil, directory: URL(fileURLWithPath: directory, isDirectory: true))]
         }
-        let variables: [String] = switch install {
-        case .all: ["TSO_GAME_DIR", "TSO_BETA_DIR"]
-        case .game: ["TSO_GAME_DIR"]
-        case .beta: ["TSO_BETA_DIR"]
-        }
-        var found: [Install] = []
-        for variable in variables {
-            guard let path = environment[variable], !path.isEmpty else { continue }
-            let directory = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
-            if !found.contains(where: { $0.directory == directory }) { found.append(Install(source: variable, directory: directory)) }
-        }
+        let kinds = install.isEmpty ? InstallKind.allCases : InstallKind.allCases.filter(install.contains)
+        let found = InstallKind.installs(in: config).filter { kinds.contains($0.kind) }
+            .map { Install(source: $0.kind.environmentVariable, directory: $0.directory) }
         guard !found.isEmpty else {
-            throw ValidationError("No folder given and \(variables.joined(separator: " and ")) \(variables.count == 1 ? "is" : "are") not set.")
+            let variables = kinds.map(\.environmentVariable)
+            let list = variables.count < 3 ? variables.joined(separator: " and ")
+                : variables.dropLast().joined(separator: ", ") + ", and " + (variables.last ?? "")
+            throw ValidationError("No folder given and \(list) \(variables.count == 1 ? "is" : "are") not set.")
         }
         return found
     }
 
-    /// Whether a folder holds an install: it has an `objectdata` folder, in any letter case.
-    static func isInstall(_ directory: URL) -> Bool {
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else { return false }
-        return names.contains { $0.lowercased() == "objectdata" }
+    /// The header line for an install: where it was named, its folder, and the version its
+    /// `version` file records, if it has one.
+    static func header(for install: Install) -> String {
+        let version: String
+        do {
+            version = try GameVersion.read(install: install.directory).map { " (\($0))" } ?? ""
+        } catch {
+            version = " (version unknown: \(error))"
+        }
+        return "== \(install.source.map { "\($0): " } ?? "")\(install.directory.path)\(version)"
     }
 
     /// Compares two installs and writes the differences file, unless it exists. Returns false
@@ -125,17 +127,17 @@ struct TSOFilesCheck: ParsableCommand {
     }
 
     func run() throws {
-        let installs = try installs(environment: ProcessInfo.processInfo.environment)
+        let installs = try installs(in: ConfigReader(provider: EnvironmentVariablesProvider()))
         let scanner = InstallScanner(far1Variant: far1Variant.layout, readsEntries: !headersOnly, parsesChunks: !headersOnly)
         var exitCode: Int32 = 0
         var scanned: [Install] = []
         for (index, install) in installs.enumerated() {
             if installs.count > 1 || install.source != nil {
                 if index > 0 { print("") }
-                print("== \(install.source.map { "\($0): " } ?? "")\(install.directory.path)")
+                print(Self.header(for: install))
             }
             fflush(nil) // keep the header ahead of any error on standard error
-            guard Self.isInstall(install.directory) else {
+            guard GameLocator.isInstall(install.directory) else {
                 FileHandle.standardError.write(Data("tsofiles-check: \(install.directory.path) isn't a TSO install (no objectdata folder)\n".utf8))
                 exitCode = 2
                 continue
@@ -185,3 +187,5 @@ enum ScanReportText {
         return lines
     }
 }
+
+extension InstallKind: @retroactive ExpressibleByArgument {}

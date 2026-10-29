@@ -1,61 +1,73 @@
 import ArgumentParser
+import Configuration
 import Foundation
 import Testing
+import TSOContent
 import TSOFiles
 @testable import TSOFilesCheck
 
 @Suite struct OptionsTests {
+    /// The installs a command picks from an environment, as `run` reads it.
+    func installs(_ command: TSOFilesCheck, _ environment: [String: String]) throws -> [TSOFilesCheck.Install] {
+        try command.installs(in: ConfigReader(provider: EnvironmentVariablesProvider(environmentVariables: environment)))
+    }
+
     @Test func readsEveryOption() throws {
         let command = try TSOFilesCheck.parse(["--far1-variant", "a", "--headers-only", "--max-failures", "5", "/games/tso"])
         #expect(command.far1Variant == .a)
         #expect(command.headersOnly)
         #expect(command.maxFailures == 5)
-        let installs = try command.installs(environment: ["TSO_GAME_DIR": "/opt/tso", "TSO_BETA_DIR": "/opt/beta"])
+        let installs = try installs(command, ["TSO_GAME_DIR": "/opt/tso", "TSO_BETA_DIR": "/opt/beta"])
         #expect(installs.map(\.directory.path) == ["/games/tso"] && installs[0].source == nil)
     }
 
     @Test func fallsBackToTheEnvironment() throws {
         let command = try TSOFilesCheck.parse([])
-        let installs = try command.installs(environment: ["TSO_GAME_DIR": "/opt/tso"])
+        let installs = try installs(command, ["TSO_GAME_DIR": "/opt/tso"])
         #expect(installs == [.init(source: "TSO_GAME_DIR", directory: URL(fileURLWithPath: "/opt/tso", isDirectory: true))])
         #expect(command.far1Variant == .b)
         #expect(!command.headersOnly)
         #expect(command.maxFailures == 50)
-        #expect(command.install == .all)
+        #expect(command.install.isEmpty)
     }
 
-    @Test func checksBothInstallsGameFirst() throws {
-        let environment = ["TSO_BETA_DIR": "/opt/beta", "TSO_GAME_DIR": "/opt/tso"]
-        let all = try TSOFilesCheck.parse([]).installs(environment: environment)
-        #expect(all.map(\.source) == ["TSO_GAME_DIR", "TSO_BETA_DIR"])
-        #expect(all.map(\.directory.path) == ["/opt/tso", "/opt/beta"])
-        #expect(try TSOFilesCheck.parse([]).installs(environment: ["TSO_BETA_DIR": "/opt/beta"]).map(\.source) == ["TSO_BETA_DIR"])
-        #expect(try TSOFilesCheck.parse(["--install", "beta"]).installs(environment: environment).map(\.source) == ["TSO_BETA_DIR"])
-        #expect(try TSOFilesCheck.parse(["--install", "game"]).installs(environment: environment).map(\.source) == ["TSO_GAME_DIR"])
+    @Test func checksEveryInstallGameFirst() throws {
+        let environment = ["TSO_BETA_DIR": "/opt/beta", "TSO_GAME_DIR": "/opt/tso", "TSO_CLASSIC_DIR": "/opt/classic"]
+        let all = try installs(TSOFilesCheck.parse([]), environment)
+        #expect(all.map(\.source) == ["TSO_GAME_DIR", "TSO_CLASSIC_DIR", "TSO_BETA_DIR"])
+        #expect(all.map(\.directory.path) == ["/opt/tso", "/opt/classic", "/opt/beta"])
+        #expect(try installs(TSOFilesCheck.parse([]), ["TSO_BETA_DIR": "/opt/beta"]).map(\.source) == ["TSO_BETA_DIR"])
+        #expect(try installs(TSOFilesCheck.parse(["--install", "beta"]), environment).map(\.source) == ["TSO_BETA_DIR"])
+        #expect(try installs(TSOFilesCheck.parse(["--install", "game"]), environment).map(\.source) == ["TSO_GAME_DIR"])
+        // Repeated, in the installs' own order whatever the order given.
+        #expect(try installs(TSOFilesCheck.parse(["--install", "beta", "--install", "classic"]), environment).map(\.source)
+                == ["TSO_CLASSIC_DIR", "TSO_BETA_DIR"])
     }
 
     @Test func checksOneFolderOnce() throws {
-        let installs = try TSOFilesCheck.parse([]).installs(environment: ["TSO_GAME_DIR": "/opt/tso", "TSO_BETA_DIR": "/opt/x/../tso/"])
+        let installs = try installs(TSOFilesCheck.parse([]), ["TSO_GAME_DIR": "/opt/tso", "TSO_BETA_DIR": "/opt/x/../tso/"])
         #expect(installs.map(\.source) == ["TSO_GAME_DIR"])
     }
 
     @Test func needsADirectory() throws {
         let command = try TSOFilesCheck.parse([])
-        #expect(throws: ValidationError.self) { try command.installs(environment: [:]) }
-        #expect(throws: ValidationError.self) { try command.installs(environment: ["TSO_GAME_DIR": "", "TSO_BETA_DIR": ""]) }
+        #expect(throws: ValidationError.self) { try installs(command, [:]) }
+        #expect(throws: ValidationError.self) { try installs(command, ["TSO_GAME_DIR": "", "TSO_BETA_DIR": ""]) }
         #expect(throws: ValidationError.self) {
-            try TSOFilesCheck.parse(["--install", "beta"]).installs(environment: ["TSO_GAME_DIR": "/opt/tso"])
+            try installs(TSOFilesCheck.parse(["--install", "beta"]), ["TSO_GAME_DIR": "/opt/tso"])
         }
     }
 
-    @Test func recognizesInstalls() throws {
+    @Test func headsEachInstallWithItsVersion() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("tsofiles-install-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        #expect(!TSOFilesCheck.isInstall(root))
-        try FileManager.default.createDirectory(at: root.appendingPathComponent("ObjectData"), withIntermediateDirectories: true)
-        #expect(TSOFilesCheck.isInstall(root))
-        #expect(!TSOFilesCheck.isInstall(root.appendingPathComponent("missing")))
+        let install = TSOFilesCheck.Install(source: "TSO_GAME_DIR", directory: root)
+        #expect(TSOFilesCheck.header(for: install) == "== TSO_GAME_DIR: \(root.path)")
+        try Data("1.1097.1.0".utf8).write(to: root.appendingPathComponent("version"))
+        #expect(TSOFilesCheck.header(for: install) == "== TSO_GAME_DIR: \(root.path) (1.1097.1.0)")
+        try Data("1.1097".utf8).write(to: root.appendingPathComponent("version"))
+        #expect(TSOFilesCheck.header(for: install).contains("(version unknown: "))
     }
 
     @Test(arguments: [
@@ -66,6 +78,7 @@ import TSOFiles
         ["/x", "/y"],
         ["--install", "beta", "/x"],
         ["--install", "demo"],
+        ["--install", "all"],
         ["--help"],
     ])
     func rejectsBadArguments(arguments: [String]) {
