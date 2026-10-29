@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install X11 and GL headers for raylib (Interface)
+      - name: Install X11 and GL headers for raylib (NSOInterface)
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
@@ -47,7 +47,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle ScriptOracle Interface Client; do
+          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle ScriptOracle NSOInterface Client; do
             echo "::group::$package"
             swift build --package-path "NSOClient/$package"
             swift test --package-path "NSOClient/$package"
@@ -76,7 +76,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle ScriptOracle Interface Client; do
+          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle ScriptOracle NSOInterface Client; do
             echo "::group::$package"
             swift build --package-path "NSOClient/$package"
             swift test --package-path "NSOClient/$package"

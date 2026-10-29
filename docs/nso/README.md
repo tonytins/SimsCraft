@@ -25,7 +25,7 @@ point one way:
 TSOFiles ──▶ TSOContent ──▶ SimAntics ──▶ SimsScript ──▶ ScriptOracle (sso-oracle)
                                 │
                                 ├──▶ NSOOracle (nso-oracle)
-                                └──▶ Client (newso) ◀── Interface ◀── raylib-swift
+                                └──▶ Client (newso) ◀── NSOInterface ◀── raylib-swift
 
 TSOFiles and TSOContent ──▶ TSOFilesCheck (tsofiles-check)
 ```
@@ -40,7 +40,7 @@ the client; the libraries themselves take no configuration library.
 | SimAntics | Runs object behavior: the VM, entities, threads, primitives, and variables | [simantics.md](simantics.md) |
 | SimAntics (lot model) | Positions, the tile index, walls, floors, rooms, and blueprints | [lot.md](lot.md) |
 | SimsScript | Routines as readable listings and text assembly, and a small compiler; `simsscript list` | [tools.md](tools.md#simsscript) |
-| Interface | The client's windows and controls on raylib-swift, from CityLimits through cs2swift | [client.md](client.md) |
+| NSOInterface | The client's windows and controls on raylib-swift, from CityLimits through cs2swift | [client.md](client.md) |
 | Client | `newso`: shows a lot running, or runs it headless and logs it | [client.md](client.md) |
 | TSOFilesCheck | `tsofiles-check`, which opens everything in each install and compares two | [tools.md](tools.md) |
 | NSOOracle | `nso-oracle`, which runs `fso-oracle`'s experiments on NSOClient and reports whether the two agree | [tools.md](tools.md#nso-oracle) |

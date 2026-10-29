@@ -1,12 +1,12 @@
 // These run without a window. Measuring text needs the font a window loads, so the checks
 // here stay with what doesn't draw: the camera's math and what the text boxes accept.
 
-import Interface
+import NSOInterface
 import Raylib
 import Testing
 
 @Test func cameraRoundTripsBetweenScreenAndWorld() {
-    let camera = Interface.Camera(2)
+    let camera = NSOInterface.Camera(2)
     camera.setScreenSize(800, 600)
     camera.centerOn(Vector2(x: 100, y: 50))
     let screen = Vector2(x: 123, y: 456)
@@ -16,14 +16,14 @@ import Testing
 }
 
 @Test func cameraZoomStaysInItsRange() {
-    let camera = Interface.Camera(100)
-    #expect(camera.zoom == Interface.Camera.maxZoom)
+    let camera = NSOInterface.Camera(100)
+    #expect(camera.zoom == NSOInterface.Camera.maxZoom)
     camera.setZoom(0)
-    #expect(camera.zoom == Interface.Camera.minZoom)
+    #expect(camera.zoom == NSOInterface.Camera.minZoom)
 }
 
 @Test func cameraZoomKeepsThePointUnderThePointerStill() {
-    let camera = Interface.Camera()
+    let camera = NSOInterface.Camera()
     camera.setScreenSize(800, 600)
     let pointer = Vector2(x: 200, y: 100)
     let before = camera.screenToWorld(pointer)
@@ -33,7 +33,7 @@ import Testing
 }
 
 @Test func cameraCentersAWorldSmallerThanTheScreen() {
-    let camera = Interface.Camera()
+    let camera = NSOInterface.Camera()
     camera.setScreenSize(800, 600)
     camera.clampTo(200, 100)
     #expect(camera.target == Vector2(x: 100, y: 50))

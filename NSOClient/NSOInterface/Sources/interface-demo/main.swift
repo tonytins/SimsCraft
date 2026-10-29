@@ -6,7 +6,7 @@
 // so a change can be checked without anyone at the screen.
 
 import Foundation
-import Interface
+import NSOInterface
 import Raylib
 
 var screenshot: String?

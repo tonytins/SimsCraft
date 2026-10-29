@@ -57,7 +57,7 @@ which also serves as NewSO's fallback and debug interface:
 - **The inspector** shows a clicked object: what it is, where it is, and what it's running.
 
 The windows and controls come from the owner's CityLimits through cs2swift, in
-[`NSOClient/Interface`](../../NSOClient/Interface/); `interface-demo` there shows them on their own.
+[`NSOClient/NSOInterface`](../../NSOClient/NSOInterface/); `interface-demo` there shows them on their own.
 
 ## Without a window
 

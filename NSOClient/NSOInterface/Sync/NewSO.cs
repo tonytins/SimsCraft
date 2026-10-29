@@ -1,4 +1,4 @@
-// What the CityLimits files call that NewSO provides in Swift (Sources/Interface/NewSO),
+// What the CityLimits files call that NewSO provides in Swift (Sources/NSOInterface/NewSO),
 // declared for cs2swift's --reference so it converts the calls correctly. Never translated.
 
 namespace NewSO.Interface;

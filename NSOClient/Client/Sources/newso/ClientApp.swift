@@ -1,4 +1,4 @@
-import Interface
+import NSOInterface
 import LotScene
 import Raylib
 import SimAntics
