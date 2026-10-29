@@ -71,7 +71,7 @@ public enum Review {
         ## Reading the results
 
         Each section below covers one copy of the game. *Production* is a 2002 release of the game
-        (FreeSO was built against EA's final download, from the EA-Land era), and *beta* is a 2002 beta. *Mock* is
+        (FreeSO was built against a 2003 one), and *beta* is a 2002 beta. *Mock* is
         `NSOClient/MockInstall`, a small made-up install in the repository with no game data, so anyone
         can reproduce its section without a copy of the game; its numbers are small, and grow as the mock
         gains objects. In each table:
