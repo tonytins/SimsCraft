@@ -76,6 +76,7 @@ swift run --package-path NSOClient/TSOFilesCheck -c release tsofiles-check      
 NSOClient/scripts/oracle-fixtures.sh /tmp/oracle                                       # FreeSO's side; needs TSO_GAME_DIR
 TSO_ORACLE_DIR=/tmp/oracle swift test --package-path NSOClient/NSOOracle               # NSOClient's side, compared
 NSOClient/scripts/oracle-review.sh --mock /tmp/review                                  # both oracles on MockInstall
+NSOClient/scripts/scenario-oracle.sh --mock                                            # SimsScript scenarios on both VMs
 git status --short -- TSOClient Charvatia FSOInstaller Other                           # must print nothing
 ```
 
@@ -83,7 +84,7 @@ Locally, build and test only what changed: the packages you touched and the ones
 
 ### The oracles
 
-``fso-oracle`` (``NSOClient/FSO.Oracle``) is a small .NET tool that compiles FreeSO's SimAntics, Files, and Content sources headless and records what they do. ``nso-oracle`` runs the same experiments on NSOClient, and ``compare`` sets the two side by side. ``sso-oracle`` (``ScriptOracle``) expresses scenarios in SimsScript.
+``fso-oracle`` (``NSOClient/FSO.Oracle``) is a small .NET tool that compiles FreeSO's SimAntics, Files, and Content sources headless and records what they do. ``nso-oracle`` runs the same experiments on NSOClient, and ``compare`` sets the two side by side. ``sso-oracle`` (``ScriptOracle``) asks smaller questions: each scenario is a SimsScript object with the values it should leave, compiled once and run on both VMs (``fso-oracle run-scenarios``).
 
 Treat them as two sides of an experiment, not an answer key and a student:
 

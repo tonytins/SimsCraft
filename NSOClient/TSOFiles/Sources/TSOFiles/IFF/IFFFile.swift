@@ -12,6 +12,15 @@ public struct IFFChunkRecord: Sendable, Equatable {
     public var label: String
     /// The chunk's data, without its 76-byte header.
     public var data: Data
+
+    /// A chunk, such as one to write: its four-character type, ID, flags, label, and data.
+    public init(typeCode: String, id: UInt16, flags: UInt16 = 0, label: String = "", data: Data) {
+        self.typeCode = typeCode
+        self.id = id
+        self.flags = flags
+        self.label = label
+        self.data = data
+    }
 }
 
 /// A Maxis IFF file: the container for objects, behavior, sprites, and strings.

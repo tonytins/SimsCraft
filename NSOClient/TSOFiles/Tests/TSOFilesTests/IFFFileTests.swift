@@ -94,3 +94,41 @@ func makeIFF(_ chunks: [ChunkFixture]) -> Data {
         #expect(throws: IFFError.notAnIFFFile) { try IFFFile(bytes: Data(repeating: 0x20, count: 80)) }
     }
 }
+
+@Suite struct IFFWritingTests {
+    @Test func readsBackWhatItWrites() throws {
+        let chunks = [
+            IFFChunkRecord(typeCode: "BHAV", id: 4096, flags: 0x10, label: "main", data: Data([1, 2, 3])),
+            IFFChunkRecord(typeCode: "STR#", id: 128, label: String(repeating: "x", count: 64), data: Data()),
+            IFFChunkRecord(typeCode: "OBJD", id: 128, data: Data(repeating: 7, count: 300)),
+        ]
+        let bytes = try IFFFile(chunks: chunks).encoded()
+        #expect(bytes.count == 64 + 3 * 76 + 3 + 300)
+        let reread = try IFFFile(bytes: bytes)
+        #expect(reread.chunks == chunks)
+        #expect(reread.resourceMapOffset == 0)
+        // The header and the first chunk's size, as FreeSO writes them.
+        #expect(bytes.prefix(13) == Data("IFF FILE 2.5:".utf8))
+        #expect(Array(bytes[68..<72]) == [0, 0, 0, 79])
+    }
+
+    @Test func writesAnEmptyFile() throws {
+        let bytes = try IFFFile(chunks: []).encoded()
+        #expect(bytes.count == 64)
+        #expect(try IFFFile(bytes: bytes).chunks.isEmpty)
+    }
+
+    @Test func rejectsWhatTheFormatCantHold() {
+        #expect(throws: IFFWriteError.invalidTypeCode("BHA")) {
+            try IFFFile(chunks: [IFFChunkRecord(typeCode: "BHA", id: 1, data: Data())]).encoded()
+        }
+        #expect(throws: IFFWriteError.invalidTypeCode("BHÄV")) {
+            try IFFFile(chunks: [IFFChunkRecord(typeCode: "BHÄV", id: 1, data: Data())]).encoded()
+        }
+        for label in [String(repeating: "x", count: 65), "caf\u{E9}", "a\0b"] {
+            #expect(throws: IFFWriteError.invalidLabel(typeCode: "BHAV", id: 1, label: label)) {
+                try IFFFile(chunks: [IFFChunkRecord(typeCode: "BHAV", id: 1, label: label, data: Data())]).encoded()
+            }
+        }
+    }
+}

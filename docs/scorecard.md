@@ -46,7 +46,7 @@ Package: [TSOFiles](../NSOClient/TSOFiles/). Ports `TSOClient/tso.files` (see
 | FMT-2 | RefPack decompression matching `Decompresser.Decompress` | done | `Compression/RefPack.swift`; `RefPackTests` covers all four command forms, the 6-byte passthrough, output growth, 0xFD continuing, 0xFC stop, and two error paths |
 | FMT-3 | FAR1 archives, variants 1a and 1b | done | `Archives/FAR1Archive.swift`; `FAR1ArchiveTests` (both variants, bad version, truncated manifest, out-of-bounds entry) |
 | FMT-4 | FAR3 archives with asset IDs and RefPack entries | done | `Archives/FAR3Archive.swift`; `FAR3ArchiveTests` (ID packing, raw and compressed entries, non-RefPack fallback, duplicate names, entries sharing a file ID, wrong type ID) |
-| FMT-5 | IFF container: header, chunk records, lookups | done | `IFF/IFFFile.swift`; `IFFFileTests` (10 tests incl. trailing byte, short final chunk, bad sizes, 2.0 header) |
+| FMT-5 | IFF container: header, chunk records, lookups | done | `IFF/IFFFile.swift`; `IFFFileTests` (10 tests incl. trailing byte, short final chunk, bad sizes, 2.0 header). Writing (2026-10-28): `IFFFile.encoded()` lays a file out as FreeSO's `IffFile.Write` does, and rejects what the format can't hold (`IFFWritingTests`) |
 | FMT-6 | Reference snapshot constant | done | `ReferenceSnapshot.swift`; `ReferenceSnapshotTests` |
 | FMT-7 | DBPF archives | done | `Archives/DBPFArchive.swift`; `DBPFArchiveTests` (versions 1.0 and 2.0, lookup ID packing, first-wins IDs, missing types, truncation, out-of-bounds entries) |
 | FMT-8 | Behavior chunks: `BHAV`, `BCON`, `TRCN`, `TPRP` | done | `IFF/Chunks/BHAV.swift`, `BCON.swift`, `TRCN.swift`, `TPRP.swift`; `BHAVTests` (all four header versions, unknown versions left empty as in FreeSO, truncation), `ConstantChunkTests` (TRCN versions 0 and 2, Latin-1 and .NET strings, negative counts; TPRP both name layouts). Real install: 15,732 BHAVs, 1,476 BCONs, 1,856 TRCNs, 15,577 TPRPs; every branch target is an instruction or an exit code (`RealInstallTests`) |
@@ -190,6 +190,7 @@ decision 5); only a proof of concept so far.
 | SCR-5 | Decompiler from routines to the LSL-like language | missing | Yatesport |
 | SCR-6 | Interactions, `state`s, and built-ins for every primitive | missing | Yatesport |
 | SCR-7 | Editor support: language server, VS Code extension | missing | Yatesport |
+| SCR-8 | Experiments written in SimsScript (`sso-oracle`) | done | Rebuilt 2026-10-28 around scenarios: a `.ss` file is a SimsScript object plus `@ticks` and `@expect` directives (`Scenario`, `ScenarioLibrary`). `CompiledObject.objectFile(guid:name:)` (SimsScript) writes it as a standalone IFF through TSOFiles' `IFFFile.encoded()`. `sso-oracle run` runs each on NSOClient's VM as `run-objects` runs an object and checks its expectations; `fso-oracle run-scenarios` runs the same compiled objects on FreeSO's VM; `sso-oracle compare` and `scripts/scenario-oracle.sh` set them side by side. Both shipped scenarios, `counting` and `arithmetic` (wrapping, division and remainder by zero, a negative remainder), agree on MockInstall and 1.1097.1.0. `ScenarioTests`, `ScenarioRunnerTests`, `ScenarioComparisonTests`, `ObjectFileTests`, `IFFWritingTests`. **Unverified:** the check that refuses a GUID the install already has isn't tested. FreeSO's thread errors don't show in its records |
 
 ## Known differences from FreeSO
 

@@ -100,3 +100,21 @@ FreeSO's side comes from `oracle-fixtures.sh`. With `--review` it writes
 since it reruns every object and primitive case. The same comparisons run as NSOOracle's tests
 against FreeSO's records, sharing the same code, so the checks and the report can't contradict
 each other.
+
+## sso-oracle
+
+`sso-oracle` (`NSOClient/ScriptOracle`) runs experiments written in SimsScript. A scenario is a
+small object with a header saying how long to run it and which object variables it should leave
+(`@ticks`, `@expect`); see [its README](../../NSOClient/ScriptOracle/README.md).
+
+- `check` compiles each scenario.
+- `run` runs each on NSOClient's VM, as `run-objects` runs an object, and checks its expectations.
+- `build DIR` writes each compiled object, and `scenarios.tsv`, for `fso-oracle run-scenarios`.
+- `compare RECORDS` runs them on NSOClient's VM and sets the result beside FreeSO's records.
+
+```sh
+NSOClient/scripts/scenario-oracle.sh --mock     # build, run on FreeSO, compare; fails on any difference
+```
+
+Because both VMs run the same compiled bytes, a scenario pins down one behavior in a form anyone
+can read. The first two cover SimAntics' 16-bit arithmetic, which FreeSO's VM confirms.

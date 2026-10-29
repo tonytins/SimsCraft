@@ -25,6 +25,7 @@ namespace FSO.Oracle
        fso-oracle list-objects [options]
        fso-oracle run-objects [options] [--ticks N] [--every N]
        fso-oracle room-maps [options]
+       fso-oracle run-scenarios [options] --scenarios DIR
        fso-oracle sprites [--game DIR]
 
 sprites decodes every SPR2, SPR#, and DGRP in the install's objspf*.far archives with
@@ -42,6 +43,10 @@ run-objects reads object GUIDs (hexadecimal) from standard input, one per line. 
 it loads an empty lot, creates the object out of the world, and prints a state digest
 after creation and as it ticks (see README.md).
 
+run-scenarios runs the SimsScript scenarios sso-oracle build wrote to DIR: each object
+created out of the world on an empty lot, ticked as long as its scenario says, then its
+attributes printed by name, as sso-oracle run --records-only prints them (see README.md).
+
 room-maps reads blueprint XML paths from standard input, one per line, loads each lot,
 and prints its room map and rooms as one JSON line (see README.md).
 
@@ -56,13 +61,14 @@ options:
                     (default: TSOClient/tso.content/Content in this repository)
   --blueprint FILE  lot XML (default: Blueprints/empty_lot_fso.xml in the content folder)
   --seed HEX        the VM's random seed once the lot is loaded (default: 0F50D0C5EED00001)
+  --scenarios DIR   run-scenarios: the folder sso-oracle build wrote
   --ticks N         run-lot and run-objects: ticks to run after loading (default: 1800, one minute of game time)
   --every N         run-lot and run-objects: also print a digest every N ticks (default: 0, only at the end)
   --dump            run-lot: after each digest, the digested fields of every entity, one line each";
 
         public static int Main(string[] args)
         {
-            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "sprites" }.Contains(args[0]))
+            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "run-scenarios", "sprites" }.Contains(args[0]))
             {
                 Console.Error.WriteLine(Usage);
                 return 2;
@@ -95,7 +101,16 @@ options:
             using var overlay = new GameOverlay(options.GameDirectory);
             foreach (var change in overlay.Changes)
                 Console.Error.WriteLine($"fso-oracle: {change}");
-            FSOEnvironment.ContentDir = options.ContentDirectory;
+            // Scenarios add their compiled objects to a copy of the content folder's Objects.
+            if (args[0] == "run-scenarios" && options.ScenarioDirectory == null)
+            {
+                Console.Error.WriteLine($"fso-oracle: run-scenarios needs --scenarios\n\n{Usage}");
+                return 2;
+            }
+            using var contentOverlay = args[0] == "run-scenarios"
+                ? new ScenarioRunner.ContentOverlay(options.ContentDirectory, options.ScenarioDirectory)
+                : null;
+            FSOEnvironment.ContentDir = contentOverlay?.Path ?? options.ContentDirectory;
             FSOEnvironment.UserDir = overlay.UserPath;
             Content.Content.Init(overlay.Path, Content.ContentMode.SERVER);
             if (args[0] == "list-objects")
@@ -110,6 +125,12 @@ options:
             }
             var blueprint = BlueprintForInstall(options.BlueprintPath);
 
+            if (args[0] == "run-scenarios")
+            {
+                var empty = EmptyBlueprint(blueprint);
+                ScenarioRunner.Run(ScenarioRunner.ReadTable(options.ScenarioDirectory), () => LoadLot(empty, options.Seed), results);
+                return 0;
+            }
             if (args[0] == "run-objects")
             {
                 RunObjects(EmptyBlueprint(blueprint), options, results);
@@ -420,6 +441,7 @@ options:
             public string GameDirectory;
             public string ContentDirectory;
             public string BlueprintPath;
+            public string ScenarioDirectory;
             public int Ticks = 1800;
             public int Every;
             public bool Dump;
@@ -448,6 +470,7 @@ options:
                         case "--game": options.GameDirectory = Value(); break;
                         case "--content": options.ContentDirectory = Value(); break;
                         case "--blueprint": options.BlueprintPath = Value(); break;
+                        case "--scenarios": options.ScenarioDirectory = Value(); break;
                         case "--ticks": options.Ticks = Count(); break;
                         case "--every": options.Every = Count(); break;
                         case "--dump": options.Dump = true; break;
@@ -466,6 +489,8 @@ options:
                     throw new ArgumentException($"{options.GameDirectory} does not exist");
                 if (!Directory.Exists(options.ContentDirectory))
                     throw new ArgumentException($"{options.ContentDirectory} does not exist");
+                if (options.ScenarioDirectory != null && !File.Exists(Path.Combine(options.ScenarioDirectory, "scenarios.tsv")))
+                    throw new ArgumentException($"{options.ScenarioDirectory} has no scenarios.tsv (write it with sso-oracle build)");
 
                 // FreeSO joins content paths by string concatenation, so these need a trailing slash.
                 options.GameDirectory = WithTrailingSlash(options.GameDirectory);

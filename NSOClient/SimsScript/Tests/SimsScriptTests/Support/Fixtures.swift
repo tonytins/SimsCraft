@@ -61,19 +61,6 @@ func makeFAR1(_ files: [(name: String, contents: Data)]) -> Data {
     return writer.bytes
 }
 
-/// A version 142 OBJD that uses a function table (word 20), with GUID 0x100.
-func functionTableOBJD() -> Data {
-    var writer = ByteWriter()
-    writer.uint32(142)
-    for index in 0..<103 {
-        switch index {
-        case 12: writer.uint16(0x100)
-        case 20: writer.uint16(1)
-        default: writer.uint16(0)
-        }
-    }
-    return writer.bytes
-}
 
 /// Compiles a script into an object, loads it in a VM, initializes it, ticks it, and runs
 /// `check` on the entity while its install still exists.
@@ -82,8 +69,7 @@ func run(_ source: String, ticks: Int = 1, _ check: (VM, Entity) throws -> Void)
     let install = try FakeInstall()
     try install.write(Data(#"<ObjectInfoTable><I g="0x100" n="scripted" m="0" i="0"/></ObjectInfoTable>"#.utf8),
                       to: "packingslips/objecttable.xml")
-    let iff = makeIFF([("OBJD", 128, "scripted", functionTableOBJD()), ("OBJf", 128, "", compiled.functionTableData())]
-                      + compiled.routines.map { ("BHAV", $0.id, $0.label, $0.encoded()) })
+    let iff = try compiled.objectFile(guid: 0x100, name: "scripted")
     try install.write(makeFAR1([(name: "scripted.iff", contents: iff)]), to: "objectdata/objects/objiff.far")
     try install.write(makeFAR1([]), to: "objectdata/objects/objotf.far")
     try install.write(makeIFF([]), to: "objectdata/globals/global.iff")

@@ -14,7 +14,6 @@ let package = Package(
         .package(path: "../SimAntics"),
         .package(path: "../TSOContent"),
         .package(path: "../TSOFiles"),
-        .package(url: "https://github.com/tonytins/SwiftConfigurationTOML", branch: "main"),
         .package(path: "../SimsScript"),
     ],
     targets: [
@@ -23,7 +22,6 @@ let package = Package(
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
             .product(name: "Configuration", package: "swift-configuration"),
             .product(name: "TSOConfig", package: "TSOContent"),
-            .product(name: "ConfigurationTOML", package: "SwiftConfigurationTOML"),
         ]),
         .target(name: "ScriptOracleCore", dependencies: [
             .product(name: "SimAntics", package: "SimAntics"),
@@ -35,6 +33,8 @@ let package = Package(
         ]),
         .testTarget(name: "ScriptOracleTests", dependencies: [
             "ScriptOracleCore",
+            .product(name: "SimsScript", package: "SimsScript"),
+            .product(name: "SimAntics", package: "SimAntics"),
         ]),
     ],
     swiftLanguageModes: [.v6]

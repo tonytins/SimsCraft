@@ -178,6 +178,24 @@ lot with every object taken out, creates the object out of the world as
 Objects that reach behavior NSOClient doesn't have yet are counted by what stopped them, which
 ranks what to port next.
 
+## SimsScript scenarios: `run-scenarios`
+
+```sh
+swift run --package-path NSOClient/ScriptOracle sso-oracle build /tmp/scenarios
+dotnet run --project NSOClient/FSO.Oracle -c Release -- run-scenarios --scenarios /tmp/scenarios
+```
+
+Runs the objects `sso-oracle build` compiled from SimsScript scenarios. It links FreeSO's content
+folder into a temporary one whose `Objects` folder also holds the scenario objects, which FreeSO
+loads as standalone objects. Each is then run as `run-objects` runs an object: an empty lot,
+the object created out of the world (running its init), and the ticks `scenarios.tsv` gives it.
+It prints `name guid attributes a=1 b=2`, the attributes named as the scenario names them, which
+is the form `sso-oracle run --records-only` prints; `name guid missing` if FreeSO can't create
+it; or `name guid error Type` if creating or ticking throws. FreeSO suppresses an exception inside
+an object's thread and resets the object, so such an error doesn't show in the record.
+
+`NSOClient/scripts/scenario-oracle.sh` builds, runs, and compares (`sso-oracle compare`).
+
 ## Rooms: `room-maps`
 
 ```sh
