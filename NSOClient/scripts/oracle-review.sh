@@ -14,6 +14,10 @@
 # records from oracle-fixtures.sh (also a TSO_ORACLE_DIR for the NSOOracle tests), and
 # OUTPUT_DIR/NAME/nso/, NSOClient's records of the same experiments in the same files, each with
 # timings.tsv.
+#
+# With ORACLE_REUSE=1, an install whose FreeSO records are already complete in OUTPUT_DIR (the last
+# file oracle-fixtures.sh writes, operands.tsv, exists) keeps them instead of running FreeSO again,
+# so an interrupted review can resume. Use it only with records from the same commit.
 set -euo pipefail
 
 repository="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -57,7 +61,9 @@ for install in "${installs[@]}"; do
     rm -f "$folder"/*.jsonl "$folder"/*.digests "$folder"/*.tsv "$folder/log.txt"
 
     echo "[$name] FreeSO's side..."
-    if [[ "$name" == mock ]]; then
+    if [[ "${ORACLE_REUSE:-}" == 1 && -f "$fso_folder/operands.tsv" ]]; then
+        echo "[$name] Reusing FreeSO's records in $fso_folder"
+    elif [[ "$name" == mock ]]; then
         ORACLE_BUILT=1 "$repository/NSOClient/scripts/oracle-fixtures.sh" --mock "$fso_folder" | sed "s|^|[$name] |"
     else
         ORACLE_BUILT=1 TSO_GAME_DIR="$game" "$repository/NSOClient/scripts/oracle-fixtures.sh" "$fso_folder" | sed "s|^|[$name] |"
