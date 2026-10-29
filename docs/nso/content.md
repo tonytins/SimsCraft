@@ -42,6 +42,34 @@ import TSOConfig
 let installs = InstallKind.installs(in: ConfigReader(provider: EnvironmentVariablesProvider()))
 ```
 
+## Content folders and mods
+
+Beside the game, content comes from two more folders:
+
+- **FreeSO's content folder**, `FreeSOContentLocator`: a configured folder, then the
+  `FSO_CONTENT_DIR` environment variable, then `Content` beside the running executable (where
+  FreeSO keeps it), then a fallback the caller gives (the tools and the client use the copy in the
+  FreeSO snapshot). It holds FreeSO's shipped patches in `Patch`, a player's FreeSO patches in
+  `Patch/User`, and custom objects in `Objects`, so content made for FreeSO works unchanged. A
+  folder named on purpose that has neither `Patch` nor `Objects` is an error, not skipped.
+- **NewSO's user folder**, `UserFolderLocator`: a configured folder, then `NSO_USER_DIR`, then
+  the OS's usual place (`$XDG_DATA_HOME/NewSO` or `~/.local/share/NewSO` on Linux,
+  `~/Library/Application Support/NewSO` on macOS, `%APPDATA%\NewSO` on Windows). Its `Mods`
+  folder holds a player's custom objects in `Mods/Objects` and patches in `Mods/Patch`. It needn't
+  exist.
+
+`GameContent.Configuration(gameDirectory:freeSOContentDirectory:modsDirectory:)` loads them in
+order. The mods' patches count as user patches, so they replace the shipped ones for the same
+file, as FreeSO's `Patch/User` does. Custom objects load after FreeSO's, and one whose GUID is
+already registered is left out and listed in `objects.duplicates`, so a mod can't silently replace
+one of the game's objects. A custom object that can't be read is skipped and listed in
+`objects.standaloneFailures`, and the rest still load, where FreeSO would fail to start. The
+`TSOConfig` product reads both folders from settings too: `nso.user.dir` and `fso.content.dir`.
+
+The loop for making an object works end to end: SimsScript compiles it to a standalone IFF
+(`CompiledObject.objectFile`), it goes in `Mods/Objects`, and NewSO loads it, with
+`simsscript list` showing its routines.
+
 ## Loading content
 
 `GameContent` holds one install's content. It indexes every file, loads the PIFF patches, and

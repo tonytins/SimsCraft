@@ -60,12 +60,24 @@ public struct PatchRegistry: Sendable {
     ///
     /// - Throws: An error if the folder can't be listed. Individual bad files are in ``failures``.
     public init(directory: URL) throws {
+        try register(directory: directory, asUserPatches: false)
+    }
+
+    /// Loads every `.piff` and `.otf` file under another folder, after what's registered.
+    ///
+    /// With `asUserPatches`, every patch in it counts as a user patch, as those under a
+    /// `User/` folder do: NewSO's `Mods/Patch` works this way, so a player's patches replace
+    /// the shipped ones for the same file. Its tuning replacements replace earlier ones too.
+    ///
+    /// - Throws: An error if the folder can't be listed. Individual bad files are in ``failures``.
+    public mutating func register(directory: URL, asUserPatches: Bool) throws {
         for url in try DirectoryListing.regularFiles(under: directory) {
             let relativePath = DirectoryListing.relativePath(of: url, under: directory)
             switch url.pathExtension.lowercased() {
             case "piff":
                 do {
-                    try register(IFFFile(contentsOf: url), named: relativePath, isUserPatch: relativePath.contains("User/"))
+                    try register(IFFFile(contentsOf: url), named: relativePath,
+                                 isUserPatch: asUserPatches || relativePath.contains("User/"))
                 } catch {
                     failures.append(Failure(path: relativePath, message: String(describing: error)))
                 }

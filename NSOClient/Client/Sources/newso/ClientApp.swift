@@ -148,14 +148,14 @@ final class ClientApp {
             let mouse = GetMousePosition()
             DrawText(Inspection(entity).title, Int(mouse.x) + 14, Int(mouse.y) + 10, 16, Theme.text)
         }
-        momi.draw(SystemMessages.messages(of: session.vm))
+        momi.draw(session.systemMessages)
         help.draw()
         EndDrawing()
     }
 
     private var topBarState: TopBar.State {
         TopBar.State(lotName: session.lotName, speedIndex: session.speedIndex, isPaused: session.isPaused,
-                     clock: session.clockText, level: view.level, errors: session.vm.reportedErrors.count,
+                     clock: session.clockText, level: view.level, errors: session.contentProblems.count + session.vm.reportedErrors.count,
                      objects: scene.objects.count)
     }
 }

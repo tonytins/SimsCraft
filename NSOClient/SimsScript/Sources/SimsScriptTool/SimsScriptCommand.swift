@@ -25,7 +25,9 @@ extension SimsScriptCommand {
                 OBJECT is a GUID in hexadecimal (such as 0x4D4F4301) or a name: the object's file \
                 name (such as mockchair) or its catalog name. With a name several objects share, \
                 each is listed. Calls, parameters, locals, attributes, and constants are named \
-                from the object's own files, its semi-global, and the global file.
+                from the object's own files, its semi-global, and the global file. Custom objects in \
+                NewSO's mods folder ($NSO_USER_DIR/Mods/Objects, or the OS's usual NewSO folder) and \
+                FreeSO's content folder ($FSO_CONTENT_DIR) are listed too.
                 """)
 
         @Argument(help: "The object: a GUID in hexadecimal, or a name.")
@@ -44,8 +46,13 @@ extension SimsScriptCommand {
             let directory = game.map { URL(fileURLWithPath: $0, isDirectory: true) }
                 ?? InstallKind.installs(in: ProcessInfo.processInfo.environment).first { $0.kind == .game }?.directory
                 ?? nsoclient.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
-            let freeSO = nsoclient.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
-            let content = try GameContent(.init(gameDirectory: directory, freeSOContentDirectory: freeSO))
+            let snapshot = nsoclient.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
+            let content = try GameContent(.init(gameDirectory: directory,
+                                                freeSOContentDirectory: try FreeSOContentLocator(fallback: snapshot).locate(),
+                                                modsDirectory: try UserFolderLocator().modsDirectory()))
+            for failure in content.objects.standaloneFailures {
+                FileHandle.standardError.write(Data("simsscript: couldn't read \(failure.path): \(failure.reason)\n".utf8))
+            }
             let global = try content.global()
 
             let wanted = object.lowercased()

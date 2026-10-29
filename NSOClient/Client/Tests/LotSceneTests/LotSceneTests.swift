@@ -5,6 +5,7 @@ import LotScene
 import SimAntics
 import Testing
 import TSOContent
+import TSOFiles
 
 private let nsoclient = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -114,6 +115,24 @@ private func mockSession() throws -> LotSession {
 @Test(arguments: [(0.0, "0 min"), (5, "5 min"), (60, "1 h"), (1_440, "1 day"), (1_530, "1 day 1 h 30 min"), (2_880, "2 days")])
 func gameDurationsLeaveOutWhatsZero(minutes: Double, text: String) {
     #expect(RunReport.gameDuration(minutes: minutes) == text)
+}
+
+@Test func brokenOrConflictingModsBecomeSystemMessages() throws {
+    let mods = FileManager.default.temporaryDirectory.appendingPathComponent("newso-mods-\(UUID().uuidString)/Mods")
+    defer { try? FileManager.default.removeItem(at: mods.deletingLastPathComponent()) }
+    try FileManager.default.createDirectory(at: mods.appendingPathComponent("Objects"), withIntermediateDirectories: true)
+    try Data("not an IFF".utf8).write(to: mods.appendingPathComponent("Objects/broken.iff"))
+    // A copy of the mock chair: its GUID already belongs to the install's chair.
+    let chair = try FAR1Archive(contentsOf: nsoclient.appendingPathComponent("MockInstall/TSOClient/objectdata/objects/objiff.far"),
+                                variant: .b)
+    let entry = try #require(chair.entries.first { $0.fileName == "mockchair.iff" })
+    try chair.data(for: entry).write(to: mods.appendingPathComponent("Objects/copy.iff"))
+
+    let session = try LotSession(ClientOptions(installs: [], nsoclient: nsoclient, modsDirectory: mods))
+    #expect(session.contentProblems.count == 2)
+    #expect(session.contentProblems[0].hasPrefix("Couldn't read the custom object broken.iff"))
+    #expect(session.contentProblems[1].hasPrefix("Left out the custom object Mock Chair (copy.iff): its GUID 4d4f4301 belongs to"))
+    #expect(session.systemMessages.prefix(2) == session.contentProblems[...])
 }
 
 @Test func floorsAreNamedAsTheTopBarShowsThem() {

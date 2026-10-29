@@ -20,6 +20,11 @@ so it runs anywhere. Without `--lot`, the lot is the owner's house
 ([`NSOClient/Lots`](../../NSOClient/Lots/)) on a real install and the mock lot on MockInstall. Objects
 the install doesn't have, or can't load, are left out and reported, as `fso-oracle` leaves them out.
 
+It also loads FreeSO's content folder and NewSO's mods (`FSO_CONTENT_DIR` and `NSO_USER_DIR`; see
+[content.md](content.md#content-folders-and-mods)). A custom object or patch that can't be read,
+or a custom object whose GUID is taken, becomes a system message in MOMI and counts as an error in
+the top bar.
+
 ## The window
 
 The lot is drawn through raylib's 3D camera at TSO's view: looking down 30° from the horizon, at a

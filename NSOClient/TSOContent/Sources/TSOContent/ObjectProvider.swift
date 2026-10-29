@@ -56,6 +56,12 @@ public final class ObjectProvider: @unchecked Sendable {
         public var ignored: Reference
     }
 
+    /// A standalone IFF that couldn't be read, and why. It's skipped; the rest still load.
+    public struct StandaloneFailure: Sendable, Equatable {
+        public var path: String
+        public var reason: String
+    }
+
     private let files: GameFileIndex
     private let patches: PatchRegistry
     private let globals: GlobalProvider
@@ -67,17 +73,30 @@ public final class ObjectProvider: @unchecked Sendable {
     private var referencesByGUID: [UInt32: Reference] = [:]
     private var resourcesByFileName: [String: ObjectResource] = [:]
     private var _duplicates: [Duplicate] = []
+    /// Set once in the initializer.
+    private var _standaloneFailures: [StandaloneFailure] = []
+
+    /// Reads the object table and registers every object, with one folder of standalone IFFs.
+    public convenience init(files: GameFileIndex, patches: PatchRegistry, globals: GlobalProvider,
+                            standaloneDirectory: URL?, loadsSprites: Bool) throws(ContentError) {
+        try self.init(files: files, patches: patches, globals: globals,
+                      standaloneDirectories: standaloneDirectory.map { [$0] } ?? [], loadsSprites: loadsSprites)
+    }
 
     /// Reads the object table and registers every object.
     ///
     /// - Parameters:
-    ///   - standaloneDirectory: A folder of extra `*.iff` objects, searched recursively,
-    ///     or `nil` for none. FreeSO uses `Content/Objects`.
+    ///   - standaloneDirectories: Folders of extra `*.iff` objects, searched recursively, in
+    ///     order: FreeSO's `Content/Objects`, then NewSO's `Mods/Objects`. A folder that doesn't
+    ///     exist holds nothing. An IFF that doesn't read is skipped and listed in
+    ///     ``standaloneFailures``, where FreeSO would fail to start: these are files nobody
+    ///     controls. A GUID already registered keeps its first registration (``duplicates``),
+    ///     so a mod can't silently replace one of the game's objects.
     ///   - loadsSprites: Whether to load sprite IFFs from `objspf*.far`. Servers don't need them.
-    /// - Throws: An error if the object table or an archive is missing or malformed,
-    ///   or a standalone IFF doesn't parse.
+    /// - Throws: An error if the object table or an archive is missing or malformed, or a
+    ///   standalone folder exists but can't be listed.
     public init(files: GameFileIndex, patches: PatchRegistry, globals: GlobalProvider,
-                standaloneDirectory: URL?, loadsSprites: Bool) throws(ContentError) {
+                standaloneDirectories: [URL], loadsSprites: Bool) throws(ContentError) {
         self.files = files
         self.patches = patches
         self.globals = globals
@@ -100,7 +119,14 @@ public final class ObjectProvider: @unchecked Sendable {
             register(Reference(guid: entry.guid, fileName: entry.fileName, source: .archive,
                                name: entry.name, group: entry.group, subIndex: entry.subIndex))
         }
-        if let standaloneDirectory { try registerStandaloneObjects(in: standaloneDirectory) }
+        for directory in standaloneDirectories { try registerStandaloneObjects(in: directory) }
+    }
+
+    /// Standalone IFFs that couldn't be read, in the order found.
+    public var standaloneFailures: [StandaloneFailure] {
+        lock.lock()
+        defer { lock.unlock() }
+        return _standaloneFailures
     }
 
     /// GUIDs that were registered more than once, in the order found.
@@ -166,6 +192,9 @@ public final class ObjectProvider: @unchecked Sendable {
     }
 
     private func registerStandaloneObjects(in directory: URL) throws(ContentError) {
+        var isFolder: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: directory.path, isDirectory: &isFolder) else { return }
+        guard isFolder.boolValue else { throw .invalidFile(path: directory.path, reason: "not a folder") }
         let urls: [URL]
         do {
             urls = try DirectoryListing.regularFiles(under: directory)
@@ -173,8 +202,15 @@ public final class ObjectProvider: @unchecked Sendable {
             throw .invalidFile(path: directory.path, reason: String(describing: error))
         }
         for url in urls where url.pathExtension.lowercased() == "iff" {
-            let file = try Self.readIFF(at: url, path: url.path)
-            for definition in try Self.definitions(in: file, path: url.path) {
+            let definitions: [OBJD]
+            do {
+                definitions = try Self.definitions(in: try Self.readIFF(at: url, path: url.path), path: url.path)
+            } catch {
+                let reason = if case .invalidFile(_, let reason) = error { reason } else { "\(error)" }
+                _standaloneFailures.append(StandaloneFailure(path: url.path, reason: reason))
+                continue
+            }
+            for definition in definitions {
                 register(Reference(guid: definition.guid, fileName: url.path, source: .standalone,
                                    name: definition.label, group: Int16(bitPattern: definition.masterID),
                                    subIndex: definition.subIndex))

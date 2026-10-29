@@ -75,8 +75,12 @@ struct NewSO: ParsableCommand {
     }
 
     func run() throws {
-        let installs = InstallKind.installs(in: ConfigReader(provider: EnvironmentVariablesProvider()))
-        let options = ClientOptions(game: game, lot: lot, installs: installs, nsoclient: Self.nsoclient)
+        let config = ConfigReader(provider: EnvironmentVariablesProvider())
+        let installs = InstallKind.installs(in: config)
+        let snapshot = Self.nsoclient.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
+        let options = ClientOptions(game: game, lot: lot, installs: installs, nsoclient: Self.nsoclient,
+                                    freeSOContent: try FreeSOContentLocator(config: config, fallback: snapshot).locate(),
+                                    modsDirectory: try UserFolderLocator(config: config).modsDirectory())
         // A ClientError says what to fix; ArgumentParser prints it and exits with a failure.
         let session = try LotSession(options)
         let logs = headless || verbose

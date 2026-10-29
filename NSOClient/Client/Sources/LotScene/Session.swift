@@ -10,6 +10,8 @@ public struct ClientOptions: Sendable, Equatable {
     public var lot: URL
     /// FreeSO's content folder, for its patches and standalone objects; `nil` for none.
     public var freeSOContent: URL?
+    /// NewSO's mods folder, with a player's objects and patches; `nil` for none.
+    public var modsDirectory: URL?
 
     /// Chooses the install and the lot. Without `game`, the install is the first of `installs`
     /// (``InstallKind`` order: `TSO_GAME_DIR`, `TSO_CLASSIC_DIR`, `TSO_BETA_DIR`), then
@@ -21,7 +23,12 @@ public struct ClientOptions: Sendable, Equatable {
     ///     lists them.
     ///   - nsoclient: the NSOClient folder, which holds MockInstall, Lots, and (next to it)
     ///     FreeSO's content.
-    public init(game: String? = nil, lot: String? = nil, installs: [NamedInstall], nsoclient: URL) {
+    ///   - freeSOContent: FreeSO's content folder, as ``FreeSOContentLocator`` finds it, or `nil`
+    ///     for the copy in SimsCraft's FreeSO snapshot. MockInstall gets none either way:
+    ///     FreeSO's patches target real installs.
+    ///   - modsDirectory: NewSO's mods folder (``UserFolderLocator/modsDirectory()``), or `nil`.
+    public init(game: String? = nil, lot: String? = nil, installs: [NamedInstall], nsoclient: URL,
+                freeSOContent: URL? = nil, modsDirectory: URL? = nil) {
         let mockInstall = nsoclient.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
         let chosen = game.map { URL(fileURLWithPath: $0, isDirectory: true) } ?? installs.first?.directory
         let usesMock = chosen == nil
@@ -29,8 +36,9 @@ public struct ClientOptions: Sendable, Equatable {
         self.lot = lot.map { URL(fileURLWithPath: $0) }
             ?? nsoclient.appendingPathComponent(usesMock ? "MockInstall/Lots/mock-lot.xml" : "Lots/tonys-house.xml")
         // FreeSO's patches target real installs; MockInstall is made up and has none.
-        freeSOContent = usesMock ? nil
-            : nsoclient.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
+        self.freeSOContent = usesMock ? nil
+            : freeSOContent ?? nsoclient.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
+        self.modsDirectory = modsDirectory
     }
 }
 
@@ -64,6 +72,8 @@ public final class LotSession {
     public let lotName: String
     /// Objects the lot names that the install doesn't have, left out of it.
     public let leftOut: [VM.LeftOut]
+    /// Problems loading the content, such as a broken mod; see ``SystemMessages/contentProblems(of:)``.
+    public let contentProblems: [String]
     /// Whether time is stopped.
     public var isPaused = false
     /// The index into ``speeds``.
@@ -75,10 +85,9 @@ public final class LotSession {
         let content: GameContent
         do {
             // The client draws objects, so it loads their sprite files too.
-            let configuration = options.freeSOContent.map {
-                GameContent.Configuration(gameDirectory: options.gameDirectory, freeSOContentDirectory: $0, loadsSprites: true)
-            } ?? GameContent.Configuration(gameDirectory: options.gameDirectory, loadsSprites: true)
-            content = try GameContent(configuration)
+            content = try GameContent(.init(gameDirectory: options.gameDirectory, freeSOContentDirectory: options.freeSOContent,
+                                            modsDirectory: options.modsDirectory, loadsSprites: true))
+            contentProblems = SystemMessages.contentProblems(of: content)
         } catch {
             throw .content("\(options.gameDirectory.path): \(error)")
         }
@@ -130,6 +139,11 @@ public final class LotSession {
         default: "th"
         }
         return "\(level)\(suffix) Floor"
+    }
+
+    /// Every system message so far: the content's problems, then each error the VM reported.
+    public var systemMessages: [String] {
+        contentProblems + SystemMessages.messages(of: vm)
     }
 
     /// The game time as `h:mm`.

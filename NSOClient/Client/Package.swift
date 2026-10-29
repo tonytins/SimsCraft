@@ -43,6 +43,7 @@ let package = Package(
             "LotScene",
             .product(name: "SimAntics", package: "SimAntics"),
             .product(name: "TSOContent", package: "TSOContent"),
+            .product(name: "TSOFiles", package: "TSOFiles"),
         ]),
     ],
     swiftLanguageModes: [.v6]
