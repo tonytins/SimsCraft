@@ -22,7 +22,9 @@ It follows the layout of a real install, with only what the content system needs
 | `packingslips/catalog.xml` | Their catalog entries (made-up prices; the parts aren't for sale) |
 | `objectdata/objects/objiff.far` | `mockchair.iff`, `mocktable.iff`, `mocklamp.iff`, `mockregister.iff`, and `mocksim.iff` |
 | `objectdata/objects/objspf.far` | `mockchair.spf`: made-up sprites for the `sprites` comparison (a palette, `SPR2` versions 1000 and 1001 using every run command, `SPR#` in both byte orders, and `DGRP` versions 20000, 20001, and 20004). DGRP 0 is the chairs' own (base graphic 0 plus graphic 0), with near images for north and east, so the client draws them. Two show NewSO's fixes: `SPR#` #201 is big-endian version 1001, which FreeSO misreads (DIFF-26), and `SPR2` #102 has alpha 40, which FreeSO wraps (DIFF-27) |
-| `objectdata/globals/global.iff` | One global routine (256) that returns true |
+| `objectdata/globals/global.iff` | One global routine (256) that returns true, and the Sim's walk (`STR#` 150) and swim (`STR#` 158) animation names, made up |
+| `tuning.dat` | The global tuning a Sim's motives read, made up: `lotmotives` (a weight of 1 for every lot category and motive) and `simmotives` (small decay rates, 16 waking hours) |
+| `avatardata/skeletons/skeletons.dat` | A FAR3 holding `adult.skel`, a made-up skeleton of one bone (`ROOT`), laid out as 1.1097.1.0's is |
 | `objectdata/globals/mockglobals.iff` | The objects' semi-global: one routine (8192) that returns true |
 
 | GUID | Object | Notes |
@@ -33,7 +35,7 @@ It follows the layout of a real install, with only what the content system needs
 | `0x4D4F4304` | Mock Table (right) | Its part one tile along x |
 | `0x4D4F4305` | Mock Lamp | A one-tile object whose main runs a routine by name |
 | `0x4D4F4306` | Mock Register | A one-tile object whose main moves money |
-| `0x4D4F4307` | Mock Sim | A one-tile person (object type `person`) whose main counts runs in attribute 0 |
+| `0x4D4F4307` | Mock Sim | A one-tile person (object type `person`) whose main counts runs in attribute 0. Its body strings (`STR#` 200, `BodyStringID`) make it an adult named Mock Sim |
 
 The GUIDs spell `MOC` followed by a number, so they can't be mistaken for a real object's.
 
@@ -51,6 +53,12 @@ to be paid 100 by the game, pay 30 back, and fail to pay 1,000, each waiting a t
 answer, and puts its cash in TempXL 0, which it copies to attribute 2. Objects on a blueprint lot
 all have persist ID 0, which FreeSO resolves to the lowest-numbered object, so on the mock lot
 the money moves in and out of object 1, and alone on a lot it's the register's own.
+
+The Sim has what FreeSO needs to create one, all made up: its body strings (type, outfits left
+empty for FreeSO's default, name, gender, age, and skin tone), an adult skeleton in a FAR3 archive,
+the motive tuning in `tuning.dat`, and the global walk and swim animation tables. FreeSO creates
+and runs it; NewSO doesn't run Sims yet, so it reports the Sim's setup as unsupported, and the
+oracles count it as not measured until Queen Margaret's fourth pass.
 
 `Lots/mock-lot.xml` is a made-up lot for it: a closed 3 by 3 room with floor, a chair out of
 the world, a chair in the room, two tables outside (one facing south, with a group ID), the lamp in the

@@ -207,7 +207,12 @@ public final class VM {
     /// (``Entity/initialize()``, with the main parameter and stack object given), then the group
     /// is placed (``place(_:at:facing:flags:)``). If it doesn't fit, it stays out of the world.
     ///
-    /// - Throws: ``SimAnticsError/unsupported(_:)`` for a Sim; any error an entry point throws.
+    /// A Sim (an object of type person) is created like any object, but FreeSO's Sim setup
+    /// (`VMAvatar`: body strings, outfits, the random name pick, motives) isn't ported yet, so each
+    /// one reports ``SimAnticsError/unsupported(_:)`` in ``reportedErrors`` when it's created.
+    /// Comparisons with FreeSO then count it as not measured, rather than agreeing by accident.
+    ///
+    /// - Throws: Any error an entry point throws.
     @discardableResult
     public func createObject(guid: UInt32, at position: LotPosition = .outOfWorld, facing direction: Direction = .north,
                              mainStackObjectID: Int16 = 0, mainParameter: Int16 = 0) throws(SimAnticsError) -> MultitileGroup? {
@@ -242,6 +247,7 @@ public final class VM {
             entity.mainStackObjectID = mainStackObjectID
             entity.mainParameter = mainParameter
             entity.isAvatar = isAvatar
+            if isAvatar { report(.unsupported(Self.simSetupGap), by: entity) }
         }
         for entity in group.objects { try entity.initialize() }
         // FreeSO ignores whether this worked; an object that didn't fit stays out of the world.
@@ -408,6 +414,9 @@ public final class VM {
         }
         answers = later
     }
+
+    /// What a Sim's creation reports until Sims are ported (Queen Margaret's fourth pass).
+    static let simSetupGap = "Sim setup (FreeSO's VMAvatar: body strings, outfits, name, and motives)"
 
     func report(_ error: SimAnticsError, by entity: Entity) {
         reportedErrors.append(ReportedError(objectID: entity.objectID, tick: scheduler.currentTick, error: error))

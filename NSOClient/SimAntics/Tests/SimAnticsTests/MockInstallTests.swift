@@ -25,6 +25,18 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
         #expect(entity.objectData[42] == 3 && entity.objectData[4] == 1)
     }
 
+    /// FreeSO's Sim setup isn't ported, so creating a Sim says so: comparisons then count it as
+    /// not measured. Other objects report nothing.
+    @Test func creatingASimReportsItsSetupAsNotPorted() throws {
+        let vm = try vm()
+        let chair = try #require(try vm.createObject(guid: mockChairGUID)?.objects.first)
+        #expect(vm.reportedErrors.isEmpty && !chair.isAvatar)
+        let sim = try #require(try vm.createObject(guid: mockSimGUID)?.objects.first)
+        #expect(sim.isAvatar)
+        #expect(vm.reportedErrors == [VM.ReportedError(objectID: sim.objectID, tick: vm.scheduler.currentTick,
+                                                       error: .unsupported(VM.simSetupGap))])
+    }
+
     @Test func createsTheTableAsAGroupOfItsParts() throws {
         let vm = try vm()
         let table = try #require(try vm.createObject(guid: mockTableGUID))

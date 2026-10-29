@@ -86,7 +86,13 @@ In order:
    - [ ] A. Sims in the experiments: `fso-oracle` puts Sims on a lot through FreeSO's sandbox join,
      the digest's version 1 adds Sims' state (person data, motives, animation, the queue),
      `run-primitive` requests can name Sims, FreeSO with an idle Sim is shown repeatable, and the
-     mock install gets a made-up person object and appearance.
+     mock install gets a made-up person object and appearance. Started 2026-10-29: the mock Sim has
+     what FreeSO needs to create it (body strings, a skeleton, motive tuning, animation tables), and
+     NewSO reports a Sim's setup as unsupported until phase B. Found on the way: FreeSO's
+     `VMAvatar.SetAvatarType` reads missing body strings after defaulting to adult, so a Sim without
+     them always crashes FreeSO (a fix for NewSO); and FreeSO can't create a Sim on the 2002 copy
+     or the beta, whose `adult.skel` is a loose file rather than in `skeletons.dat` (NewSO could
+     read both).
    - [ ] B. The Sim entity: avatars from the person template, person data, motives and their decay,
      running every tick; Set Motive Deltas, Test Sim Interacting With, and Look Towards.
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
@@ -231,6 +237,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-29 | minor | The mock Sim, a first step of Queen Margaret's fourth pass: MockInstall gains what FreeSO needs to create a Sim (body strings, a one-bone skeleton in `skeletons.dat`, motive tuning in `tuning.dat`, walk and swim tables), all made up, so FreeSO creates and runs it where it crashed before. NewSO reports a Sim's setup as unsupported, so the mock review counts the Sim as not measured rather than agreeing by accident. |
 | 2026-10-29 | minor | Content folders, the scaffold for custom content (CNT-11): TSOContent finds FreeSO's content folder and NewSO's user folder as `GameLocator` finds the game, and `GameContent` loads a player's mods from `Mods/Objects` and `Mods/Patch` after FreeSO's, the mods' patches winning as user patches. A broken custom object is skipped and reported (DIFF-28), and one whose GUID is taken is left out; `newso` shows both in MOMI. `newso` and `simsscript` load mods; the oracles keep to FreeSO's content. Custom content is the goal, as the owner set it. |
 | 2026-10-29 | patch | `NSOClient/Interface` is renamed `NSOClient/NSOInterface`, as the owner asked: the package, its library and module, its folders, and the client's imports; `interface-demo` keeps its name. |
 | 2026-10-29 | patch | The docs catch up with the client: a new `docs/nso/client.md` for `newso` (the window, its interface, screenshots, headless and verbose runs, and TSO's time scale); the NSOClient overview and the docs index no longer say NSOClient has no interface, and list the client, Interface, SimsScript, and the oracles; the results README names the review's Production, Classic, Beta, and Mock sections. |
