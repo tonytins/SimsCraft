@@ -4,56 +4,79 @@ import LotScene
 import Raylib
 import SimAntics
 
-/// Draws a ``LotScene`` through an orthographic 3D camera (roadmap decision 7), and works out
-/// which object is under the pointer.
+/// Draws a ``LotScene`` the way TSO projects it (roadmap decision 7): an orthographic 3D camera
+/// looking down at 30° on a diagonal, which is exactly TSO's 2:1 view, so the lot's boxes and
+/// the objects' sprites line up. Works out which object is under the pointer, too.
 final class LotView {
-    /// Quarter turns of the view, as TSO's four rotations.
+    /// The zoom steps: TSO's three sprite sizes, then two farther views of the far sprites, scaled
+    /// down, for seeing a whole lot.
+    static let zoomSteps: [(zoom: SpriteZoom, scale: Float)] = [
+        (.near, 1), (.medium, 1), (.far, 1), (.far, 0.5), (.far, 0.25),
+    ]
+
+    /// Quarter turns of the view.
     private(set) var rotation = 0
-    /// The world height the screen shows; smaller is closer.
-    private(set) var span: Float = 40
+    /// The index into ``zoomSteps``.
+    private(set) var zoomStep = 1
     /// The floor the player is looking at; floors above it are hidden.
     var level = 1
     /// Whether walls are cut down so the rooms inside show.
     var wallsCut = true
     private var target = SIMD3<Float>(0, 0, 0)
 
-    static let leastSpan: Float = 6
-    static let mostSpan: Float = 160
+    /// The sprite size drawn at.
+    var spriteZoom: SpriteZoom { Self.zoomSteps[zoomStep].zoom }
+    /// How much the sprites are scaled from their own size.
+    var spriteScale: Float { Self.zoomSteps[zoomStep].scale }
+    /// Screen pixels per world unit.
+    var pixelsPerUnit: Float { spriteZoom.pixelsPerUnit * spriteScale }
+    /// FreeSO's `WorldRotation` for this view: turning the view one way turns the world the other.
+    var worldRotation: UInt32 { UInt32((4 - rotation) % 4) }
 
     func center(on point: SIMD3<Float>) {
         target = point
-    }
-
-    /// Zooms so a lot of this size fills most of the screen.
-    func fit(width: Int, height: Int) {
-        span = min(max(Float(max(width, height)) * 0.65, Self.leastSpan), Self.mostSpan)
     }
 
     func rotate(by quarterTurns: Int) {
         rotation = ((rotation + quarterTurns) % 4 + 4) % 4
     }
 
+    func setZoomStep(_ step: Int) {
+        zoomStep = min(max(step, 0), Self.zoomSteps.count - 1)
+    }
+
+    /// Steps the zoom in (positive) or out (negative), one step a wheel notch.
     func zoom(by wheel: Float) {
         guard wheel != 0 else { return }
-        span = min(max(span * (wheel > 0 ? 0.85 : 1 / 0.85), Self.leastSpan), Self.mostSpan)
+        zoomStep = min(max(zoomStep + (wheel > 0 ? -1 : 1), 0), Self.zoomSteps.count - 1)
+    }
+
+    /// Picks the closest zoom at which a lot of this size fits on a screen this tall.
+    func fit(width: Int, height: Int, screenHeight: Int) {
+        // A lot's diagonal runs across the screen; its depth takes about half its length in height.
+        let needed = Float(max(width, height)) * 0.75
+        zoomStep = Self.zoomSteps.firstIndex { Float(screenHeight) / ($0.zoom.pixelsPerUnit * $0.scale) >= needed }
+            ?? Self.zoomSteps.count - 1
     }
 
     /// Moves the view by a drag of the pointer, in screen pixels.
-    func pan(by pixels: Vector2, screenHeight: Int) {
-        guard screenHeight > 0 else { return }
-        let unitsPerPixel = span / Float(screenHeight)
+    func pan(by pixels: Vector2) {
+        let unitsPerPixel = 1 / pixelsPerUnit
         let (right, forward) = groundAxes()
         target -= right * pixels.x * unitsPerPixel
-        // Screen y moves the view along the ground, stretched by the camera's tilt.
-        target += forward * pixels.y * unitsPerPixel * 1.6
+        // A pixel down the screen is two along the ground, at 30° down.
+        target += forward * pixels.y * unitsPerPixel * 2
     }
 
-    var camera: Camera3D {
+    /// The camera for a screen this tall.
+    func camera(screenHeight: Int) -> Camera3D {
         let angle = (Float(rotation) * 90 + 45) * .pi / 180
-        let offset = SIMD3<Float>(cos(angle) * 60, 50, sin(angle) * 60)
+        let distance: Float = 200
+        // 30° down, as TSO's tiles are twice as wide as they're tall.
+        let offset = SIMD3<Float>(cos(angle) * distance, distance * tan(.pi / 6), sin(angle) * distance)
         let eye = target + offset
-        return Camera3D(position: Vector3(x: eye.x, y: eye.y, z: eye.z), target: vector(target),
-                        up: Vector3(x: 0, y: 1, z: 0), fovy: span,
+        return Camera3D(position: vector(eye), target: vector(target), up: Vector3(x: 0, y: 1, z: 0),
+                        fovy: Float(max(screenHeight, 1)) / pixelsPerUnit,
                         projection: Int32(truncatingIfNeeded: CameraProjection.orthographic.rawValue))
     }
 
@@ -67,17 +90,47 @@ final class LotView {
 
     // MARK: Drawing
 
-    func draw(_ scene: LotScene, selected: Int16?, hovered: Int16?) {
+    /// The lot's floors and walls, and the boxes of objects without sprites.
+    func draw(_ scene: LotScene, camera: Camera3D, objectsWithSprites: Set<Int16>, selected: Int16?, hovered: Int16?) {
         BeginMode3D(camera)
         for box in scene.architecture where box.level <= level {
             draw(box, color: color(of: box), outline: false)
         }
         for box in scene.objects where box.level <= level {
-            guard case .object(let id) = box.kind else { continue }
+            guard case .object(let id) = box.kind, !objectsWithSprites.contains(id) else { continue }
             let color = id == selected ? Theme.accent : id == hovered ? Color(r: 150, g: 200, b: 255, a: 255) : objectColor(id)
             draw(box, color: color, outline: true)
         }
         EndMode3D()
+    }
+
+    /// The objects' sprites, flat on the screen, objects farthest from the viewer first. Each
+    /// sprite's top left is its anchor's place on screen plus its pixel offset, scaled for zoom.
+    func drawSprites(_ sprites: [ObjectSprite], camera: Camera3D, textures: SpriteTextures, order: inout [Int],
+                     selected: Int16?, hovered: Int16?) {
+        let angle = (Float(rotation) * 90 + 45) * .pi / 180
+        let towardViewer = SIMD3<Float>(cos(angle), 0, sin(angle))
+        order.removeAll(keepingCapacity: true)
+        order.append(contentsOf: sprites.indices)
+        // Back to front by each object's anchor; an object's sprites keep their drawing group order.
+        order.sort { a, b in
+            let depthA = (sprites[a].objectAnchor * towardViewer).sum() + sprites[a].objectAnchor.y
+            let depthB = (sprites[b].objectAnchor * towardViewer).sum() + sprites[b].objectAnchor.y
+            return depthA != depthB ? depthA < depthB : a < b
+        }
+        let scale = spriteScale
+        for index in order {
+            let sprite = sprites[index]
+            guard sprite.level <= level, let texture = textures.texture(for: sprite.key) else { continue }
+            let anchor = GetWorldToScreen(vector(sprite.anchor), camera)
+            let width = Float(sprite.width), height = Float(sprite.height)
+            let source = Rectangle(x: 0, y: 0, width: sprite.flip ? -width : width, height: height)
+            let destination = Rectangle(x: anchor.x + sprite.pixelOffset.x * scale, y: anchor.y + sprite.pixelOffset.y * scale,
+                                        width: width * scale, height: height * scale)
+            let tint = sprite.objectID == selected ? Color(r: 255, g: 220, b: 140, a: 255)
+                : sprite.objectID == hovered ? Color(r: 200, g: 225, b: 255, a: 255) : Color.white
+            DrawTexturePro(texture, source, destination, .zero, 0, tint)
+        }
     }
 
     private func draw(_ box: LotScene.Box, color: Color, outline: Bool) {
@@ -136,7 +189,7 @@ final class LotView {
     // MARK: Picking
 
     /// The object under a point on the screen, the nearest when boxes overlap.
-    func object(at point: Vector2, in scene: LotScene) -> Int16? {
+    func object(at point: Vector2, in scene: LotScene, camera: Camera3D) -> Int16? {
         let ray = GetScreenToWorldRay(point, camera)
         var nearest: (id: Int16, distance: Float)?
         for box in scene.objects where box.level <= level {
@@ -153,5 +206,44 @@ final class LotView {
 
     private func vector(_ value: SIMD3<Float>) -> Vector3 {
         Vector3(x: value.x, y: value.y, z: value.z)
+    }
+}
+
+/// The GPU textures of decoded sprite frames, made the first time each is drawn and kept until
+/// the window closes.
+final class SpriteTextures {
+    private let library: SpriteLibrary
+    private var textures: [SpriteKey: Texture2D] = [:]
+    private var missing: Set<SpriteKey> = []
+
+    init(library: SpriteLibrary) {
+        self.library = library
+    }
+
+    func texture(for key: SpriteKey) -> Texture2D? {
+        if let texture = textures[key] { return texture }
+        guard !missing.contains(key), let image = library.image(for: key), image.width > 0, image.height > 0,
+              var rgba = image.rgba else {
+            missing.insert(key)
+            return nil
+        }
+        let texture = rgba.withUnsafeMutableBytes { bytes in
+            LoadTextureFromImage(Image(data: bytes.baseAddress, width: Int32(clamping: image.width), height: Int32(clamping: image.height),
+                                       mipmaps: 1, format: Int32(truncatingIfNeeded: PixelFormat.uncompressedR8g8b8a8.rawValue)))
+        }
+        guard IsTextureValid(texture) else {
+            missing.insert(key)
+            return nil
+        }
+        // Pixel art stays sharp, at TSO's own sizes and scaled down.
+        SetTextureFilter(texture, .point)
+        textures[key] = texture
+        return texture
+    }
+
+    /// Releases every texture; call before the window closes.
+    func unloadAll() {
+        for texture in textures.values { UnloadTexture(texture) }
+        textures.removeAll()
     }
 }

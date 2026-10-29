@@ -105,6 +105,15 @@ public struct ObjectResource: IFFResource {
         return try sprites?.chunk(type, id: id)
     }
 
+    /// The drawing group with an ID and the file it's in, which its sprites and palettes come
+    /// from (FreeSO's `Get<DGRP>`, then the chunk's `ChunkParent`): the object's IFF, else its
+    /// sprite IFF. `nil` when neither has it.
+    public func drawGroup(id: UInt16) throws(IFFChunkError) -> (group: DGRP, file: IFFFile)? {
+        if let group = try mainFile.chunk(DGRP.self, id: id) { return (group, mainFile) }
+        if let sprites, let group = try sprites.chunk(DGRP.self, id: id) { return (group, sprites) }
+        return nil
+    }
+
     /// Sprite chunks from the sprite IFF when one is loaded; everything else from the object's IFF.
     public func chunks<Chunk: IFFChunk>(_ type: Chunk.Type) throws(IFFChunkError) -> [Chunk] {
         if let sprites, Self.spriteChunkTypes.contains(Chunk.typeCode) { return try sprites.chunks(type) }

@@ -145,6 +145,8 @@ public enum SpriteError: Error, Equatable, Sendable {
     case missingLayer(String)
     /// A pixel or the transparent color names an index past the palette's end.
     case paletteIndexOutOfRange(Int)
+    /// The sprite or palette chunk the frame needs can't be read.
+    case unreadableChunk(String)
 }
 
 enum SpriteDecoder {

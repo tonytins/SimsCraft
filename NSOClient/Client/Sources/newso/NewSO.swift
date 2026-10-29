@@ -26,7 +26,19 @@ struct NewSO: ParsableCommand {
     @Option(help: "Ticks to run before the screenshot, 30 a second (default: 300).")
     var ticks: Int?
 
+    @Option(help: "The zoom to start at, 1 (closest, TSO's near) to 5 (default: the one that fits the lot).")
+    var zoom: Int?
+
+    @Option(help: "The tile to center on, as x,y (default: the lot's middle).")
+    var focus: String?
+
+    @Option(help: "Quarter turns of the view to start with, 0 to 3.")
+    var rotation = 0
+
     func validate() throws {
+        if let zoom, !(1...5).contains(zoom) { throw ValidationError("--zoom takes 1 to 5") }
+        guard (0...3).contains(rotation) else { throw ValidationError("--rotation takes 0 to 3") }
+        if let focus, focusTile(focus) == nil { throw ValidationError("--focus takes a tile as x,y, such as 32,30") }
         guard let ticks else { return }
         guard screenshot != nil else { throw ValidationError("--ticks only goes with --screenshot") }
         guard ticks >= 0 else { throw ValidationError("--ticks can't be negative") }
@@ -42,7 +54,8 @@ struct NewSO: ParsableCommand {
             FileHandle.standardError.write(Data("newso: left out object 0x\(guid): \(missing.reason)\n".utf8))
         }
 
-        let app = ClientApp(session: session, hidden: screenshot != nil)
+        let app = ClientApp(session: session, hidden: screenshot != nil, zoomStep: zoom.map { $0 - 1 }, focus: focus.flatMap(focusTile),
+                            rotation: rotation)
         if let screenshot {
             guard app.saveScreenshot(to: screenshot, after: ticks ?? 300) else {
                 throw Failure(description: "couldn't save the screenshot to \(screenshot)")
@@ -50,6 +63,12 @@ struct NewSO: ParsableCommand {
         } else {
             app.run()
         }
+    }
+
+    private func focusTile(_ text: String) -> SIMD2<Float>? {
+        let parts = text.split(separator: ",").compactMap { Float($0.trimmingCharacters(in: .whitespaces)) }
+        guard parts.count == 2, parts.allSatisfy(\.isFinite) else { return nil }
+        return SIMD2(parts[0], parts[1])
     }
 
     /// The NSOClient folder, which holds MockInstall and Lots.

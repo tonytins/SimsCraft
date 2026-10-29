@@ -9,12 +9,20 @@ final class ClientApp {
     private var scene = LotScene()
     private let view = LotView()
     private let inspector = Inspector()
+    private let library = SpriteLibrary()
+    private let textures: SpriteTextures
+    // Kept between frames, so drawing doesn't allocate.
+    private var sprites: [ObjectSprite] = []
+    private var drawOrder: [Int] = []
+    private var objectsWithSprites: Set<Int16> = []
     private var hovered: Int16?
     private var lastMinute: Int32
 
-    /// Opens the window, which is hidden when the client only takes a screenshot.
-    init(session: LotSession, hidden: Bool) {
+    /// Opens the window, which is hidden when the client only takes a screenshot, at a zoom
+    /// step and centered on a tile when they're given.
+    init(session: LotSession, hidden: Bool, zoomStep: Int? = nil, focus: SIMD2<Float>? = nil, rotation: Int = 0) {
         self.session = session
+        textures = SpriteTextures(library: library)
         lastMinute = session.vm.clock.minutes
         SetTraceLogLevel(.warning)
         SetConfigFlags(hidden ? [.windowHidden] : [.windowResizable, .vsyncHint, .msaa4xHint])
@@ -25,7 +33,11 @@ final class ClientApp {
 
         rebuildScene()
         view.center(on: scene.center)
-        view.fit(width: scene.lotWidth, height: scene.lotHeight)
+        view.fit(width: scene.lotWidth, height: scene.lotHeight, screenHeight: Int(GetScreenHeight()))
+        if let zoomStep { view.setZoomStep(zoomStep) }
+        if let focus { view.center(on: SIMD3(focus.x + 0.5, 0, focus.y + 0.5)) }
+        view.rotate(by: rotation)
+        rebuildSprites()
     }
 
     /// Runs until the window is closed.
@@ -35,6 +47,7 @@ final class ClientApp {
             advance()
             draw()
         }
+        textures.unloadAll()
         CloseWindow()
     }
 
@@ -47,6 +60,7 @@ final class ClientApp {
         let image = LoadImageFromScreen()
         let saved = ExportImage(image, path)
         UnloadImage(image)
+        textures.unloadAll()
         CloseWindow()
         return saved
     }
@@ -54,6 +68,14 @@ final class ClientApp {
     private func rebuildScene() {
         scene.rebuildArchitecture(of: session.vm)
         scene.rebuildObjects(of: session.vm)
+        rebuildSprites()
+    }
+
+    private func rebuildSprites() {
+        LotScene.objectSprites(of: session.vm, zoom: view.spriteZoom, worldRotation: view.worldRotation,
+                               library: library, into: &sprites)
+        objectsWithSprites.removeAll(keepingCapacity: true)
+        for sprite in sprites { objectsWithSprites.insert(sprite.objectID) }
     }
 
     // MARK: Frame
@@ -73,8 +95,8 @@ final class ClientApp {
         let mouse = GetMousePosition()
         let overInspector = inspector.contains(mouse)
         if !overInspector { view.zoom(by: GetMouseWheelMove()) }
-        if IsMouseButtonDown(.right) { view.pan(by: GetMouseDelta(), screenHeight: Int(GetScreenHeight())) }
-        hovered = overInspector ? nil : view.object(at: mouse, in: scene)
+        if IsMouseButtonDown(.right) { view.pan(by: GetMouseDelta()) }
+        hovered = overInspector ? nil : view.object(at: mouse, in: scene, camera: view.camera(screenHeight: Int(GetScreenHeight())))
         // The inspector takes the click when it wants it; otherwise a click picks what's under the pointer.
         if !inspector.update(), IsMouseButtonPressed(.left), !overInspector {
             inspector.selected = hovered
@@ -90,12 +112,15 @@ final class ClientApp {
             scene.rebuildArchitecture(of: session.vm)
         }
         scene.rebuildObjects(of: session.vm)
+        rebuildSprites()
     }
 
     private func draw() {
+        let camera = view.camera(screenHeight: Int(GetScreenHeight()))
         BeginDrawing()
         ClearBackground(Color(r: 34, g: 44, b: 58, a: 255))
-        view.draw(scene, selected: inspector.selected, hovered: hovered)
+        view.draw(scene, camera: camera, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
+        view.drawSprites(sprites, camera: camera, textures: textures, order: &drawOrder, selected: inspector.selected, hovered: hovered)
         drawStatusBar()
         drawHelp()
         if let id = inspector.selected, let entity = session.vm.entity(id: id) {

@@ -71,9 +71,10 @@ public final class LotSession {
     public init(_ options: ClientOptions) throws(ClientError) {
         let content: GameContent
         do {
+            // The client draws objects, so it loads their sprite files too.
             let configuration = options.freeSOContent.map {
-                GameContent.Configuration(gameDirectory: options.gameDirectory, freeSOContentDirectory: $0)
-            } ?? GameContent.Configuration(gameDirectory: options.gameDirectory)
+                GameContent.Configuration(gameDirectory: options.gameDirectory, freeSOContentDirectory: $0, loadsSprites: true)
+            } ?? GameContent.Configuration(gameDirectory: options.gameDirectory, loadsSprites: true)
             content = try GameContent(configuration)
         } catch {
             throw .content("\(options.gameDirectory.path): \(error)")
