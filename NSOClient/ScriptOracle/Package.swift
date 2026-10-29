@@ -4,6 +4,8 @@ import PackageDescription
 
 let package = Package(
     name: "ScriptOracle",
+    // A tool, so it may require a newer macOS than the libraries: swift-configuration needs 15.
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "sso-oracle", targets: ["ScriptOracle"]),
         .library(name: "ScriptOracleCore", targets: ["ScriptOracleCore"]),

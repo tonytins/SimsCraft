@@ -4,6 +4,8 @@ import PackageDescription
 
 let package = Package(
     name: "NSOOracle",
+    // A tool, so it may require a newer macOS than the libraries: swift-configuration needs 15.
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "nso-oracle", targets: ["NSOOracle"]),
     ],
