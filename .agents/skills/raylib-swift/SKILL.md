@@ -131,7 +131,14 @@ is in `docs/fso/rendering.md`.
   into world depth the way FreeSO's `vsZSprite` does (`tso.content/ContentSrc/Effects/2DWorldBatch.fx`):
   from the draw group's `ObjectOffset` (`tso.files/formats/iff/chunks/DGRP.cs`), in a shader
   that writes the fragment's depth. Without it, a quad gets one depth, and neighboring
-  sprites seam.
+  sprites seam. `newso` does this in `SpriteDepth`: sprites stay flat on the screen, drawn
+  after `EndMode3D` with the depth test on, and each pixel's depth runs from its tile's far
+  corner toward the viewer (`LotScene.depthLine`), projected with the 3D pass's own matrices.
+- **Floors sit just behind the sprites on them.** TSO's depth art puts the feet of some
+  objects a little behind the floor they stand on. FreeSO draws its 3D floors and terrain a
+  little back and down for this (`TerrainComponent.Draw`), and `newso` does the same
+  (`SpriteZoom.floorBias`). Without it, table feet and chair legs are cut off. Walls get no
+  bias, so a cut-down wall in front of an object correctly hides its base.
 - **Pre-composite per state and direction.** Build an object's textures for every graphic
   state and direction when it's loaded, so a state change never stalls a frame. Which
   states an object cycles through comes from its BHAVs, which the VM runs.

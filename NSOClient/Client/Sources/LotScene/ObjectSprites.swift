@@ -16,6 +16,29 @@ public enum SpriteZoom: UInt32, Sendable, CaseIterable {
         case .near: Float(128 * 128 / 2.0).squareRoot()
         }
     }
+
+    /// How far floors and the ground are moved from where they are, in tiles, so sprites standing
+    /// on them aren't cut off: TSO's depth art puts the bottom of some sprites, such as a stand
+    /// drawn over the next tile, a little behind the floor it's drawn on.
+    ///
+    /// Ports update-46's `TerrainComponent.Draw`, which draws its 3D floors and terrain a quarter
+    /// world unit farther from the viewer (`View * CreateTranslation(0, 0, -0.25)`), and lower by
+    /// 3, 5, or 7 × 20/522 world units at near, medium, and far, more at a smaller `scale`.
+    /// FreeSO's walls are sprites and aren't moved, so NewSO's walls aren't either.
+    ///
+    /// - Parameter towardViewer: The unit direction from the view's target to the camera.
+    public func floorBias(scale: Float, towardViewer: SIMD3<Float>) -> SIMD3<Float> {
+        let steps: Float = switch self {
+        case .near: 3
+        case .medium: 5
+        case .far: 7
+        }
+        let lower = steps * (20 / 522) / (scale < 1 ? scale : 1)
+        return (-0.25 * towardViewer - SIMD3(0, lower, 0)) / Self.worldUnitsPerTile
+    }
+
+    /// FreeSO's `WorldSpace.WorldUnitsPerTile`.
+    static let worldUnitsPerTile: Float = 3
 }
 
 /// One sprite to draw for an object, placed as FreeSO's `DGRPRenderer` places it.
@@ -42,6 +65,13 @@ public struct ObjectSprite: Sendable {
     public var height: Int
     /// Drawn mirrored left to right.
     public var flip: Bool
+    /// Where the sprite's depth starts and ends in the world (roadmap decision 7). The frame's
+    /// stored depth places each pixel on the line from ``back`` toward ``front``: a pixel of
+    /// depth `d` sits `(1 − d) / 0.4` of the way along it, as FreeSO's `2DWorldBatch` effect
+    /// (`vsZSprite`, `depthCalc2`) places it, so overlapping sprites, and walls and floors drawn
+    /// in 3D, cover each other pixel by pixel. See ``LotScene/depthLine(corner:worldRotation:)``.
+    public var back: SIMD3<Float>
+    public var front: SIMD3<Float>
 }
 
 /// A decoded frame's identity: the object resource, the file, and the sprite's place in it.
@@ -128,14 +158,33 @@ extension LotScene {
                 // The object offset is in sixteenths of a tile across and fifths up, turned with the object.
                 let offset = sprite.objectOffset * SIMD3(1.0 / 16, 1.0 / 16, 1.0 / 5)
                 let turned = SIMD2(offset.x * cos(turn) - offset.y * sin(turn), offset.x * sin(turn) + offset.y * cos(turn))
+                let anchor = base + SIMD3(turned.x, offset.z, turned.y)
+                // FreeSO's world position is the tile's corner, not the centre the anchor adds.
+                let (back, front) = Self.depthLine(corner: anchor - SIMD3(0.5, 0, 0.5), worldRotation: worldRotation)
                 sprites.append(ObjectSprite(
-                    key: key, objectID: entity.objectID, objectAnchor: base, level: level,
-                    anchor: base + SIMD3(turned.x, offset.z, turned.y),
+                    key: key, objectID: entity.objectID, objectAnchor: base, level: level, anchor: anchor,
                     pixelOffset: SIMD2(Float(sprite.spriteOffset.x), Float(sprite.spriteOffset.y) - Float(frame.height)),
-                    width: frame.width, height: frame.height, flip: sprite.flags.contains(.flip)
+                    width: frame.width, height: frame.height, flip: sprite.flags.contains(.flip), back: back, front: front
                 ))
             }
         }
+    }
+
+    /// The line a sprite's depth runs along, for a sprite whose world position (FreeSO's
+    /// `AbsoluteWorldPosition`: the object's tile corner plus its object offset) is `corner`.
+    ///
+    /// Ports `_2DWorldBatch.BackOffForRot` and `FrontDirForRot`, in tiles rather than FreeSO's 3
+    /// world units to a tile: the back is the tile's corner farthest from the viewer, and the
+    /// front a tile diagonally toward the viewer from there.
+    public static func depthLine(corner: SIMD3<Float>, worldRotation: UInt32) -> (back: SIMD3<Float>, front: SIMD3<Float>) {
+        let (toBack, toFront): (SIMD3<Float>, SIMD3<Float>) = switch worldRotation % 4 {
+        case 1: (SIMD3(0, 0, 1), SIMD3(1, 0, -1))      // TopRight
+        case 2: (SIMD3(1, 0, 1), SIMD3(-1, 0, -1))     // BottomRight
+        case 3: (SIMD3(1, 0, 0), SIMD3(-1, 0, 1))      // BottomLeft
+        default: (SIMD3(0, 0, 0), SIMD3(1, 0, 1))      // TopLeft
+        }
+        let back = corner + toBack
+        return (back, back + toFront)
     }
 
     /// FreeSO's `DGRPRenderer.RadianDirection`: the four main facings; the diagonals don't turn.

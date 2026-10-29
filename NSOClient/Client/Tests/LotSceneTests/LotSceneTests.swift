@@ -152,6 +152,58 @@ func gameDurationsLeaveOutWhatsZero(minutes: Double, text: String) {
 
 // MARK: Sprites
 
+@Test(arguments: [(UInt32(0), SIMD3<Float>(5, 0, 7), SIMD3<Float>(6, 0, 8)),     // TopLeft: (0,0,0), (3,0,3)
+                  (1, SIMD3(5, 0, 8), SIMD3(6, 0, 7)),                           // TopRight: (0,0,3), (3,0,-3)
+                  (2, SIMD3(6, 0, 8), SIMD3(5, 0, 7)),                           // BottomRight: (3,0,3), (-3,0,-3)
+                  (3, SIMD3(6, 0, 7), SIMD3(5, 0, 8))])                          // BottomLeft: (3,0,0), (-3,0,3)
+func spriteDepthRunsFromTheFarCornerTowardTheViewer(worldRotation: UInt32, back: SIMD3<Float>, front: SIMD3<Float>) {
+    // FreeSO's BackOffForRot and FrontDirForRot, in its 3 world units to a tile.
+    let line = LotScene.depthLine(corner: SIMD3(5, 0, 7), worldRotation: worldRotation)
+    #expect(line.back == back && line.front == front)
+}
+
+@Test func eachSpritesDepthLineStartsAtItsTileCorner() throws {
+    let session = try mockSession()
+    var sprites: [ObjectSprite] = []
+    LotScene.objectSprites(of: session.vm, zoom: .near, worldRotation: 0, library: SpriteLibrary(), into: &sprites)
+    #expect(!sprites.isEmpty)
+    for sprite in sprites {
+        #expect(sprite.back == sprite.anchor - SIMD3(0.5, 0, 0.5))
+        #expect(sprite.front == sprite.back + SIMD3(1, 0, 1))
+    }
+}
+
+@Test func floorsAreDrawnBackAndDownAsFreeSODrawsThem() {
+    // update-46's TerrainComponent: a quarter world unit away from the viewer, and down by
+    // 3, 5, or 7 × 20/522 world units, more at smaller scales; 3 world units to a tile.
+    let away = SIMD3<Float>(0, 0.5, -0.8)
+    for (zoom, steps) in [(SpriteZoom.near, Float(3)), (.medium, 5), (.far, 7)] {
+        let bias = zoom.floorBias(scale: 1, towardViewer: -away)
+        let expected = (0.25 * away - SIMD3(0, steps * 20 / 522, 0)) / 3
+        #expect(simdLength(bias - expected) < 1e-6)
+    }
+    let quarter = SpriteZoom.far.floorBias(scale: 0.25, towardViewer: SIMD3(0, 1, 0))
+    #expect(abs(quarter.y - (-0.25 - 4 * 7 * 20 / 522) / 3) < 1e-6)
+}
+
+@Test func floorTopsAreTheFloorLineAboveTheGround() throws {
+    let session = try mockSession()
+    var scene = LotScene()
+    scene.rebuildArchitecture(of: session.vm)
+    let ground = try #require(scene.architecture.first { $0.kind == .ground })
+    let floors = scene.architecture.filter { if case .floor = $0.kind { true } else { false } }
+    #expect(!floors.isEmpty)
+    for floor in floors where floor.level == 1 {
+        // Objects stand on the floor line, y = 0, as do FreeSO's floors.
+        #expect(abs(floor.center.y + floor.size.y / 2) < 1e-6)
+    }
+    #expect(ground.center.y + ground.size.y / 2 < 0)
+}
+
+private func simdLength(_ vector: SIMD3<Float>) -> Float {
+    (vector * vector).sum().squareRoot()
+}
+
 @Test func zoomsHaveTSOsPixelsPerUnit() {
     // √(tile width² / 2): FreeSO's OneUnitDistance for 32-, 64-, and 128-pixel tiles.
     #expect(abs(SpriteZoom.near.pixelsPerUnit - 90.50967) < 0.001)

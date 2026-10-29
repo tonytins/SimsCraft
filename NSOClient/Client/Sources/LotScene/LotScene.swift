@@ -55,7 +55,8 @@ public struct LotScene: Sendable {
         lotWidth = architecture.width
         lotHeight = architecture.height
         self.architecture.removeAll(keepingCapacity: true)
-        self.architecture.append(Box(kind: .ground, level: 1, center: SIMD3(Float(lotWidth) / 2, -0.05, Float(lotHeight) / 2),
+        // The ground's top is a hair under the floors', so the two don't fight where they meet.
+        self.architecture.append(Box(kind: .ground, level: 1, center: SIMD3(Float(lotWidth) / 2, -0.06, Float(lotHeight) / 2),
                                      size: SIMD3(Float(lotWidth), 0.1, Float(lotHeight))))
 
         for level in 0..<min(Architecture.stories, architecture.floors.count) {
@@ -66,7 +67,8 @@ public struct LotScene: Sendable {
                 let pattern = floors[index]
                 guard pattern != 0 else { continue }
                 let tileX = index % lotWidth, tileY = index / lotWidth
-                let center = SIMD3(Float(tileX) + 0.5, base + 0.02, Float(tileY) + 0.5)
+                // A floor's top is the floor line, where objects stand, as in FreeSO.
+                let center = SIMD3(Float(tileX) + 0.5, base - 0.02, Float(tileY) + 0.5)
                 if pattern >= Architecture.poolPattern - 1 {
                     append(.water, level + 1, center - SIMD3(0, 0.1, 0), SIMD3(1, 0.04, 1))
                 } else {

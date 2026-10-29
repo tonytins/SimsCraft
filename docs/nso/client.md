@@ -31,11 +31,14 @@ The lot is drawn through raylib's 3D camera at TSO's view: looking down 30° fro
 45° angle, with TSO's three zooms (near, medium, far) and two farther ones. Roadmap decision 7
 explains why a 3D camera rather than FreeSO's 2D batches.
 
-- **Objects** draw with their sprites, placed as FreeSO's `DGRPRenderer` places them, back to
-  front by each object's position. Sprites aren't yet sorted per pixel by their depth (Hyde Park's
-  E2), so where two objects overlap, one is drawn wholly in front of the other.
+- **Objects** draw with their sprites, placed as FreeSO's `DGRPRenderer` places them. Each pixel
+  has its depth from the sprite's depth frame, made global as FreeSO's `2DWorldBatch` shader does
+  (Hyde Park's E2). So objects cover each other, and the walls, pixel by pixel: a television's
+  screen shows in front of its own body, and a cut-down wall hides the base of what stands
+  behind it. A GPU that can't compile the depth shader gets the sprites back to front instead.
 - **Walls, floors, and the ground** are flat shapes for now, colored by kind. The walls of the floor
-  in view are cut down so the rooms show, as TSO does.
+  in view are cut down so the rooms show, as TSO does. Floors and the ground are drawn a little
+  back and down, as FreeSO draws its floors, so the feet of objects standing on them show.
 - **An object without a sprite** for the view is drawn as a box.
 
 | Input | Does |

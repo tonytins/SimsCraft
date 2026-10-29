@@ -77,7 +77,7 @@ In order:
    - [x] A. The schematic lot view, the inspector, time controls (pause, three speeds), rotation,
      zoom, pan, and floors; `--screenshot` for checks. The owner's house loads and runs.
    - [ ] B. Sprites in place of the boxes, as Hyde Park lands: objects draw with their sprites
-     (Hyde Park E1); per-pixel depth, walls, and floors are next.
+     (Hyde Park E1), sorted per pixel by their depth (E2); walls and floors are next.
 3. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
    with FreeSO (the alpha gate's lot job). Each phase ends with the oracles' experiments agreeing.
    On the real installs, Sims come from the game's person template with a made-up identity defined
@@ -123,8 +123,9 @@ In order:
        `LotScene.objectSprites` places each sprite as FreeSO's `DGRPRenderer` does, and `newso`
        draws them back to front over the lot, through a camera that matches TSO's 30° view at its
        three zooms, in all four rotations. The owner's house draws with every object's sprites.
-     - [ ] E2. Depth: SPR2 depth made global from each sprite's object offset, in a shader that
-       writes the fragment's depth, so objects, walls, and later Sims sort per pixel.
+     - [x] E2. Depth: SPR2 depth made global from each sprite's object offset, in a shader that
+       writes the fragment's depth, so objects, walls, and later Sims sort per pixel. Ports
+       FreeSO's `vsZSprite` and `depthCalc2`, and update-46's floor bias.
    - [ ] F. Images (`BMP_`, `THMB`, BMP, TGA, PNG), when the interface and walls need them.
 
 ## Milestones
@@ -237,6 +238,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-29 | minor | Hyde Park, phase E2: sprites sort per pixel. Each sprite's depth frame is made global as FreeSO's `2DWorldBatch` shader does: a line from its tile's far corner toward the viewer (`LotScene.depthLine`, FreeSO's `BackOffForRot` and `FrontDirForRot`), projected with the 3D camera's matrices, and written per pixel by `newso`'s `SpriteDepth` shader. Objects now cover each other and the walls pixel by pixel; the owner's television, whose screen E1's back-to-front order put behind its body, comes out right. Floors and the ground are drawn back and down as update-46's `TerrainComponent` draws them, and floor tops moved to the floor line, so table feet and chair legs aren't cut off. A cut-down wall now hides the base of an object behind it. MockInstall's generators (`mock_sim.py`, `make_mock_sprites.py`) are in the repository. |
 | 2026-10-29 | minor | The mock Sim, a first step of Queen Margaret's fourth pass: MockInstall gains what FreeSO needs to create a Sim (body strings, a one-bone skeleton in `skeletons.dat`, motive tuning in `tuning.dat`, walk and swim tables), all made up, so FreeSO creates and runs it where it crashed before. NewSO reports a Sim's setup as unsupported, so the mock review counts the Sim as not measured rather than agreeing by accident. |
 | 2026-10-29 | minor | Content folders, the scaffold for custom content (CNT-11): TSOContent finds FreeSO's content folder and NewSO's user folder as `GameLocator` finds the game, and `GameContent` loads a player's mods from `Mods/Objects` and `Mods/Patch` after FreeSO's, the mods' patches winning as user patches. A broken custom object is skipped and reported (DIFF-28), and one whose GUID is taken is left out; `newso` shows both in MOMI. `newso` and `simsscript` load mods; the oracles keep to FreeSO's content. Custom content is the goal, as the owner set it. |
 | 2026-10-29 | patch | `NSOClient/Interface` is renamed `NSOClient/NSOInterface`, as the owner asked: the package, its library and module, its folders, and the client's imports; `interface-demo` keeps its name. |

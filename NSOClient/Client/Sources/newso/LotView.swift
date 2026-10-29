@@ -90,10 +90,20 @@ final class LotView {
 
     // MARK: Drawing
 
-    /// The lot's floors and walls, and the boxes of objects without sprites.
+    /// The lot's floors and walls, and the boxes of objects without sprites. Floors and the ground
+    /// are drawn a little back and down (``SpriteZoom/floorBias(scale:towardViewer:)``), as FreeSO
+    /// draws them, so the sprites standing on them aren't cut off.
     func draw(_ scene: LotScene, camera: Camera3D, objectsWithSprites: Set<Int16>, selected: Int16?, hovered: Int16?) {
+        let eye = SIMD3(camera.position.x, camera.position.y, camera.position.z)
+        let offset = eye - target
+        let towardViewer = offset / (offset * offset).sum().squareRoot()
+        let bias = spriteZoom.floorBias(scale: spriteScale, towardViewer: towardViewer)
         BeginMode3D(camera)
-        for box in scene.architecture where box.level <= level {
+        for var box in scene.architecture where box.level <= level {
+            switch box.kind {
+            case .ground, .floor, .water: box.center += bias
+            case .wall, .fence, .object: break
+            }
             draw(box, color: color(of: box), outline: false)
         }
         for box in scene.objects where box.level <= level {
@@ -106,8 +116,10 @@ final class LotView {
 
     /// The objects' sprites, flat on the screen, objects farthest from the viewer first. Each
     /// sprite's top left is its anchor's place on screen plus its pixel offset, scaled for zoom.
-    func drawSprites(_ sprites: [ObjectSprite], camera: Camera3D, textures: SpriteTextures, order: inout [Int],
-                     selected: Int16?, hovered: Int16?) {
+    /// With `depth`, each pixel also gets its depth (``SpriteDepth``), so what's nearer covers
+    /// what's farther pixel by pixel; the back-to-front order then only blends soft edges.
+    func drawSprites(_ sprites: [ObjectSprite], camera: Camera3D, textures: SpriteTextures, depth: SpriteDepth?,
+                     order: inout [Int], selected: Int16?, hovered: Int16?) {
         let angle = (Float(rotation) * 90 + 45) * .pi / 180
         let towardViewer = SIMD3<Float>(cos(angle), 0, sin(angle))
         order.removeAll(keepingCapacity: true)
@@ -119,6 +131,9 @@ final class LotView {
             return depthA != depthB ? depthA < depthB : a < b
         }
         let scale = spriteScale
+        depth?.prepare(camera: camera, screenWidth: Int(GetScreenWidth()), screenHeight: Int(GetScreenHeight()))
+        depth?.begin()
+        defer { depth?.end() }
         for index in order {
             let sprite = sprites[index]
             guard sprite.level <= level, let texture = textures.texture(for: sprite.key) else { continue }
@@ -129,7 +144,12 @@ final class LotView {
                                         width: width * scale, height: height * scale)
             let tint = sprite.objectID == selected ? Color(r: 255, g: 220, b: 140, a: 255)
                 : sprite.objectID == hovered ? Color(r: 200, g: 225, b: 255, a: 255) : Color.white
-            DrawTexturePro(texture, source, destination, .zero, 0, tint)
+            if let depth, let depthTexture = textures.depthTexture(for: sprite.key) {
+                depth.draw(texture, depth: depthTexture, back: sprite.back, front: sprite.front,
+                           source: source, destination: destination, tint: tint)
+            } else {
+                DrawTexturePro(texture, source, destination, .zero, 0, tint)
+            }
         }
     }
 
@@ -215,6 +235,8 @@ final class SpriteTextures {
     private let library: SpriteLibrary
     private var textures: [SpriteKey: Texture2D] = [:]
     private var missing: Set<SpriteKey> = []
+    private var depthTextures: [SpriteKey: Texture2D] = [:]
+    private var missingDepth: Set<SpriteKey> = []
 
     init(library: SpriteLibrary) {
         self.library = library
@@ -241,9 +263,33 @@ final class SpriteTextures {
         return texture
     }
 
+    /// A frame's stored depth as a one-channel texture: each pixel's byte, 0 nearest.
+    func depthTexture(for key: SpriteKey) -> Texture2D? {
+        if let texture = depthTextures[key] { return texture }
+        guard !missingDepth.contains(key), let image = library.image(for: key), image.width > 0, image.height > 0,
+              var depth = image.depth, depth.count == image.width * image.height else {
+            missingDepth.insert(key)
+            return nil
+        }
+        let texture = depth.withUnsafeMutableBytes { bytes in
+            LoadTextureFromImage(Image(data: bytes.baseAddress, width: Int32(clamping: image.width), height: Int32(clamping: image.height),
+                                       mipmaps: 1, format: Int32(truncatingIfNeeded: PixelFormat.uncompressedGrayscale.rawValue)))
+        }
+        guard IsTextureValid(texture) else {
+            missingDepth.insert(key)
+            return nil
+        }
+        // Depth must never blend between pixels.
+        SetTextureFilter(texture, .point)
+        depthTextures[key] = texture
+        return texture
+    }
+
     /// Releases every texture; call before the window closes.
     func unloadAll() {
         for texture in textures.values { UnloadTexture(texture) }
+        for texture in depthTextures.values { UnloadTexture(texture) }
         textures.removeAll()
+        depthTextures.removeAll()
     }
 }

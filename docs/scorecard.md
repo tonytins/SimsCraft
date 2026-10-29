@@ -8,7 +8,7 @@ page and [roadmap.md](roadmap.md) disagree, this page wins and the roadmap gets 
 **As of:** 2026-10-28 · Swift 6.3.3 on Linux x86_64 · `swift test`: TSOFiles 146 passed, TSOFilesCheck 12
 passed, TSOContent 59 passed (including TSOConfig's 2; 12 need `TSO_GAME_DIR`), SimAntics 113 passed
 (1 needs `TSO_GAME_DIR`), SimsScript 12 passed (1 needs `TSO_GAME_DIR`), NSOOracle 15 passed (5 need
-`TSO_GAME_DIR` and `TSO_ORACLE_DIR`), Client 12 passed. Tests that need either variable are skipped without it. The
+`TSO_GAME_DIR` and `TSO_ORACLE_DIR`), Client 21 passed. Tests that need either variable are skipped without it. The
 owner has three installs: 1.1097.1.0 (`TSO_GAME_DIR`, which the tests and oracle use), a 2002 copy
 (1.145.1.0, `TSO_CLASSIC_DIR`), and a 2002 beta (`TSO_BETA_DIR`). FreeSO targets TSO after its New &
 Improved update (October 2003), likely around 1.1097.1.0. **Until 2026-10-28 `TSO_GAME_DIR` named the

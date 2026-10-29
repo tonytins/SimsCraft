@@ -77,3 +77,8 @@ TSO_GAME_DIR="$PWD/NSOClient/MockInstall/TSOClient" TSO_ORACLE_DIR=/tmp/oracle/m
 
 The files are kept as they are, not generated. Add to them as tests need: another object, a
 chunk type, a quirk to cover. Update the tables above when you do, and keep everything made up.
+
+`generators/` keeps the scripts that made some of the files, to show how they were built:
+`mock_sim.py` gave the Sim its body strings, animation names, skeleton, and tuning. Each ran once
+on the committed files and refuses to run again on files it has already patched. The script that
+made `objspf.far` wasn't kept.

@@ -13,6 +13,8 @@ final class ClientApp {
     private let momi = MomiWindow()
     private let library = SpriteLibrary()
     private let textures: SpriteTextures
+    /// Sprite depth; `nil` if the shader didn't compile, and sprites draw back to front only.
+    private var depth: SpriteDepth?
     // Kept between frames, so drawing doesn't allocate.
     private var sprites: [ObjectSprite] = []
     private var drawOrder: [Int] = []
@@ -35,6 +37,7 @@ final class ClientApp {
         SetTargetFPS(60)
         // Escape closes the inspector instead of the client.
         SetExitKey(.null)
+        depth = SpriteDepth()
 
         rebuildScene()
         view.center(on: scene.center)
@@ -53,6 +56,7 @@ final class ClientApp {
             draw()
         }
         textures.unloadAll()
+        depth?.unload()
         CloseWindow()
     }
 
@@ -66,6 +70,7 @@ final class ClientApp {
         let saved = ExportImage(image, path)
         UnloadImage(image)
         textures.unloadAll()
+        depth?.unload()
         CloseWindow()
         return saved
     }
@@ -140,7 +145,7 @@ final class ClientApp {
         BeginDrawing()
         ClearBackground(Color(r: 34, g: 44, b: 58, a: 255))
         view.draw(scene, camera: camera, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
-        view.drawSprites(sprites, camera: camera, textures: textures, order: &drawOrder, selected: inspector.selected, hovered: hovered)
+        view.drawSprites(sprites, camera: camera, textures: textures, depth: depth, order: &drawOrder, selected: inspector.selected, hovered: hovered)
         TopBar.draw(topBarState)
         if let id = inspector.selected, let entity = session.vm.entity(id: id) {
             inspector.draw(entity)
