@@ -18,6 +18,8 @@ let package = Package(
         .package(url: "https://github.com/tonytins/raylib-swift", branch: "main"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.0"),
         .package(url: "https://github.com/apple/swift-configuration", from: "1.0.0"),
+        // Headless and verbose runs log through it; it's already in the graph through swift-configuration.
+        .package(url: "https://github.com/apple/swift-log", from: "1.16.0"),
     ],
     targets: [
         // What the client shows, worked out without raylib, so it's tested without a window.
@@ -31,6 +33,7 @@ let package = Package(
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
             .product(name: "Configuration", package: "swift-configuration"),
             .product(name: "Interface", package: "Interface"),
+            .product(name: "Logging", package: "swift-log"),
             .product(name: "Raylib", package: "raylib-swift"),
             .product(name: "SimAntics", package: "SimAntics"),
             .product(name: "TSOConfig", package: "TSOContent"),

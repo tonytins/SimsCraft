@@ -92,6 +92,28 @@ private func mockSession() throws -> LotSession {
             == "Tick 2: Object #7 ran too many instructions in one tick and was reset")
     let session = try mockSession()
     #expect(SystemMessages.messages(of: session.vm).count == session.vm.reportedErrors.count)
+    for (full, bare) in zip(SystemMessages.messages(of: session.vm), SystemMessages.messages(of: session.vm, includingTick: false)) {
+        #expect(full.hasSuffix(bare) && full.hasPrefix("Tick ") && !bare.hasPrefix("Tick "))
+    }
+}
+
+@Test func runReportsStampLinesWithGameTimeNotTheWallClock() throws {
+    let session = try mockSession()
+    let vm = session.vm
+    #expect(RunReport.stamp(vm) == "tick \(vm.clock.ticks), 0:00")
+    #expect(RunReport.ticksPerGameDay(vm) == 216_000)
+    #expect(RunReport.gameDayLength(vm) == "2 h 0 min")
+    let start = RunReport.start(session, install: "/games/mock")
+    #expect(start.first == "tick \(vm.clock.ticks), 0:00: lot mock-lot, install /games/mock")
+    #expect(start[1].contains("a game day is 216000 ticks, 2 h 0 min at normal speed"))
+    #expect(RunReport.summary(vm, ticks: 9_000, seconds: nil).count == 1)
+    #expect(RunReport.summary(vm, ticks: 9_000, seconds: nil)[0].contains("ran 9000 ticks, 1 h of game time"))
+    #expect(RunReport.summary(vm, ticks: 300, seconds: 0.5)[1].hasSuffix("took 0.5 s, 600 ticks a second, 20x normal speed"))
+}
+
+@Test(arguments: [(0.0, "0 min"), (5, "5 min"), (60, "1 h"), (1_440, "1 day"), (1_530, "1 day 1 h 30 min"), (2_880, "2 days")])
+func gameDurationsLeaveOutWhatsZero(minutes: Double, text: String) {
+    #expect(RunReport.gameDuration(minutes: minutes) == text)
 }
 
 @Test func floorsAreNamedAsTheTopBarShowsThem() {

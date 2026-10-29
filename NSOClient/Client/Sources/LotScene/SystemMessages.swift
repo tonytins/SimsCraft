@@ -7,10 +7,14 @@ import SimAntics
 public enum SystemMessages {
     /// One message per error the VM has reported, oldest first, naming the object when it's
     /// still on the lot.
-    public static func messages(of vm: VM) -> [String] {
+    ///
+    /// - Parameter includingTick: whether each starts with its tick, as MOMI shows them; a log
+    ///   that stamps its lines itself leaves it out.
+    public static func messages(of vm: VM, includingTick: Bool = true) -> [String] {
         vm.reportedErrors.map { report in
-            text(tick: report.tick, objectID: report.objectID,
-                 objectName: vm.entity(id: report.objectID).map { Inspection($0).title }, error: report.error)
+            let text = text(tick: report.tick, objectID: report.objectID,
+                            objectName: vm.entity(id: report.objectID).map { Inspection($0).title }, error: report.error)
+            return includingTick ? text : String(text.drop { $0 != ":" }.dropFirst(2))
         }
     }
 

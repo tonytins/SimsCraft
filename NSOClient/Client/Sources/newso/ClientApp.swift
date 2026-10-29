@@ -19,11 +19,14 @@ final class ClientApp {
     private var objectsWithSprites: Set<Int16> = []
     private var hovered: Int16?
     private var lastMinute: Int32
+    /// With --verbose, the run's log.
+    private let log: RunLog?
 
     /// Opens the window, which is hidden when the client only takes a screenshot, at a zoom
     /// step and centered on a tile when they're given.
-    init(session: LotSession, hidden: Bool, zoomStep: Int? = nil, focus: SIMD2<Float>? = nil, rotation: Int = 0) {
+    init(session: LotSession, hidden: Bool, zoomStep: Int? = nil, focus: SIMD2<Float>? = nil, rotation: Int = 0, log: RunLog? = nil) {
         self.session = session
+        self.log = log
         textures = SpriteTextures(library: library)
         lastMinute = session.vm.clock.minutes
         SetTraceLogLevel(.warning)
@@ -122,6 +125,7 @@ final class ClientApp {
 
     private func advance() {
         session.advance(seconds: Double(GetFrameTime()))
+        log?.update()
         // Rooms regenerate on the tick after a change; once a game minute is often enough to catch it.
         if session.vm.clock.minutes != lastMinute {
             lastMinute = session.vm.clock.minutes
