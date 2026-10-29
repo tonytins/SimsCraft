@@ -358,7 +358,9 @@ options:
         /// FreeSO's blueprints assume TSO's New & Improved files. On an older install
         /// (such as the 2002 beta) some objects don't exist, or carry a FreeSO patch that doesn't
         /// fit them, and FreeSO's activator fails on either, so they're left out and reported.
-        /// The Swift side must load the same adapted lot.
+        /// A Sim is also left out if FreeSO can't build its avatar, as on MockInstall, which has
+        /// no skeletons: <c>VMAvatar</c>'s constructor throws there, which would stop the whole
+        /// lot. The Swift side must load the same adapted lot.
         /// </remarks>
         private static byte[] BlueprintForInstall(string path)
         {
@@ -370,11 +372,19 @@ options:
                 string problem = null;
                 try
                 {
-                    if (objects.Get(Convert.ToUInt32(guid, 16)) == null) problem = "the install has no object";
+                    var item = objects.Get(Convert.ToUInt32(guid, 16));
+                    if (item == null) problem = "the install has no object";
+                    else if (item.OBJ.ObjectType == FSO.Files.Formats.IFF.Chunks.OBJDType.Person)
+                    {
+                        // Built as the activator would build it, without a world.
+                        VM.UseWorld = false;
+                        _ = new VMAvatar(item);
+                    }
                 }
                 catch (Exception error)
                 {
-                    // Such as a FreeSO patch written for New & Improved that doesn't fit this install.
+                    // Such as a FreeSO patch written for New & Improved that doesn't fit this install,
+                    // or a Sim whose avatar FreeSO can't build.
                     problem = $"FreeSO can't load ({error.GetType().Name}) object";
                 }
                 if (problem == null) continue;

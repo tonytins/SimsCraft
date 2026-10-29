@@ -9,7 +9,7 @@ import TSOContent
 
 /// `nso-oracle`: NSOClient's side of the experiments `fso-oracle` runs on FreeSO, and the two compared.
 @main
-struct NSOOracle: ParsableCommand {
+struct NSOOracle: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "nso-oracle",
         abstract: "Run fso-oracle's experiments on NSOClient, and compare the two sides' records.",
@@ -76,7 +76,7 @@ struct LotOptions: ParsableArguments {
 }
 
 extension NSOOracle {
-    struct ListObjects: ParsableCommand {
+    struct ListObjects: AsyncParsableCommand {
         static let configuration = CommandConfiguration(commandName: "list-objects",
                                                         abstract: "Print what NSOClient loads for every registered object.")
         @OptionGroup var install: InstallOptions
@@ -86,7 +86,7 @@ extension NSOOracle {
         }
     }
 
-    struct RunObjects: ParsableCommand {
+    struct RunObjects: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "run-objects",
             abstract: "For each GUID on standard input, run the object alone on an empty lot and print digests.")
@@ -118,7 +118,7 @@ extension NSOOracle {
         }
     }
 
-    struct RunLot: ParsableCommand {
+    struct RunLot: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "run-lot", abstract: "Load a lot with its objects, run it, and print digests.")
         @OptionGroup var install: InstallOptions
@@ -137,7 +137,7 @@ extension NSOOracle {
         }
     }
 
-    struct RunPrimitive: ParsableCommand {
+    struct RunPrimitive: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "run-primitive",
             abstract: "Run fso-oracle run-primitive requests on standard input, one JSON line each, on a freshly loaded lot.")

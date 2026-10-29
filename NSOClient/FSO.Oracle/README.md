@@ -288,7 +288,7 @@ each one on standard error:
   tuning, audio archives with one track, sound groups, a data definition, wall and floor
   globals with build-mode string tables, the first wall and floor archives, and an empty
   `cities` folder;
-- blueprint objects the install doesn't have, or that FreeSO can't load (such as one whose FreeSO patch doesn't fit the install), are left out of the lot and reported.
+- blueprint objects the install doesn't have, or that FreeSO can't load (such as one whose FreeSO patch doesn't fit the install, or a Sim whose avatar FreeSO can't build because the install has no skeletons, as on MockInstall), are left out of the lot and reported.
 
 The install is never written to. FreeSO's user data (such as the sandbox
 ban list) goes to a scratch folder inside the overlay, which is deleted on exit.
