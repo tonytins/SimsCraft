@@ -7,6 +7,33 @@ FreeSO VM, NSOClient's VM, and lockstep multiplayer run the result unchanged.
 This is a proof of concept for a later milestone (Yatesport, roadmap decision 5). It shows the
 idea is feasible; it isn't a usable language yet.
 
+## Reading an object
+
+`Listing` writes routines to be read, one line per instruction, with the names the files give
+their numbers: calls by the called routine's label, parameters and locals by the routine's `TPRP`,
+the object's attributes by its `STR#` 256, and constants by their `TRCN` labels with their
+values. Primitives NSOClient has ported show their operands in words; the rest keep their bytes,
+marked "not ported yet". A made-up example:
+
+```text
+4096 "init": 1 parameter (brightness)
+  0: call "setup" (temp 0)                                           then 1, else unset
+  1: "glow" (my attribute 2) := "Default Glow" (constant = 50)       then 2, else unset
+  2: clear flag 11 of my flags                                       then return true, else unset
+```
+
+`unset` is branch target 253: FreeSO goes on along the other branch, while the SimAntics Wiki
+describes it as an error in the original engine. A listing doesn't convert back to routines;
+`Assembly` does. The `simsscript` command lists an install's objects:
+
+```sh
+swift run --package-path NSOClient/SimsScript simsscript list 0x4D4F4301        # by GUID
+swift run --package-path NSOClient/SimsScript simsscript list mockchair --routine 4096
+```
+
+`OBJECT` is a GUID or a name (the object's file name or its catalog name); `--semi-global` adds
+the semi-global's routines. The install is `--game`, else `$TSO_GAME_DIR`, else MockInstall.
+
 ## Assembly
 
 `Assembly` writes routines as text and reads them back, one line per instruction:
@@ -49,5 +76,6 @@ function returns only true or false, so a call can be a condition. Primitives ar
 ## How feasibility is tested
 
 - Assembly round trip over every routine in the install (`RealAssemblyTests`, needs `TSO_GAME_DIR`).
+- Every object's routines list, one line per instruction (`RealListingTests`, needs `TSO_GAME_DIR`).
 - Operand encoders re-encode every Expression and call operand to its bytes (SimAntics tests).
 - Compiled scripts run as objects on the Swift VM and leave the expected values (`CompilerTests`).

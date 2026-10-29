@@ -118,3 +118,10 @@ NSOClient/scripts/scenario-oracle.sh --mock     # build, run on FreeSO, compare;
 
 Because both VMs run the same compiled bytes, a scenario pins down one behavior in a form anyone
 can read. The first two cover SimAntics' 16-bit arithmetic, which FreeSO's VM confirms.
+
+## simsscript
+
+`simsscript list OBJECT` (`NSOClient/SimsScript`) prints an object's routines as SimsScript's
+`Listing` writes them: one line per instruction, with routines, parameters, locals, attributes,
+and constants named from the object's files, its semi-global, and the global file, and ported
+primitives' operands in words. See [SimsScript's README](../../NSOClient/SimsScript/README.md).

@@ -34,3 +34,26 @@ struct RealAssemblyTests {
         #expect(problems.isEmpty, "\(problems.prefix(5))")
     }
 }
+
+/// Every object's routines list, with its names, one line per instruction.
+@Suite(.enabled(if: gameDirectory != nil, "TSO_GAME_DIR is not set"))
+struct RealListingTests {
+    @Test func everyObjectsRoutinesList() throws {
+        let content = try GameContent(.init(gameDirectory: try #require(gameDirectory)))
+        let global = try content.global()
+        var seen = Set<String>(), routines = 0, unported = 0, problems: [String] = []
+        for reference in content.objects.references where seen.insert(reference.fileName).inserted {
+            guard let object = try? content.objects.object(guid: reference.guid) else { continue }
+            let names = RoutineNames(owner: object.resource, global: global)
+            for routine in try object.resource.mainFile.chunks(BHAV.self) {
+                let lines = Listing.text(of: routine, names: names).split(separator: "\n")
+                if lines.count != routine.instructions.count + 1 { problems.append("\(reference.fileName) BHAV #\(routine.id)") }
+                unported += lines.filter { $0.contains("(not ported yet)") || $0.contains("(unknown)") }.count
+                routines += 1
+            }
+        }
+        print("Listing: \(routines) routines, \(unported) instructions with operands not yet spelled out")
+        #expect(routines > 5_000)
+        #expect(problems.isEmpty, "\(problems.prefix(5))")
+    }
+}
