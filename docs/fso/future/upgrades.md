@@ -87,5 +87,5 @@ summaries) and better tuning views in preparation. `feature/lotview-refactor` co
   where it chooses to fix one of the snapshot's bugs, these show what FreeSO later did.
 - **Extensions.** The AOT compiler, the new TSO calls, tuning presets, and upgrades are prior art
   for NSOClient's own extensions.
-- **The patches.** Many new PIFF patches and "TSOPorts" target the EA-Land-era files, as the
+- **The patches.** Many new PIFF patches and "TSOPorts" target the 2003 production files, as the
   snapshot's do. They'd need the same "apply only if it fits" handling on the 2002 installs.

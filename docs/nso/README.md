@@ -48,7 +48,7 @@ A few rules hold everywhere. Knowing them makes each package easier to follow.
 - **Values, not singletons.** Archives and chunks are immutable `Sendable` values, often over
   memory-mapped bytes. FreeSO reaches content through a global `Content.Get()`; here a
   `GameContent` is created and passed in, so tests and tools can load several installs side by side.
-- **Degrade gracefully on the beta.** Where the 2002 beta's files differ from the EA-Land-era
+- **Degrade gracefully on the beta.** Where the 2002 beta's files differ from the 2003 production
   files FreeSO expects, NSOClient skips what doesn't fit, reports it, and keeps going. For example,
   a PIFF patch that doesn't fit an object is skipped, not fatal. [`install-differences.md`](../results/install-differences.md)
   records how the production and beta installs differ.
