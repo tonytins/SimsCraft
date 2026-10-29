@@ -196,7 +196,8 @@ extension VM {
 }
 
 /// The TSO install named by `TSO_GAME_DIR`, or `nil` when it isn't set.
-let gameDirectory: URL? = ProcessInfo.processInfo.environment["TSO_GAME_DIR"].map { URL(fileURLWithPath: $0) }
+let gameDirectory: URL? = InstallKind.installs(in: ProcessInfo.processInfo.environment)
+    .first { $0.kind == .game }?.directory
 
 struct MissingFixtureValue: Error, CustomStringConvertible {
     var description: String

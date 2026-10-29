@@ -27,6 +27,7 @@ let package = Package(
             .product(name: "SimAntics", package: "SimAntics"),
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
             .product(name: "Configuration", package: "swift-configuration"),
+            .product(name: "TSOConfig", package: "TSOContent"),
             .product(name: "ConfigurationTOML", package: "SwiftConfigurationTOML"),
         ]),
         .testTarget(name: "NSOOracleTests", dependencies: [

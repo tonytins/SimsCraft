@@ -263,8 +263,9 @@ extension ComparisonTests {
         #expect(rerun.contains("| Room maps | 50 |"))                     // the beta's section stays
         #expect(Review.sections(of: rerun).count == 2)
 
-        let withMock = Review.updating(Review.updating(rerun, with: run("mock", matched: 9)), with: run("alpha", matched: 1))
-        let order = ["## Production", "## Beta", "## Mock", "## Alpha"].map { withMock.range(of: $0)!.lowerBound }
-        #expect(order == order.sorted())                                       // then the mock, then others by name
+        let withMock = [run("mock", matched: 9), run("alpha", matched: 1), run("classic", matched: 40)]
+            .reduce(rerun) { Review.updating($0, with: $1) }
+        let order = ["## Production", "## Classic", "## Beta", "## Mock", "## Alpha"].map { withMock.range(of: $0)!.lowerBound }
+        #expect(order == order.sorted())                                       // then classic, beta, mock, others by name
     }
 }

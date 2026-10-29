@@ -5,7 +5,8 @@
 #
 #   NSOClient/scripts/oracle-review.sh [--review | --mock] [OUTPUT_DIR]     (default: $TMPDIR/oracle-review)
 #
-# Installs come from TSO_GAME_DIR ("production") and TSO_BETA_DIR ("beta"); either or both, and with
+# Installs come from TSO_GAME_DIR ("production"), TSO_CLASSIC_DIR ("classic"), and TSO_BETA_DIR
+# ("beta"); any of them, and with
 # --review, NSOClient/MockInstall ("mock") too, so the report has a section anyone can reproduce.
 # --mock runs on the mock install alone, as CI does: it never writes the review, and it fails on
 # any disagreement.
@@ -29,11 +30,12 @@ if $mock; then
     installs+=("mock=$repository/NSOClient/MockInstall/TSOClient")
 else
     [[ -n "${TSO_GAME_DIR:-}" ]] && installs+=("production=$TSO_GAME_DIR")
+    [[ -n "${TSO_CLASSIC_DIR:-}" ]] && installs+=("classic=$TSO_CLASSIC_DIR")
     [[ -n "${TSO_BETA_DIR:-}" ]] && installs+=("beta=$TSO_BETA_DIR")
     if $review && (( ${#installs[@]} > 0 )); then installs+=("mock=$repository/NSOClient/MockInstall/TSOClient"); fi
 fi
 if (( ${#installs[@]} == 0 )); then
-    echo "oracle-review: set TSO_GAME_DIR, TSO_BETA_DIR, or both, or pass --mock" >&2
+    echo "oracle-review: set TSO_GAME_DIR, TSO_CLASSIC_DIR, or TSO_BETA_DIR, or pass --mock" >&2
     exit 2
 fi
 # Kept in step with oracle-fixtures.sh.

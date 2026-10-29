@@ -4,6 +4,7 @@ import Configuration
 import Foundation
 import ScriptOracleCore
 import SimAntics
+import TSOConfig
 import TSOContent
 
 private let repositoryContent = URL(fileURLWithPath: #filePath)
@@ -22,11 +23,12 @@ struct InstallOptions: ParsableArguments {
             providers.append(tp)
         }
         let config = ConfigReader(providers: providers)
-        let envGame = config.string(forKey: "TSO_GAME_DIR")
-        guard let path = game ?? envGame, !path.isEmpty else {
+        let directory = game.map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? InstallKind.installs(in: config).first { $0.kind == .game }?.directory
+        guard let directory, game?.isEmpty != true else {
             throw ValidationError("No --game given and TSO_GAME_DIR is not set.")
         }
-        return try GameContent(.init(gameDirectory: URL(fileURLWithPath: path, isDirectory: true),
+        return try GameContent(.init(gameDirectory: directory,
                                      freeSOContentDirectory: contentDirectory))
     }
 

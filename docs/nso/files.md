@@ -116,7 +116,7 @@ let patched = outcome.file
 ```
 
 A patch is applied whole or not at all. It's kept only if it applies cleanly and every chunk it
-touches still parses. On the files FreeSO expects every patch should fit and the result match FreeSO (**Unverified**: not yet measured on 1.1097.1.0).
+touches still parses. On 1.1097.1.0 every patch that targets an object in `objiff.far` fits (all 32).
 On the beta, a patch that doesn't fit is skipped and reported, where FreeSO would fail to load the
 object.
 

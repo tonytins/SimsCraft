@@ -4,35 +4,37 @@ import Foundation
 import LotScene
 import SimAntics
 import Testing
+import TSOContent
 
 private let nsoclient = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
 private func mockSession() throws -> LotSession {
-    try LotSession(ClientOptions(environment: [:], nsoclient: nsoclient))
+    try LotSession(ClientOptions(installs: [], nsoclient: nsoclient))
 }
 
 @Test func optionsFallBackToMockInstall() {
-    let options = ClientOptions(environment: [:], nsoclient: nsoclient)
+    let options = ClientOptions(installs: [], nsoclient: nsoclient)
     #expect(options.gameDirectory.path.hasSuffix("MockInstall/TSOClient"))
     #expect(options.lot.lastPathComponent == "mock-lot.xml")
     #expect(options.freeSOContent == nil)
 }
 
-@Test func optionsPreferTheInstallsTheEnvironmentNames() {
-    let options = ClientOptions(environment: ["TSO_BETA_DIR": "/games/beta"], nsoclient: nsoclient)
-    #expect(options.gameDirectory.path == "/games/beta")
+@Test func optionsPreferTheFirstInstallNamed() {
+    let installs = InstallKind.installs(in: ["TSO_BETA_DIR": "/games/beta", "TSO_CLASSIC_DIR": "/games/classic"])
+    let options = ClientOptions(installs: installs, nsoclient: nsoclient)
+    #expect(options.gameDirectory.path == "/games/classic")
     #expect(options.lot.lastPathComponent == "tonys-house.xml")
     #expect(options.freeSOContent?.path.hasSuffix("TSOClient/tso.content/Content") == true)
-    let chosen = ClientOptions(game: "/games/tso", lot: "/lots/a.xml", environment: ["TSO_GAME_DIR": "/elsewhere"],
-                               nsoclient: nsoclient)
+    let chosen = ClientOptions(game: "/games/tso", lot: "/lots/a.xml",
+                               installs: InstallKind.installs(in: ["TSO_GAME_DIR": "/elsewhere"]), nsoclient: nsoclient)
     #expect(chosen.gameDirectory.path == "/games/tso")
     #expect(chosen.lot.path == "/lots/a.xml")
 }
 
 @Test func aMissingLotIsReported() {
     #expect(throws: ClientError.self) {
-        try LotSession(ClientOptions(lot: "/no/such/lot.xml", environment: [:], nsoclient: nsoclient))
+        try LotSession(ClientOptions(lot: "/no/such/lot.xml", installs: [], nsoclient: nsoclient))
     }
 }
 

@@ -21,6 +21,27 @@ A configured folder or `TSO_GAME_DIR` that isn't an install throws `ContentError
 rather than falling through to a default, so a typo never loads a different install silently.
 Unlike FreeSO, it doesn't read the Windows registry.
 
+## Listing the installs
+
+Tools, tests, and the client may check more than one copy of the game. `InstallKind` lists them
+in one place: `game` (`TSO_GAME_DIR`), `classic` (`TSO_CLASSIC_DIR`), and `beta` (`TSO_BETA_DIR`),
+in that order. `InstallKind.installs(in:)` returns the ones an environment names, leaving out unset
+or empty values and keeping a folder named twice once. `GameVersion.read(install:)` reads the
+version an install's `version` file records, in either known layout (`1.1097.1.0`, or the beta's
+`major:1` lines), and throws on any other. FreeSO reads neither.
+
+The `TSOConfig` product reads the same installs through
+[swift-configuration](https://github.com/apple/swift-configuration), under the keys `tso.game.dir`
+and so on, which its environment provider reads as `TSO_GAME_DIR`. It's a separate product so the
+libraries don't take on swift-configuration, whose API needs macOS 15.
+
+```swift
+import Configuration
+import TSOConfig
+
+let installs = InstallKind.installs(in: ConfigReader(provider: EnvironmentVariablesProvider()))
+```
+
 ## Loading content
 
 `GameContent` holds one install's content. It indexes every file, loads the PIFF patches, and

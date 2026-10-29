@@ -13,9 +13,13 @@ swift run --package-path NSOClient/TSOFilesCheck -c release tsofiles-check
 ### Which installs it checks
 
 - **With a folder argument,** it checks that folder.
-- **Without one,** it checks every install named by `TSO_GAME_DIR` (1.1097.1.0 since 2026-10-28; the 2002 copy before that) and
-  `TSO_BETA_DIR` (the 2002 beta), in that order. `--install game` or `--install beta` picks one.
-  Two variables naming the same folder check it once.
+- **Without one,** it checks every install named by `TSO_GAME_DIR` (1.1097.1.0 since 2026-10-28;
+  the 2002 copy before that), `TSO_CLASSIC_DIR` (the 2002 copy), and `TSO_BETA_DIR` (the 2002
+  beta), in that order, as TSOContent's `InstallKind` lists them, read through `TSOConfig`.
+  `--install game`, `classic`, or `beta` picks one, and can be repeated. Two variables naming the
+  same folder check it once. Each install's header shows the version its `version` file records.
+- **The differences file** is written only when exactly two installs are checked, such as
+  `--install classic --install beta`.
 
 Each folder must contain an `objectdata` folder, in any letter case. One that doesn't is reported
 and skipped, and the other install is still checked.
@@ -88,7 +92,7 @@ cut -f1 objects.tsv | swift run --package-path NSOClient/NSOOracle nso-oracle ru
 ```
 
 `NSOClient/scripts/oracle-review.sh [--review | --mock]` runs both oracles on every install it's
-given (`TSO_GAME_DIR` as "production", `TSO_BETA_DIR` as "beta") and compares them; `--mock` uses
+given (`TSO_GAME_DIR` as "production", `TSO_CLASSIC_DIR` as "classic", `TSO_BETA_DIR` as "beta") and compares them; `--mock` uses
 `NSOClient/MockInstall` instead, as CI does, and stops on any disagreement (`compare --strict`) so a
 person looks at it before the change goes in.
 FreeSO's side comes from `oracle-fixtures.sh`. With `--review` it writes

@@ -1,6 +1,9 @@
 import ArgumentParser
+import Configuration
 import Foundation
 import LotScene
+import TSOConfig
+import TSOContent
 
 /// The `newso` command: NewSO's client, as far as it goes.
 @main
@@ -9,8 +12,8 @@ struct NewSO: ParsableCommand {
         commandName: "newso",
         abstract: "Load a lot from a TSO install, run it, and show it.",
         discussion: """
-        Without --game, the install is $TSO_GAME_DIR, then $TSO_BETA_DIR, then NSOClient's \
-        MockInstall. Until the game's sprites decode, objects are drawn as boxes.
+        Without --game, the install is $TSO_GAME_DIR, then $TSO_CLASSIC_DIR, then $TSO_BETA_DIR, \
+        then NSOClient's MockInstall. Objects without sprites for the view are drawn as boxes.
         """
     )
 
@@ -45,8 +48,8 @@ struct NewSO: ParsableCommand {
     }
 
     func run() throws {
-        let options = ClientOptions(game: game, lot: lot, environment: ProcessInfo.processInfo.environment,
-                                    nsoclient: Self.nsoclient)
+        let installs = InstallKind.installs(in: ConfigReader(provider: EnvironmentVariablesProvider()))
+        let options = ClientOptions(game: game, lot: lot, installs: installs, nsoclient: Self.nsoclient)
         // A ClientError says what to fix; ArgumentParser prints it and exits with a failure.
         let session = try LotSession(options)
         for missing in session.leftOut {

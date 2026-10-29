@@ -14,10 +14,11 @@ if $mock; then
     installs+=("mock=$repository/NSOClient/MockInstall/TSOClient")
 else
     [[ -n "${TSO_GAME_DIR:-}" ]] && installs+=("production=$TSO_GAME_DIR")
+    [[ -n "${TSO_CLASSIC_DIR:-}" ]] && installs+=("classic=$TSO_CLASSIC_DIR")
     [[ -n "${TSO_BETA_DIR:-}" ]] && installs+=("beta=$TSO_BETA_DIR")
 fi
 if (( ${#installs[@]} == 0 )); then
-    echo "script-oracle-review: set TSO_GAME_DIR, TSO_BETA_DIR, or both, or pass --mock" >&2
+    echo "script-oracle-review: set TSO_GAME_DIR, TSO_CLASSIC_DIR, or TSO_BETA_DIR, or pass --mock" >&2
     exit 2
 fi
 

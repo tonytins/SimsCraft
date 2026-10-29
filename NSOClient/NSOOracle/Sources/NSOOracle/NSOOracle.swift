@@ -4,6 +4,7 @@ import Configuration
 import Foundation
 import NSOOracleCore
 import SimAntics
+import TSOConfig
 import TSOContent
 
 /// `nso-oracle`: NSOClient's side of the experiments `fso-oracle` runs on FreeSO, and the two compared.
@@ -37,11 +38,12 @@ struct InstallOptions: ParsableArguments {
             providers.append(tp)
         }
         let config = ConfigReader(providers: providers)
-        let envGame = config.string(forKey: "TSO_GAME_DIR")
-        guard let path = game ?? envGame, !path.isEmpty else {
+        let directory = game.map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? InstallKind.installs(in: config).first { $0.kind == .game }?.directory
+        guard let directory, game?.isEmpty != true else {
             throw ValidationError("No --game given and TSO_GAME_DIR is not set.")
         }
-        return try GameContent(.init(gameDirectory: URL(fileURLWithPath: path, isDirectory: true),
+        return try GameContent(.init(gameDirectory: directory,
                                      freeSOContentDirectory: contentDirectory))
     }
 
@@ -190,7 +192,7 @@ extension NSOOracle {
 
         @Option(help: "fso-oracle's records.") var fso: String
         @Option(help: "nso-oracle's records.") var nso: String
-        @Option(help: "The install's name in the review, such as production or beta.") var install = "production"
+        @Option(help: "The install's name in the review, such as production, classic, or beta.") var install = "production"
         @Option(help: "Write this install's section of the review to this file (such as docs/results/nso-review.md).")
         var review: String?
         @Option(help: "The commit the records came from, for the review.") var commit = "unknown"

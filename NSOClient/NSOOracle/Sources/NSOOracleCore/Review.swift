@@ -4,7 +4,7 @@ import Foundation
 /// install. Writing one install's section keeps the others.
 public enum Review {
     public struct Run: Sendable {
-        /// The install's name, such as `production` or `beta`.
+        /// The install's name, such as `production`, `classic`, or `beta`.
         public var install: String
         public var date: Date
         public var commit: String
@@ -71,7 +71,8 @@ public enum Review {
         ## Reading the results
 
         Each section below covers one copy of the game. *Production* is the copy in `TSO_GAME_DIR` (1.1097.1.0
-        since 2026-10-28, a 2002 copy before then), and *beta* is a 2002 beta. *Mock* is
+        since 2026-10-28, a 2002 copy before then), *classic* is the 2002 copy in `TSO_CLASSIC_DIR`,
+        and *beta* is a 2002 beta. *Mock* is
         `NSOClient/MockInstall`, a small made-up install in the repository with no game data, so anyone
         can reproduce its section without a copy of the game; its numbers are small, and grow as the mock
         gains objects. In each table:
@@ -103,8 +104,8 @@ public enum Review {
     public static func updating(_ existing: String?, with run: Run) -> String {
         var sections = sections(of: existing ?? "")
         sections[run.install] = section(for: run)
-        // Production first, then the beta, then the mock install, then any others by name.
-        let order = ["production", "beta", "mock"]
+        // Production first, then the classic copy, the beta, and the mock install, then any others by name.
+        let order = ["production", "classic", "beta", "mock"]
         let names = sections.keys.sorted { (order.firstIndex(of: $0) ?? order.count, $0) < (order.firstIndex(of: $1) ?? order.count, $1) }
         return header + names.compactMap { sections[$0] }.joined(separator: "\n")
     }

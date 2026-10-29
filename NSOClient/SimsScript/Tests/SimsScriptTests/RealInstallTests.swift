@@ -4,7 +4,8 @@ import TSOContent
 import TSOFiles
 @testable import SimsScript
 
-let gameDirectory: URL? = ProcessInfo.processInfo.environment["TSO_GAME_DIR"].map { URL(fileURLWithPath: $0) }
+let gameDirectory: URL? = InstallKind.installs(in: ProcessInfo.processInfo.environment)
+    .first { $0.kind == .game }?.directory
 
 /// Every routine in the install converts to assembly and back unchanged.
 @Suite(.enabled(if: gameDirectory != nil, "TSO_GAME_DIR is not set"))

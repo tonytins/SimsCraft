@@ -22,6 +22,7 @@ let package = Package(
             "ScriptOracleCore",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
             .product(name: "Configuration", package: "swift-configuration"),
+            .product(name: "TSOConfig", package: "TSOContent"),
             .product(name: "ConfigurationTOML", package: "SwiftConfigurationTOML"),
         ]),
         .target(name: "ScriptOracleCore", dependencies: [

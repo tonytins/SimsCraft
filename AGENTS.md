@@ -12,7 +12,7 @@ Key entrypoints:
   - ``TSOFiles/`` - file format readers (FAR, DBPF, IFF, and their chunks)
   - ``TSOFilesC/`` - a C ABI over TSOFiles
   - ``TSOFilesCheck/`` - ``tsofiles-check``, which scans a real install
-  - ``TSOContent/`` - the content system
+  - ``TSOContent/`` - the content system, and the list of installs (``InstallKind``); its ``TSOConfig`` product reads them through swift-configuration
   - ``SimAntics/`` - the VM
   - ``SimsScript/`` - BHAV text assembly and an LSL-like compiler (proof of concept)
   - ``Interface/`` - the client's windows and controls on raylib-swift (see [The client](#the-client))
@@ -72,14 +72,14 @@ for package in TSOFiles TSOContent; do   # the packages you changed and those th
     swift build --package-path "NSOClient/$package" && swift test --package-path "NSOClient/$package"
 done
 grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' NSOClient/*/Sources  # must print nothing
-swift run --package-path NSOClient/TSOFilesCheck -c release tsofiles-check            # scans TSO_GAME_DIR and TSO_BETA_DIR
+swift run --package-path NSOClient/TSOFilesCheck -c release tsofiles-check            # scans every TSO_*_DIR install that's set
 NSOClient/scripts/oracle-fixtures.sh /tmp/oracle                                       # FreeSO's side; needs TSO_GAME_DIR
 TSO_ORACLE_DIR=/tmp/oracle swift test --package-path NSOClient/NSOOracle               # NSOClient's side, compared
 NSOClient/scripts/oracle-review.sh --mock /tmp/review                                  # both oracles on MockInstall
 git status --short -- TSOClient Charvatia FSOInstaller Other                           # must print nothing
 ```
 
-Locally, build and test only what changed: the packages you touched and the ones that depend on them (TSOFiles, then TSOContent, then SimAntics, then SimsScript, NSOOracle, and ScriptOracle; ``TSOFilesC`` and ``TSOFilesCheck`` hang off TSOFiles). CI builds and tests every package on each push. Build one package at a time, and don't clear ``.build`` folders without need: rebuilding every package from scratch at once can run the owner's machine out of memory. Real-install checks read ``TSO_GAME_DIR`` (production) and ``TSO_BETA_DIR`` (the beta), and skip when they aren't set.
+Locally, build and test only what changed: the packages you touched and the ones that depend on them (TSOFiles, then TSOContent, then SimAntics, then SimsScript, NSOOracle, and ScriptOracle; ``TSOFilesC`` hangs off TSOFiles, and ``TSOFilesCheck`` off TSOFiles and TSOContent). CI builds and tests every package on each push. Build one package at a time, and don't clear ``.build`` folders without need: rebuilding every package from scratch at once can run the owner's machine out of memory. Real-install checks read ``TSO_GAME_DIR`` (production, 1.1097.1.0), ``TSO_CLASSIC_DIR`` (the 2002 copy), and ``TSO_BETA_DIR`` (the beta), as TSOContent's ``InstallKind`` lists them, and skip when they aren't set. The tests themselves read only ``TSO_GAME_DIR``; point it at another copy to test that one. TSOFiles' real-install tests live in TSOContent, since TSOFiles can't depend on it.
 
 ### The oracles
 

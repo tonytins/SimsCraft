@@ -11,18 +11,21 @@ public struct ClientOptions: Sendable, Equatable {
     /// FreeSO's content folder, for its patches and standalone objects; `nil` for none.
     public var freeSOContent: URL?
 
-    /// Chooses the install and the lot. Without `game`, the install is `TSO_GAME_DIR`, then
-    /// `TSO_BETA_DIR`, then NSOClient's MockInstall, so the client runs anywhere. Without
-    /// `lot`, the lot is the owner's house on a real install and the mock lot on MockInstall.
+    /// Chooses the install and the lot. Without `game`, the install is the first of `installs`
+    /// (``InstallKind`` order: `TSO_GAME_DIR`, `TSO_CLASSIC_DIR`, `TSO_BETA_DIR`), then
+    /// NSOClient's MockInstall, so the client runs anywhere. Without `lot`, the lot is the
+    /// owner's house on a real install and the mock lot on MockInstall.
     ///
-    /// - Parameter nsoclient: the NSOClient folder, which holds MockInstall, Lots, and (next to
-    ///   it) FreeSO's content.
-    public init(game: String? = nil, lot: String? = nil, environment: [String: String], nsoclient: URL) {
+    /// - Parameters:
+    ///   - installs: the installs the configuration names, as ``InstallKind/installs(named:)``
+    ///     lists them.
+    ///   - nsoclient: the NSOClient folder, which holds MockInstall, Lots, and (next to it)
+    ///     FreeSO's content.
+    public init(game: String? = nil, lot: String? = nil, installs: [NamedInstall], nsoclient: URL) {
         let mockInstall = nsoclient.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
-        let installPath = game ?? environment["TSO_GAME_DIR"].flatMap { $0.isEmpty ? nil : $0 }
-            ?? environment["TSO_BETA_DIR"].flatMap { $0.isEmpty ? nil : $0 }
-        let usesMock = installPath == nil
-        gameDirectory = installPath.map { URL(fileURLWithPath: $0, isDirectory: true) } ?? mockInstall
+        let chosen = game.map { URL(fileURLWithPath: $0, isDirectory: true) } ?? installs.first?.directory
+        let usesMock = chosen == nil
+        gameDirectory = chosen ?? mockInstall
         self.lot = lot.map { URL(fileURLWithPath: $0) }
             ?? nsoclient.appendingPathComponent(usesMock ? "MockInstall/Lots/mock-lot.xml" : "Lots/tonys-house.xml")
         // FreeSO's patches target real installs; MockInstall is made up and has none.

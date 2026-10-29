@@ -71,8 +71,9 @@ environment variables:
 
 | Variable | Points at |
 | --- | --- |
-| `TSO_GAME_DIR` | An install's `TSOClient` folder, normally the production release |
-| `TSO_BETA_DIR` | The 2002 beta's `TSOClient` folder, for the tools that compare the two |
+| `TSO_GAME_DIR` | The main install's `TSOClient` folder: the copy closest to FreeSO's files (1.1097.1.0 on the owner's machine) |
+| `TSO_CLASSIC_DIR` | An older production copy's `TSOClient` folder, such as the 2002 one (1.145.1.0) |
+| `TSO_BETA_DIR` | The 2002 beta's `TSOClient` folder |
 | `TSO_ORACLE_DIR` | A folder of FreeSO's records of the experiments, written by `NSOClient/scripts/oracle-fixtures.sh` (or `oracle-review.sh`), for the tests that compare NSOClient with FreeSO |
 
 ```sh
