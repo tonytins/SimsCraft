@@ -33,7 +33,7 @@ are in [`AGENTS.md`](../AGENTS.md); they apply to people and AI assistants alike
 | FreeSO | An open-source C# reimplementation of TSO, built on MonoGame. NSOClient is checked against it |
 | NSOClient | SimsCraft's Swift reimplementation of FreeSO's engine-independent libraries (also called NewSO) |
 | Install | A copy of TSO's game files on disk (a `TSOClient` folder). The repository holds none; tests that need one read the `TSO_GAME_DIR` environment variable, or use [`NSOClient/MockInstall`](../NSOClient/MockInstall/README.md), a tiny made-up install |
-| Production, beta | The two installs the project is tested on: a 2002 production release and a 2002 beta. FreeSO was built against a 2003 release |
+| Production, beta | The two installs the project is tested on: a 2002 production release (version 1.145.1.0) and a 2002 beta (1.3.2.121). FreeSO was built against EA's final public download, from the EA-Land era (2007 to 2008): its installer fetches it, and its VM cites EA-Land's simulator globals |
 | SimAntics | The virtual machine that runs object behavior in The Sims games |
 | Routine (`BHAV`), primitive | A routine is a small program an object runs; each of its instructions is either a call to another routine or a primitive, one of the VM's built-in operations |
 | IFF, chunk | Maxis's resource file format. An object's IFF holds chunks: its definition (`OBJD`), routines (`BHAV`), strings (`STR#`), sprites, and so on |
