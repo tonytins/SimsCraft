@@ -13,9 +13,10 @@ struct TSOFilesCheck: ParsableCommand {
         abstract: "Open every FAR1, FAR3, DBPF, and IFF file in a TSO install and read every entry.",
         discussion: """
             Without a folder, checks every install named by $TSO_GAME_DIR, $TSO_CLASSIC_DIR, and \
-            $TSO_BETA_DIR, one after the other. When exactly two are checked and the differences \
-            file doesn't exist yet, it compares them once and writes how they differ there. Exits with 0 when everything reads, 1 when anything fails, and \
-            2 when a folder isn't an install or can't be listed.
+            $TSO_BETA_DIR, one after the other. When two or more are checked and the differences \
+            file doesn't exist yet, it compares each with the next newer one (beta, classic, game) and \
+            writes how they differ there. Exits with 0 when everything reads, 1 when anything fails, \
+            and 2 when a folder isn't an install or can't be listed.
             """)
 
     /// The FAR1 layouts, by the names the command line takes.
@@ -45,7 +46,7 @@ struct TSOFilesCheck: ParsableCommand {
         """)
     var install: [InstallKind] = []
 
-    @Option(help: "Where to note how the two installs differ, if it doesn't exist yet.")
+    @Option(help: "Where to note how the installs differ, if it doesn't exist yet.")
     var differences = "docs/results/install-differences.md"
 
     @Argument(help: "The install folder. Defaults to the installs the environment names.")
@@ -96,8 +97,15 @@ struct TSOFilesCheck: ParsableCommand {
         return "== \(install.source.map { "\($0): " } ?? "")\(install.directory.path)\(version)"
     }
 
-    /// Compares two installs and writes the differences file, unless it exists. Returns false
-    /// if the comparison or the write failed.
+    /// How the differences page names an install: its variable (or folder) and its version.
+    static func label(for install: Install) -> String {
+        let version = (try? GameVersion.read(install: install.directory)).flatMap { $0.map { " (\($0))" } } ?? ""
+        return "`\(install.source ?? install.directory.path)`\(version)"
+    }
+
+    /// Compares each install with the next newer one and writes the differences file, unless it
+    /// exists. `installs` is in ``InstallKind`` order, newest first. Returns false if a
+    /// comparison or the write failed.
     func noteDifferences(between installs: [Install], date: Date = Date()) -> Bool {
         let file = URL(fileURLWithPath: differences)
         print("")
@@ -109,15 +117,18 @@ struct TSOFilesCheck: ParsableCommand {
             print("differences: not compared; \(file.deletingLastPathComponent().path) doesn't exist (run from the repository root, or pass --differences)")
             return true
         }
-        let first = installs[0], second = installs[1]
+        let oldestFirst = Array(installs.reversed())
         do {
-            let result = try InstallComparison(far1Variant: far1Variant.layout).compare(first.directory, second.directory)
-            let text = DifferencesReport.markdown(result, first: first.source ?? first.directory.path,
-                                                  second: second.source ?? second.directory.path, date: date)
-            try Data(text.utf8).write(to: file, options: .withoutOverwriting)
-            print("differences: \(result.changedFiles.count) files differ, \(result.onlyInFirst.count) only in "
-                  + "\(first.source ?? "the first"), \(result.onlyInSecond.count) only in \(second.source ?? "the second"); "
-                  + "noted in \(differences)")
+            var steps: [DifferencesReport.Step] = []
+            for (older, newer) in zip(oldestFirst, oldestFirst.dropFirst()) {
+                let result = try InstallComparison(far1Variant: far1Variant.layout).compare(older.directory, newer.directory)
+                steps.append(DifferencesReport.Step(older: Self.label(for: older), newer: Self.label(for: newer), differences: result))
+                print("differences: \(older.source ?? "the older") to \(newer.source ?? "the newer"): "
+                      + "\(result.changedFiles.count) files differ, \(result.onlyInFirst.count) only in the older, "
+                      + "\(result.onlyInSecond.count) only in the newer")
+            }
+            try Data(DifferencesReport.markdown(steps, date: date).utf8).write(to: file, options: .withoutOverwriting)
+            print("differences: noted in \(differences)")
             return true
         } catch {
             fflush(nil)
@@ -156,7 +167,7 @@ struct TSOFilesCheck: ParsableCommand {
             scanned.append(install)
             if !report.isClean && exitCode == 0 { exitCode = 1 }
         }
-        if scanned.count == 2, !noteDifferences(between: scanned) { exitCode = 2 }
+        if scanned.count >= 2, !noteDifferences(between: scanned) { exitCode = 2 }
         if exitCode != 0 { throw ExitCode(exitCode) }
     }
 }

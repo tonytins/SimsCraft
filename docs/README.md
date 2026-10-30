@@ -88,7 +88,8 @@ and SimsScript have READMEs of their own ([fso-oracle](../NSOClient/FSO.Oracle/R
 | Page | Covers |
 | --- | --- |
 | [nso-review.md](results/nso-review.md) | A report for peer review on whether NSOClient and FreeSO behave the same: `fso-oracle` and `nso-oracle` run the same experiments on each install, with agreements, every disagreement, what's inconclusive, and timings. Written after each phase of the roadmap |
-| [install-differences.md](results/install-differences.md) | How the production and beta installs differ: files, archive entries, IFF chunks, and object GUIDs, with no game data. The reference for keeping NSOClient working on the beta |
+| [install-differences.md](results/install-differences.md) | How the installs differ, step by step from the beta to 1.1097.1.0: files, archive entries, IFF chunks, and object GUIDs, with no game data. The reference for keeping NSOClient working on the beta |
+| [install-notes.md](results/install-notes.md) | What the install differences mean for NewSO, kept by hand: the skill objects' alpha, hidden objects |
 
 ### [fso/](fso/README.md): FreeSO's code, at update-46
 

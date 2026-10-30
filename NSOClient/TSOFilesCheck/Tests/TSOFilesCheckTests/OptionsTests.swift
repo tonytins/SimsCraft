@@ -137,13 +137,38 @@ import TSOFiles
 
         #expect(command.noteDifferences(between: installs, date: Date(timeIntervalSince1970: 0)))
         let written = try String(contentsOf: notes, encoding: .utf8)
-        #expect(written.contains("`TSO_GAME_DIR` and `TSO_BETA_DIR` name") && written.contains("wrote this on\n1970-01-01."))
-        #expect(written.contains("## Only in `TSO_GAME_DIR`\n\n- `objectdata/new.txt`"))
+        #expect(written.contains("`tsofiles-check` wrote this on 1970-01-01."))
+        // Oldest first: the beta, then the game.
+        #expect(written.contains("## `TSO_BETA_DIR` to `TSO_GAME_DIR`"))
+        #expect(written.contains("### Only in `TSO_GAME_DIR`\n\n- `objectdata/new.txt`"))
 
         // A second run leaves the notes alone, even when the installs change.
         try Data("newer".utf8).write(to: beta.appendingPathComponent("objectdata/newer.txt"))
         #expect(command.noteDifferences(between: installs))
         #expect(try String(contentsOf: notes, encoding: .utf8) == written)
+    }
+
+    @Test func comparesEachInstallWithTheNextNewer() throws {
+        let root = try temporaryFolder()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let names = ["game", "classic", "beta"]
+        for name in names {
+            try FileManager.default.createDirectory(at: root.appendingPathComponent("\(name)/objectdata"), withIntermediateDirectories: true)
+            try Data(name.utf8).write(to: root.appendingPathComponent("\(name)/objectdata/\(name).txt"))
+        }
+        let notes = root.appendingPathComponent("install-differences.md")
+        let command = try TSOFilesCheck.parse(["--differences", notes.path])
+        // In InstallKind order, newest first, as the scan checks them.
+        let installs = names.map { TSOFilesCheck.Install(source: "TSO_\($0.uppercased())_DIR", directory: root.appendingPathComponent($0)) }
+
+        #expect(command.noteDifferences(between: installs, date: Date(timeIntervalSince1970: 0)))
+        let written = try String(contentsOf: notes, encoding: .utf8)
+        #expect(written.contains("| `TSO_BETA_DIR` to `TSO_CLASSIC_DIR` | 0 | 1 | 1 | 0 |"))
+        #expect(written.contains("| `TSO_CLASSIC_DIR` to `TSO_GAME_DIR` | 0 | 1 | 1 | 0 |"))
+        let first = try #require(written.range(of: "## `TSO_BETA_DIR` to `TSO_CLASSIC_DIR`"))
+        let second = try #require(written.range(of: "## `TSO_CLASSIC_DIR` to `TSO_GAME_DIR`"))
+        #expect(first.lowerBound < second.lowerBound)
+        #expect(written.contains("### Only in `TSO_CLASSIC_DIR`\n\n- `objectdata/classic.txt`"))
     }
 
     @Test func skipsWithoutAFolderForTheNotes() throws {
@@ -176,13 +201,14 @@ import TSOFiles
                 EntryDifference(name: "c.mesh [3]", change: .changed),
             ]),
         ]
-        let text = DifferencesReport.markdown(differences, first: "TSO_GAME_DIR", second: "TSO_BETA_DIR", date: Date(timeIntervalSince1970: 0))
-        #expect(text.contains("| Identical | 3 |"))
-        #expect(text.contains("FAR1, 10 bytes in `TSO_GAME_DIR`, 12 in `TSO_BETA_DIR`."))
+        let step = DifferencesReport.Step(older: "`TSO_BETA_DIR` (1.3.2.121)", newer: "`TSO_GAME_DIR`", differences: differences)
+        let text = DifferencesReport.markdown([step], date: Date(timeIntervalSince1970: 0))
+        #expect(text.contains("| `TSO_BETA_DIR` (1.3.2.121) to `TSO_GAME_DIR` | 3 | 0 | 0 | 3 |"))
+        #expect(text.contains("FAR1, 10 bytes in the older, 12 in the newer."))
         #expect(text.contains("| `a\\|b.iff` |  | whole entry |  |  |"))
         #expect(text.contains("| `chair.iff` | BHAV 4096, 4097 |  | OBJD 128; STR# 128 | 000000ab |"))
         #expect(text.contains("| `(this file)` |  | BCON 4096 |  |  |"))
-        #expect(text.contains("Entries only in `TSO_GAME_DIR`: 1, only in `TSO_BETA_DIR`: 0, changed: 2."))
+        #expect(text.contains("Entries only in the older: 1, only in the newer: 0, changed: 2."))
         #expect(!text.contains("a.mesh"))
         #expect(!text.contains("The installs are identical."))
     }

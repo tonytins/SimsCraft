@@ -61,7 +61,7 @@ Everything else is NewSO's to get right. Fix FreeSO's bugs rather than port them
 Two more baselines:
 
 - **PIFF patches.** NewSO keeps applying FreeSO's PIFFs by default, for parity and for the content that uses them, but treats them as optional and replaceable.
-- **The TSO beta.** The owner's 2002 beta install must keep working. Where its files differ from production, skip what doesn't fit, report it, and keep going. ``docs/results/install-differences.md`` lists the differences; check it before calling a beta mismatch a bug.
+- **The TSO beta.** The owner's 2002 beta install must keep working. Where its files differ from production, skip what doesn't fit, report it, and keep going. ``docs/results/install-differences.md`` lists the differences, and ``docs/results/install-notes.md`` what they mean; check them before calling a beta mismatch a bug.
 
 Learn from everything available: FreeSO's code, the SimAntics Wiki copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (its Sims 2 pages often apply), and [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc). Treat them as leads to verify against the code or the oracles.
 

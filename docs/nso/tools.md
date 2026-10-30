@@ -50,9 +50,10 @@ can't be listed.
 
 ### The differences report, once
 
-The first time it checks both installs, it compares them and writes
-[`docs/results/install-differences.md`](../results/install-differences.md) (or the path in `--differences`). After
-that it only says the file exists. Delete the file to compare again.
+The first time it checks two or more installs, it compares each with the next newer one (the
+beta, then the classic copy, then the game) and writes
+[`docs/results/install-differences.md`](../results/install-differences.md) (or the path in `--differences`), one
+section per step. After that it only says the file exists. Delete the file to compare again.
 
 The report lists files only in one install, then, for each file that differs:
 

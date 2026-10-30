@@ -5,13 +5,15 @@ NSOClient, using FreeSO, an open-source C# reimplementation of the game as it st
 its reference. This folder records how close NSOClient is, measured on real copies of the game.
 
 Neither project ships the game's files, so the measurements are run on copies installed on the
-maintainer's machine, and only the outcome is published here. Tools write both files, not people.
+maintainer's machine, and only the outcome is published here. Tools write the reports, not people;
+the one page kept by hand, `install-notes.md`, explains what a report found.
 They hold counts, object IDs (GUIDs), file and chunk names, and values, never the game's own data.
 
 | File | What it shows | Written by | When |
 | --- | --- | --- | --- |
 | [nso-review.md](nso-review.md) | Whether NSOClient and FreeSO behave the same, experiment by experiment: where they agree, every disagreement, and what's inconclusive | `NSOClient/scripts/oracle-review.sh --review` | After each phase of work |
-| [install-differences.md](install-differences.md) | How two copies of the game used here differ, file by file | `tsofiles-check` | Once |
+| [install-differences.md](install-differences.md) | How the copies of the game used here differ, file by file, from the oldest to the newest | `tsofiles-check` | Once, again when a copy is added |
+| [install-notes.md](install-notes.md) | What those differences mean for NewSO, and content that relies on something unusual | By hand | As findings come in |
 
 ## nso-review.md
 
@@ -44,9 +46,11 @@ stops a change that introduces a new disagreement until someone has looked at it
 
 ## install-differences.md
 
-It compares the 2002 copy (1.145.1.0, `TSO_GAME_DIR` when it was written, `TSO_CLASSIC_DIR` now)
-with the 2002 beta (1.3.2.121). It lists the files only one of them has and, for files in both
-that differ, which objects and resources inside changed. When NSOClient or FreeSO behaves
-differently on the two copies, it shows what changed in the game's files, before anyone looks for a
-bug in the code. It's written once; deleting it and running `tsofiles-check` on both copies
-writes it again.
+It compares each copy with the next newer one: the 2002 beta (1.3.2.121) with the 2002 copy
+(1.145.1.0), then the 2002 copy with 1.1097.1.0, which came after New & Improved. Each step
+lists the files only one of the two has and, for files in both that differ, which objects and
+resources inside changed, so it shows what the patches between them changed. When NSOClient or
+FreeSO behaves differently on two copies, it shows what changed in the game's files, before anyone
+looks for a bug in the code. It's written once; deleting it and running `tsofiles-check` with the
+copies set writes it again. Notes on what the differences mean go in `install-notes.md`, which
+the tool doesn't touch.
