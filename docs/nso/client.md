@@ -36,6 +36,8 @@ explains why a 3D camera rather than FreeSO's 2D batches.
   (Hyde Park's E2). So objects cover each other, and the walls, pixel by pixel: a television's
   screen shows in front of its own body, and a cut-down wall hides the base of what stands
   behind it. A GPU that can't compile the depth shader gets the sprites back to front instead.
+- **Hidden objects** aren't drawn or picked: portals, the mailbox's second part, and other
+  controllers hide themselves through object data 34, as FreeSO reads it.
 - **Walls, floors, and the ground** are flat shapes for now, colored by kind. The walls of the floor
   in view are cut down so the rooms show, as TSO does. Floors and the ground are drawn a little
   back and down, as FreeSO draws its floors, so the feet of objects standing on them show.

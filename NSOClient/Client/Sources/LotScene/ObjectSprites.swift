@@ -130,7 +130,7 @@ extension LotScene {
                 holder = container
                 depth += 1
             }
-            guard holder.position != .outOfWorld else { continue }
+            guard holder.position != .outOfWorld, !Self.isHidden(entity) else { continue }
             let definition = entity.object.definition
             let graphic = UInt16(bitPattern: entity.objectData[Int(ObjectVariable.graphic.rawValue)])
             let resource = entity.object.resource
@@ -168,6 +168,13 @@ extension LotScene {
                 ))
             }
         }
+    }
+
+    /// Whether an object's code has hidden it (object data 34), as portals and other controllers
+    /// do. FreeSO's `VMEntity.SetValue` makes such an object's `WorldUI` invisible, so it isn't
+    /// drawn or picked.
+    public static func isHidden(_ entity: Entity) -> Bool {
+        entity.objectData[Int(ObjectVariable.hidden.rawValue)] != 0
     }
 
     /// The line a sprite's depth runs along, for a sprite whose world position (FreeSO's

@@ -261,3 +261,20 @@ private func simdLength(_ vector: SIMD3<Float>) -> Float {
         #expect(drawn.contains(chair.objectID) == (chair.direction == .north))
     }
 }
+
+@Test func hiddenObjectsAreNeitherDrawnNorPicked() throws {
+    // Portals and other controllers hide themselves with object data 34, as FreeSO's VMEntity reads it.
+    let session = try mockSession()
+    var sprites: [ObjectSprite] = []
+    LotScene.objectSprites(of: session.vm, zoom: .near, worldRotation: 0, library: SpriteLibrary(), into: &sprites)
+    let drawn = try #require(sprites.first?.objectID)
+    let entity = try #require(session.vm.entities.first { $0.objectID == drawn })
+    entity.objectData[Int(ObjectVariable.hidden.rawValue)] = 1
+
+    LotScene.objectSprites(of: session.vm, zoom: .near, worldRotation: 0, library: SpriteLibrary(), into: &sprites)
+    #expect(!sprites.contains { $0.objectID == drawn })
+    var scene = LotScene()
+    scene.rebuildObjects(of: session.vm)
+    #expect(!scene.objects.contains { $0.kind == .object(drawn) })
+    #expect(!scene.objects.isEmpty)
+}
