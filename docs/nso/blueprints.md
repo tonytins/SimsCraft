@@ -1,6 +1,6 @@
 # Blueprints
 
-**Design, settled 2026-10-29.** Reading is built (`Blueprint` in SimAntics); writing and NewSO's sections aren't yet.
+**Design, settled 2026-10-29.** Reading and writing are built (`Blueprint` and `Blueprint.xml()` in SimAntics); NewSO's own sections aren't yet.
 
 A blueprint is a lot as an XML file: its walls, floors, objects, and more. It's how TSO shipped
 its job lots, how FreeSO saves and shares lots, and how NewSO will save, share, debug, and test
@@ -82,10 +82,21 @@ One reader for both dialects, since FreeSO's is TSO's with parts missing.
 
 ## Writing
 
-NewSO writes TSO's dialect, as Maxis did: the revision (NewSO's version and the date), a comment
-per section, each object's name, and `hidden` where it's set. Elements come in the DTD's order.
-Writing a blueprint read from TSO and reading it back gives the same lot, and keeps what NewSO
-doesn't understand.
+NewSO writes TSO's dialect, as Maxis did: the revision if the blueprint has one, a comment per
+level of floors and walls, each object's name, and `hidden` where it's set. Elements and
+attributes come in the DTD's order, an attribute at its default is left out (as Maxis left out a
+controller's tile), and an empty section closes itself. Writing a blueprint and reading it back
+gives the same lot, and keeps what NewSO doesn't understand: all 23 job lots and every blueprint
+in the repository do.
+
+Three choices of NewSO's own: UTF-8 rather than ISO-8859-1, so any object name can be written;
+line feeds rather than CRLF; and no `DOCTYPE`, which .NET since Core refuses, so FreeSO's later
+builds can still open the file.
+
+`newso --rewrite-blueprint FILE` rewrites a lot in TSO's dialect, naming each object from its
+`OBJD`. The owner's house (`NSOClient/Lots/tonys-house.xml`) was rewritten this way on
+2026-10-29, from FreeSO's dialect; FreeSO saved its controllers at tile (-2048, -2048), its
+out-of-world place, which is kept.
 
 ## Extending
 
@@ -113,8 +124,9 @@ start rather than added later:
 - **A section that's unknown is kept,** unread, and written back exactly as it came, and the load
   reports it. CityLimits drops one instead; NewSO keeps it, as AGENTS.md's "keep what you don't
   understand" asks, and XML makes that cheap.
-- **No upgrade steps until one is needed.** The first breaking change brings the first. FreeSO skips elements it doesn't know, so it can still open a NewSO blueprint as a fresh
-lot (**Unverified**; one oracle test would check it).
+- **No upgrade steps until one is needed.** The first breaking change brings the first. FreeSO skips elements and attributes it doesn't know, so it opens a NewSO blueprint as a fresh
+lot: the owner's house, rewritten in TSO's dialect, gives FreeSO the same room maps and the same
+1,800-tick run as before (2026-10-29).
 
 ## Scenarios
 

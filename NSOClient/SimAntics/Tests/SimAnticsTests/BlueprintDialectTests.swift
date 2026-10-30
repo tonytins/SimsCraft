@@ -123,6 +123,87 @@ import Testing
     }
 }
 
+/// Writing TSO's dialect: what's read back is the same lot.
+@Suite struct BlueprintWriterTests {
+    /// The blueprint as written and read back. Writing adds NewSO's marker, and Maxis' format
+    /// version for a blueprint that had none; everything else must come back as it was.
+    static func roundTrip(_ blueprint: Blueprint) throws -> Blueprint {
+        var back = try Blueprint(xml: blueprint.xml())
+        #expect(back.newsoVersion == Blueprint.newestVersion && back.formatVersion == (blueprint.formatVersion ?? "1.0"))
+        #expect(!back.wasRepaired)
+        back.newsoVersion = blueprint.newsoVersion
+        back.formatVersion = blueprint.formatVersion
+        return back
+    }
+
+    static func sameLot(_ a: Blueprint, _ b: Blueprint) -> Bool {
+        a.formatVersion == b.formatVersion && a.revision == b.revision && a.newsoVersion == b.newsoVersion
+            && a.size == b.size && a.category == b.category && a.flags == b.flags && a.floors == b.floors
+            && a.pools == b.pools && a.puddles == b.puddles && a.walls == b.walls && a.sounds == b.sounds
+            && a.objects == b.objects && a.unknownElements == b.unknownElements && a.otherAttributes == b.otherAttributes
+    }
+
+    @Test func writesTSOsDialectBackAsItWas() throws {
+        let lot = try Blueprint(xml: BlueprintDialectTests.tsoLot)
+        #expect(Self.sameLot(try Self.roundTrip(lot), lot))
+        let text = String(decoding: lot.xml(), as: UTF8.self)
+        // Maxis' layout: the DTD's order, names, hidden, comments per level, and no tile for a controller.
+        #expect(text.contains(#"<object guid="0x38E2E75B" name="Death - Controller" group="0" />"#))
+        #expect(text.contains("name=\"Portal - Caf\u{E9}\" group=\"0\" x=\"2\" y=\"3\" level=\"1\" dir=\"4\" hidden=\"1\" />"))
+        #expect(text.contains("<!-- Level 0 Floors -->"))
+        #expect(text.contains(#"<newso version="1" />"#) && !text.contains("DOCTYPE"))
+        let order = ["<revision", "<newso", "<size>", "<category>", "<world>", "<flags>", "<floors>", "<walls>", "<pools>",
+                     "<water>", "<sounds>", "<objects>"].compactMap { text.range(of: $0)?.lowerBound }
+        #expect(order.count == 12 && order == order.sorted())
+    }
+
+    @Test func keepsWhatItDoesntKnowThroughAWrite() throws {
+        let xml = """
+            <house version="1.0" flavor="sweet">
+              <newso version="1"><later kind="x"/></newso>
+              <size>4</size>
+              <weather kind="rain"><drop/></weather>
+              <world><floors flavor="salty"><floor level="0" x="1" y="1" value="2" shine="3"/><rug/></floors></world>
+              <objects><object guid="0x1" mood="happy"/></objects>
+            </house>
+            """
+        let lot = try Blueprint(xml: Data(xml.utf8))
+        let back = try Self.roundTrip(lot)
+        #expect(Self.sameLot(back, lot))
+        #expect(Set(back.unknownElements.map(\.parent)) == ["house/newso", "house", "house/world/floors"])
+    }
+
+    @Test func writesFreeSOsDialectAsTSOs() throws {
+        let xml = """
+            <house xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><size>64</size><category>0</category>
+              <objects><object id="3" guid="0x39CCF441" level="1" x="30" y="52" dir="3" group="0" /></objects></house>
+            """
+        let lot = try Blueprint(xml: Data(xml.utf8))
+        #expect(Self.sameLot(try Self.roundTrip(lot), lot))
+        #expect(!String(decoding: lot.xml(), as: UTF8.self).contains("xmlns"))
+    }
+
+    @Test func escapesWhatItWrites() throws {
+        var lot = try Blueprint(xml: Data("<house><size>4</size></house>".utf8))
+        lot.objects = [Blueprint.Object(guid: 1, name: #"Tom & "Jerry" <3"#, otherAttributes: [.init(name: "note", value: "a\nb\tc")])]
+        #expect(Self.sameLot(try Self.roundTrip(lot), lot))
+    }
+
+    @Test func roundTripsEveryBlueprintTheProjectHas() throws {
+        let nsoclient = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../..").standardizedFileURL
+        let folders = ["Lots", "MockInstall/Lots", "../TSOClient/tso.content/Content/Blueprints"].map { nsoclient.appendingPathComponent($0) }
+        var count = 0
+        for folder in folders {
+            for file in (try? FileManager.default.contentsOfDirectory(atPath: folder.path))?.filter({ $0.hasSuffix(".xml") }) ?? [] {
+                let lot = try Blueprint(xml: try Data(contentsOf: folder.appendingPathComponent(file)))
+                #expect(Self.sameLot(try Self.roundTrip(lot), lot), "\(file)")
+                count += 1
+            }
+        }
+        #expect(count >= 4)
+    }
+}
+
 /// TSO's own blueprints, the 23 job lots 1.1097.1.0 ships.
 @Suite(.enabled(if: gameDirectory != nil, "TSO_GAME_DIR is not set"))
 struct TSOBlueprintTests {
@@ -134,6 +215,7 @@ struct TSOBlueprintTests {
         for file in files {
             let lot = try Blueprint(xml: try Data(contentsOf: folder.appendingPathComponent(file)))
             if lot.wasRepaired { repaired.append(file) }
+            #expect(BlueprintWriterTests.sameLot(try BlueprintWriterTests.roundTrip(lot), lot), "\(file) changes when written")
             #expect(lot.formatVersion == "1.0" && lot.revision != nil, "\(file)")
             #expect(lot.flags.count == 2 && lot.flags.allSatisfy { $0.values.count == lot.size * lot.size }, "\(file)")
             #expect(lot.objects.allSatisfy { $0.name != nil }, "\(file)")

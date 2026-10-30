@@ -42,6 +42,26 @@ public struct ClientOptions: Sendable, Equatable {
     }
 }
 
+extension ClientOptions {
+    /// The lot's blueprint in TSO's dialect, with each object named from its `OBJD` (see
+    /// `docs/nso/blueprints.md`): how a lot saved in FreeSO's dialect becomes one people can read.
+    /// The lot is read, not run.
+    public func blueprintInTSOsDialect() throws(ClientError) -> Data {
+        let content: GameContent
+        do {
+            content = try GameContent(.init(gameDirectory: gameDirectory, freeSOContentDirectory: freeSOContent,
+                                            modsDirectory: modsDirectory))
+        } catch {
+            throw .content("\(gameDirectory.path): \(error)")
+        }
+        do {
+            return try Blueprint(xml: try Data(contentsOf: lot)).namingObjects(from: content).xml()
+        } catch {
+            throw .lot("\(lot.path): \(error)")
+        }
+    }
+}
+
 /// Why the client couldn't start.
 public enum ClientError: Error, Equatable, CustomStringConvertible {
     /// The install couldn't be read.

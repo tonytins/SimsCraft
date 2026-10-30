@@ -301,3 +301,14 @@ private func simdLength(_ vector: SIMD3<Float>) -> Float {
     let chair = try #require(session.vm.entities.first { $0.object.guid != 0x4D4F_4305 })
     #expect(!LotScene.isHidden(chair, hiddenByBlueprint: [chair.objectID: 0x4D4F_4305]))
 }
+
+@Test func rewritesABlueprintInTSOsDialectWithNames() throws {
+    let options = ClientOptions(installs: [], nsoclient: nsoclient)
+    let original = try Blueprint(xml: try Data(contentsOf: options.lot))
+    let rewritten = try Blueprint(xml: try options.blueprintInTSOsDialect())
+    #expect(rewritten.formatVersion == "1.0" && rewritten.newsoVersion == 1)
+    #expect(rewritten.objects.map(\.guid) == original.objects.map(\.guid))
+    #expect(rewritten.objects.first?.name == "Mock Chair")
+    #expect(rewritten.objects.last?.name == nil)   // the GUID MockInstall doesn't have
+    #expect(rewritten.floors == original.floors && rewritten.walls == original.walls)
+}

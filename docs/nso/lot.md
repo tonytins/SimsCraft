@@ -192,6 +192,8 @@ created out of the world, which runs its init; placed on its tile if its level i
 slots, and staying out of the world if it doesn't fit, since FreeSO ignores the result); given the
 blueprint's group ID on every part; and every part runs its user placement entry point at once.
 The lot server loads during a tick, so call `tick()` once afterward to be where FreeSO is.
+`xml()` writes a blueprint in TSO's dialect, and `namingObjects(from:)` names each object from
+its `OBJD`, as TSO's blueprints do; [blueprints.md](blueprints.md#writing) has the details.
 `loadLot(_:)` loads the same way and also reports the object IDs each blueprint object became, so
 a client can apply what the blueprint says that SimAntics has no part in, such as `hidden`.
 

@@ -43,6 +43,9 @@ struct NewSO: ParsableCommand {
         """)
     var ticks: Int?
 
+    @Option(help: "Write the lot's blueprint in TSO's dialect, with each object named, to this file, and quit; the lot isn't run.")
+    var rewriteBlueprint: String?
+
     @Option(help: "The zoom to start at, 1 (closest, TSO's near) to 5 (default: the one that fits the lot).")
     var zoom: Int?
 
@@ -61,6 +64,10 @@ struct NewSO: ParsableCommand {
         if let zoom, !(1...5).contains(zoom) { throw ValidationError("--zoom takes 1 to 5") }
         guard (0...3).contains(rotation) else { throw ValidationError("--rotation takes 0 to 3") }
         if let focus, focusTile(focus) == nil { throw ValidationError("--focus takes a tile as x,y, such as 32,30") }
+        if rewriteBlueprint != nil {
+            let others = [("--headless", headless), ("--screenshot", screenshot != nil), ("--ticks", ticks != nil)].filter(\.1).map(\.0)
+            if let first = others.first { throw ValidationError("--rewrite-blueprint doesn't run the lot, so it can't take \(first)") }
+        }
         // A headless run must never open a window, so the options that need one are refused.
         if headless {
             let windowOnly = [("--screenshot", screenshot != nil), ("--zoom", zoom != nil), ("--focus", focus != nil),
@@ -81,6 +88,17 @@ struct NewSO: ParsableCommand {
         let options = ClientOptions(game: game, lot: lot, installs: installs, nsoclient: Self.nsoclient,
                                     freeSOContent: try FreeSOContentLocator(config: config, fallback: snapshot).locate(),
                                     modsDirectory: try UserFolderLocator(config: config).modsDirectory())
+        if let rewriteBlueprint {
+            let file = URL(fileURLWithPath: rewriteBlueprint)
+            do {
+                try options.blueprintInTSOsDialect().write(to: file, options: .atomic)
+            } catch let error as ClientError {
+                throw error
+            } catch {
+                throw Failure(description: "couldn't write \(file.path): \(error.localizedDescription)")
+            }
+            return
+        }
         // A ClientError says what to fix; ArgumentParser prints it and exits with a failure.
         let session = try LotSession(options)
         let logs = headless || verbose

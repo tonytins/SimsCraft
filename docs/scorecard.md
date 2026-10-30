@@ -23,7 +23,7 @@ Status values: `done` (works and is tested), `partial` (works with gaps, named i
 
 | Area | Done | Partial | Missing | Key numbers |
 |---|---:|---:|---:|---|
-| [Formats](#formats) | 13 | 2 | 7 | 128 test cases; real install (2002 beta): 94 containers, 82,131 entries, 51,620 typed chunks, tuning, data definition, and OTFs, 0 failures |
+| [Formats](#formats) | 14 | 1 | 7 | 128 test cases; real install (2002 beta): 94 containers, 82,131 entries, 51,620 typed chunks, tuning, data definition, and OTFs, 0 failures |
 | [Content](#content) | 3 | 2 | 4 | real install: 2,694 objects registered, 2,693 load (the beta lacks one IFF), 19 semi-globals; matches FreeSO on all 2,649 objects FreeSO loads, and loads 44 more it can't |
 | [SimAntics](#simantics) | 2 | 6 | 7 | 21 primitives match FreeSO on every oracle case they can run; 2,782 objects run alone (production) match FreeSO digest for digest over 30 ticks; both real lots, the house included, run a full in-game day in step |
 | [Fidelity](#fidelity) | 9 | 5 | 1 | install scan and real-data invariants clean; every sprite frame matches FreeSO's; content and entry points match FreeSO object for object; Expression matches on 3,809 cases; single-object runs and both real lots (over a full in-game day) match digest for digest |
@@ -63,7 +63,7 @@ Package: [TSOFiles](../NSOClient/TSOFiles/). Ports `TSOClient/tso.files` (see
 | FMT-19 | Vitaboy model formats: mesh, skeleton, animation, appearance, binding, outfit, hand group | missing | Nichol's Notch |
 | FMT-20 | TS1 avatar formats: BCF, CFP, BMF | missing | Nichol's Notch |
 | FMT-21 | Cursors (`.cur`, `.ani`) | missing | Low priority; a client concern |
-| FMT-22 | Blueprints (lot XML): TSO's dialect read and written, FreeSO's read | partial | Reading done (2026-10-29): `Blueprint` (SimAntics) reads TSO's dialect in full (the revision, object names and `hidden`, flag layers, puddles, sounds, and NewSO's `<newso version>` marker, refusing a newer major) and FreeSO's, and keeps elements and attributes it doesn't know. Broken XML now throws: on Linux, `XMLDocument` had quietly recovered from it, so `XMLParser` checks first. One TSO quirk is tolerated, a `<` followed by whitespace (`nightclub00_01.xml`). `BlueprintDialectTests`; `TSOBlueprintTests` reads all 23 of 1.1097.1.0's job lots, with only the nightclub repaired. Missing: writing (see `docs/nso/blueprints.md`) |
+| FMT-22 | Blueprints (lot XML): TSO's dialect read and written, FreeSO's read | done | `Blueprint` (SimAntics, 2026-10-29) reads TSO's dialect in full (the revision, object names and `hidden`, flag layers, puddles, sounds, and NewSO's `<newso version>` marker, refusing a newer major) and FreeSO's, and keeps elements and attributes it doesn't know. Broken XML throws: on Linux `XMLDocument` had quietly recovered from it, so `XMLParser` checks first. One TSO quirk is tolerated, a `<` followed by whitespace (`nightclub00_01.xml`). `Blueprint.xml()` writes TSO's dialect, as the DTD lays it out, and `newso --rewrite-blueprint` names each object from its `OBJD`. `BlueprintDialectTests`, `BlueprintWriterTests`; `TSOBlueprintTests` reads and round-trips all 23 of 1.1097.1.0's job lots; every blueprint in the repository round-trips. The owner's house, rewritten, gives FreeSO the same room maps and run. NewSO's own sections (object and lot state) are planned, not a gap |
 
 ## Content
 

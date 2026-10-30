@@ -73,7 +73,7 @@ The windows and controls come from the owner's CityLimits through cs2swift, in
 
 ## Without a window
 
-Three options run the lot without anyone at the screen.
+Three options run the lot without anyone at the screen, and a fourth rewrites its blueprint.
 
 - **`--screenshot FILE`** opens a hidden window, runs `--ticks` ticks (300 by default), saves one
   frame, and quits. `--zoom` (1 to 5), `--focus x,y`, and `--rotation` (0 to 3) frame the shot.
@@ -81,6 +81,9 @@ Three options run the lot without anyone at the screen.
   lot runs `--ticks` ticks back to back, as fast as the machine allows: a game day (216,000 ticks)
   by default, a game week at most. It logs to standard error and exits.
 - **`--verbose`** logs the same as a headless run while the window is open.
+- **`--rewrite-blueprint FILE`** writes the lot's blueprint in TSO's own dialect, with every object
+  named, and quits without running it: how a lot saved by FreeSO becomes one people can read
+  ([blueprints.md](blueprints.md)). It can name its own lot (`--lot`) to rewrite it in place.
 
 A run's log, through swift-log, has the lot and the install's version, each system message as it
 arrives, a line each game hour, and a summary. Every line is stamped with the tick and the game
