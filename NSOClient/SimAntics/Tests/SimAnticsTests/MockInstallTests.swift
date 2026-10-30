@@ -179,6 +179,16 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
         #expect(vm.entities[4...5].allSatisfy { $0.objectData[Int(ObjectVariable.groupID.rawValue)] == 0 })
     }
 
+    @Test func reportsWhichObjectsEachBlueprintObjectBecame() throws {
+        let vm = try VM(content: try GameContent(.init(gameDirectory: mockInstall)), seed: 1)
+        let lot = try Blueprint(xml: try Data(contentsOf: lotFile))
+        let loaded = try vm.loadLot(lot)
+        #expect(loaded.objectIDs.count == lot.objects.count)
+        #expect(loaded.objectIDs.map(\.count) == [1, 1, 2, 2, 1, 1, 0])   // the tables have two parts; the unknown GUID none
+        #expect(loaded.objectIDs.flatMap { $0 } == vm.entities.map(\.objectID))
+        #expect(loaded.leftOut.map(\.object.guid) == [0x4D4F_43FF])
+    }
+
     /// `mock-lot-sim.xml` is the same lot with the Sim, which loads but reports its setup as not
     /// ported, so comparisons count the lot as not measured until Sims are.
     @Test func theLotWithTheSimReportsItsSetup() throws {

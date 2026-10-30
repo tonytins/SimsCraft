@@ -123,6 +123,22 @@ public final class VM {
     ///   an object's init or entry point throws.
     @discardableResult
     public func load(_ blueprint: Blueprint) throws(SimAnticsError) -> [LeftOut] {
+        try loadLot(blueprint).leftOut
+    }
+
+    /// What ``loadLot(_:)`` did with a blueprint's objects.
+    public struct LoadedLot: Sendable, Equatable {
+        /// The objects left out, and why.
+        public var leftOut: [LeftOut]
+        /// For each of the blueprint's objects, in its order, the object IDs of the parts it
+        /// became, or none if it was left out. The VM doesn't use this; a client does, to apply
+        /// what the blueprint says about an object that SimAntics has no part in, such as `hidden`.
+        public var objectIDs: [[Int16]]
+    }
+
+    /// Loads a lot exactly as ``load(_:)`` does, and also reports which objects each of the
+    /// blueprint's objects became.
+    public func loadLot(_ blueprint: Blueprint) throws(SimAnticsError) -> LoadedLot {
         // The lot server loads inside a command, in a tick: anything answered meanwhile waits a tick more.
         isLoading = true
         defer { isLoading = false }
@@ -135,16 +151,19 @@ public final class VM {
         updateRooms()
 
         var leftOut: [LeftOut] = []
+        var objectIDs: [[Int16]] = []
         for object in blueprint.objects {
             let group: MultitileGroup?
             do {
                 group = try createObject(guid: object.guid, facing: object.direction)
             } catch .content(let error) {
                 leftOut.append(LeftOut(object: object, reason: "can't load it: \(error)"))
+                objectIDs.append([])
                 continue
             }
             guard let group, !group.objects.isEmpty else {
                 leftOut.append(LeftOut(object: object, reason: "the content has no such object"))
+                objectIDs.append([])
                 continue
             }
             if object.level != 0 {
@@ -158,12 +177,13 @@ public final class VM {
                 }
             }
             for part in group.objects { try part.executeEntryPoint(.userPlace, runImmediately: true) }
+            objectIDs.append(group.objects.map(\.objectID))
         }
         if architecture.isDirty {
             architecture.regenerateRooms()
             updateRooms()
         }
-        return leftOut
+        return LoadedLot(leftOut: leftOut, objectIDs: objectIDs)
     }
 
     deinit {

@@ -68,6 +68,10 @@ One reader for both dialects, since FreeSO's is TSO's with parts missing.
   the revision, even before the simulation uses them. A save then keeps them.
 - **Unknown parts are kept.** An element or attribute the reader doesn't know (a later NewSO's
   section, or a mod tool's) is carried through to the next save unchanged, and reported.
+- **What SimAntics has no part in, the client applies.** TSO forked from The Sims before its
+  blueprints grew `hidden` and the rest, so SimAntics knows nothing of them: `hidden="1"` hides an
+  object in the client (`LotSession.hiddenByBlueprint`) and never touches the VM, whose results
+  stay FreeSO's.
 - **Broken files are errors,** with one tolerance: a `<` followed by whitespace, which is never
   valid XML, is dropped, so `nightclub00_01.xml` loads. TSO's launcher ran its patcher first, so
   players likely never had the broken copy, but it's what the install holds, and the reader says

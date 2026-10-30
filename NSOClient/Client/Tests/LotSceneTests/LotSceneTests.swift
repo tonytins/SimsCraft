@@ -278,3 +278,26 @@ private func simdLength(_ vector: SIMD3<Float>) -> Float {
     #expect(!scene.objects.contains { $0.kind == .object(drawn) })
     #expect(!scene.objects.isEmpty)
 }
+
+@Test func objectsTheBlueprintHidesAreNeitherDrawnNorPicked() throws {
+    // TSO's job lots mark their portals hidden="1"; here the mock lot's lamp is marked instead.
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("hidden-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: folder) }
+    let mockLot = nsoclient.appendingPathComponent("MockInstall/Lots/mock-lot.xml")
+    let xml = try String(contentsOf: mockLot, encoding: .utf8)
+        .replacingOccurrences(of: #"<object guid="0x4D4F4305""#, with: #"<object hidden="1" guid="0x4D4F4305""#)
+    let lot = folder.appendingPathComponent("hidden-lamp.xml")
+    try xml.write(to: lot, atomically: true, encoding: .utf8)
+
+    let session = try LotSession(ClientOptions(lot: lot.path, installs: [], nsoclient: nsoclient))
+    let lamp = try #require(session.vm.entities.first { $0.object.guid == 0x4D4F_4305 })
+    #expect(session.hiddenByBlueprint == [lamp.objectID: 0x4D4F_4305])
+    #expect(lamp.objectData[Int(ObjectVariable.hidden.rawValue)] == 0)   // the VM never sees it
+    var scene = LotScene()
+    scene.rebuildObjects(of: session.vm, hiddenByBlueprint: session.hiddenByBlueprint)
+    #expect(!scene.objects.contains { $0.kind == .object(lamp.objectID) })
+    // An object that later takes the lamp's ID, with another GUID, isn't hidden.
+    let chair = try #require(session.vm.entities.first { $0.object.guid != 0x4D4F_4305 })
+    #expect(!LotScene.isHidden(chair, hiddenByBlueprint: [chair.objectID: 0x4D4F_4305]))
+}

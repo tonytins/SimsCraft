@@ -121,7 +121,7 @@ extension LotScene {
     /// order, their sprites in drawing group order. They replace what `sprites` held, keeping
     /// its storage, so a frame doesn't allocate a new list.
     public static func objectSprites(of vm: VM, zoom: SpriteZoom, worldRotation: UInt32, library: SpriteLibrary,
-                                     into sprites: inout [ObjectSprite]) {
+                                     hiddenByBlueprint: [Int16: UInt32] = [:], into sprites: inout [ObjectSprite]) {
         sprites.removeAll(keepingCapacity: true)
         for entity in vm.entities where !entity.isDead {
             var holder = entity
@@ -130,7 +130,7 @@ extension LotScene {
                 holder = container
                 depth += 1
             }
-            guard holder.position != .outOfWorld, !Self.isHidden(entity) else { continue }
+            guard holder.position != .outOfWorld, !Self.isHidden(entity, hiddenByBlueprint: hiddenByBlueprint) else { continue }
             let definition = entity.object.definition
             let graphic = UInt16(bitPattern: entity.objectData[Int(ObjectVariable.graphic.rawValue)])
             let resource = entity.object.resource
@@ -170,11 +170,13 @@ extension LotScene {
         }
     }
 
-    /// Whether an object's code has hidden it (object data 34), as portals and other controllers
-    /// do. FreeSO's `VMEntity.SetValue` makes such an object's `WorldUI` invisible, so it isn't
-    /// drawn or picked.
-    public static func isHidden(_ entity: Entity) -> Bool {
+    /// Whether an object is hidden, so it isn't drawn or picked: its code has hidden it (object
+    /// data 34), as portals and other controllers do and as FreeSO's `VMEntity.SetValue` reads it;
+    /// or the lot's blueprint marks it `hidden="1"`, as TSO's job lots mark their portals
+    /// (``LotSession/hiddenByBlueprint``, an object ID with its GUID).
+    public static func isHidden(_ entity: Entity, hiddenByBlueprint: [Int16: UInt32] = [:]) -> Bool {
         entity.objectData[Int(ObjectVariable.hidden.rawValue)] != 0
+            || hiddenByBlueprint[entity.objectID] == entity.object.guid
     }
 
     /// The line a sprite's depth runs along, for a sprite whose world position (FreeSO's

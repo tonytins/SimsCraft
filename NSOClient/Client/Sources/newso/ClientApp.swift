@@ -77,13 +77,13 @@ final class ClientApp {
 
     private func rebuildScene() {
         scene.rebuildArchitecture(of: session.vm)
-        scene.rebuildObjects(of: session.vm)
+        scene.rebuildObjects(of: session.vm, hiddenByBlueprint: session.hiddenByBlueprint)
         rebuildSprites()
     }
 
     private func rebuildSprites() {
         LotScene.objectSprites(of: session.vm, zoom: view.spriteZoom, worldRotation: view.worldRotation,
-                               library: library, into: &sprites)
+                               library: library, hiddenByBlueprint: session.hiddenByBlueprint, into: &sprites)
         objectsWithSprites.removeAll(keepingCapacity: true)
         for sprite in sprites { objectsWithSprites.insert(sprite.objectID) }
     }
@@ -136,7 +136,7 @@ final class ClientApp {
             lastMinute = session.vm.clock.minutes
             scene.rebuildArchitecture(of: session.vm)
         }
-        scene.rebuildObjects(of: session.vm)
+        scene.rebuildObjects(of: session.vm, hiddenByBlueprint: session.hiddenByBlueprint)
         rebuildSprites()
     }
 

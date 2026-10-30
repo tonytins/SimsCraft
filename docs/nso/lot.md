@@ -192,6 +192,8 @@ created out of the world, which runs its init; placed on its tile if its level i
 slots, and staying out of the world if it doesn't fit, since FreeSO ignores the result); given the
 blueprint's group ID on every part; and every part runs its user placement entry point at once.
 The lot server loads during a tick, so call `tick()` once afterward to be where FreeSO is.
+`loadLot(_:)` loads the same way and also reports the object IDs each blueprint object became, so
+a client can apply what the blueprint says that SimAntics has no part in, such as `hidden`.
 
 Two differences keep loading going: an object the content doesn't have, or can't load, is left out
 and returned (FreeSO fails), and entities already on the VM are kept (FreeSO starts over).

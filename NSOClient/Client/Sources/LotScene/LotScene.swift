@@ -117,7 +117,7 @@ public struct LotScene: Sendable {
     /// Rebuilds the objects' boxes from where the VM has them: each object's footprint, or a
     /// tile-sized box where it has none. Objects in a slot sit on top of what holds them, and
     /// hidden objects (``isHidden(_:)``) have none.
-    public mutating func rebuildObjects(of vm: VM) {
+    public mutating func rebuildObjects(of vm: VM, hiddenByBlueprint: [Int16: UInt32] = [:]) {
         objects.removeAll(keepingCapacity: true)
         for entity in vm.entities where !entity.isDead {
             var holder = entity
@@ -127,7 +127,7 @@ public struct LotScene: Sendable {
                 depth += 1
             }
             let position = holder.position
-            guard position != .outOfWorld, !Self.isHidden(entity) else { continue }
+            guard position != .outOfWorld, !Self.isHidden(entity, hiddenByBlueprint: hiddenByBlueprint) else { continue }
             let level = Int(position.level)
             let base = Float(level - 1) * Self.levelHeight + Self.objectHeight * Float(depth)
             if depth > 0 {

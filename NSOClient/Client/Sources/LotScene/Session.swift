@@ -72,6 +72,10 @@ public final class LotSession {
     public let lotName: String
     /// Objects the lot names that the install doesn't have, left out of it.
     public let leftOut: [VM.LeftOut]
+    /// The objects the blueprint marks `hidden="1"`, by object ID, each with its GUID so an ID a
+    /// later object reuses isn't hidden too. TSO's job lots mark their portals this way; it's the
+    /// lot format's, not SimAntics', so the client applies it, and the VM never sees it.
+    public let hiddenByBlueprint: [Int16: UInt32]
     /// Problems loading the content, such as a broken mod; see ``SystemMessages/contentProblems(of:)``.
     public let contentProblems: [String]
     /// Whether time is stopped.
@@ -100,7 +104,13 @@ public final class LotSession {
         do {
             let blueprint = try Blueprint(xml: xml)
             vm = try VM(content: content, seed: 1)
-            leftOut = try vm.load(blueprint)
+            let loaded = try vm.loadLot(blueprint)
+            leftOut = loaded.leftOut
+            var hidden: [Int16: UInt32] = [:]
+            for (object, ids) in zip(blueprint.objects, loaded.objectIDs) where object.isHidden {
+                for id in ids { hidden[id] = vm.entity(id: id)?.object.guid }
+            }
+            hiddenByBlueprint = hidden
         } catch {
             throw .lot("\(options.lot.path): \(error)")
         }
