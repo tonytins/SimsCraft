@@ -63,6 +63,10 @@ oracles count it as not measured until Queen Margaret's fourth pass.
 `Lots/mock-lot.xml` is a made-up lot for it: a closed 3 by 3 room with floor, a chair out of
 the world, a chair in the room, two tables outside (one facing south, with a group ID), the lamp in the
 room, the register in the room, and one GUID the install doesn't have, which both oracles leave out.
+`Lots/mock-lot-sim.xml` is the same lot with the Sim in the room. It's kept apart so the Sim, which
+NewSO can't set up yet, doesn't stop the primitive cases and the lot run on `mock-lot.xml` from
+being measured; FreeSO runs both, and NewSO's side of the Sim's lot counts as not measured until
+Queen Margaret's fourth pass.
 
 `fso-oracle` reads it too: its game overlay adds placeholders for what FreeSO loads and
 NSOClient doesn't (audio, tuning, wall and floor globals, and so on). CI runs both oracles on

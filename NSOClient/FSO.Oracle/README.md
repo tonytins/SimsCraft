@@ -242,7 +242,7 @@ tab-separated line per GUID, sorted by GUID:
 
 | Result | Fields after the GUID (8 hex digits) |
 | --- | --- |
-| loaded | the `OBJD` label, the resource name, the semi-global (lower-case file name without extension, or `-`), the number of routines by name, the number of BHAVs, the number of tuning tables, and the entry point table a FreeSO entity builds (`condition:action` pairs, comma-separated, or `none`) |
+| loaded | the `OBJD` label, the resource name (a standalone object's path relative to the content folder, such as `Objects/3TileClock.iff`, so records from different checkouts compare), the semi-global (lower-case file name without extension, or `-`), the number of routines by name, the number of BHAVs, the number of tuning tables, and the entry point table a FreeSO entity builds (`condition:action` pairs, comma-separated, or `none`) |
 | no `OBJD` with the GUID | `missing` |
 | loading threw | `error` and the exception type; the full exception goes to standard error |
 

@@ -47,7 +47,7 @@ struct FixtureComparisonTests {
     }
 
     @Test func contentAndEntryPointsMatchFreeSO() throws {
-        let fso = try lines("objects.tsv"), nso = try answers().objectListing()
+        let fso = try lines("objects.tsv"), nso = try answers().objectListing(contentDirectory: freeSOContent)
         for comparison in [Comparison.content(fso: fso, nso: nso), .entryPoints(fso: fso, nso: nso)] {
             print(comparison.summary)
             #expect(comparison.matched >= leastObjects)
@@ -258,6 +258,17 @@ extension ComparisonTests {
         let list = try #require(block.range(of: "{").flatMap { start in block.range(of: "}").map { block[start.upperBound..<$0.lowerBound] } })
         let opcodes = Set(list.split(separator: ",").compactMap { UInt8($0.trimmingCharacters(in: .whitespacesAndNewlines)) })
         #expect(opcodes == Set(PrimitiveTable.unportedOperands.keys))
+    }
+
+    @Test func standaloneObjectsAreNamedRelativeToTheContentFolder() {
+        let content = URL(fileURLWithPath: "/checkout/TSOClient/tso.content/Content", isDirectory: true)
+        #expect(Answers.resourceName("/checkout/TSOClient/tso.content/Content/Objects/3TileClock.iff", contentDirectory: content)
+                == "Objects/3TileClock.iff")
+        // Objects from elsewhere (a mod folder) and archive entries keep their names.
+        #expect(Answers.resourceName("/home/player/NewSO/Mods/Objects/sofa.iff", contentDirectory: content)
+                == "/home/player/NewSO/Mods/Objects/sofa.iff")
+        #expect(Answers.resourceName("chair", contentDirectory: content) == "chair")
+        #expect(Answers.resourceName("/checkout/x.iff", contentDirectory: nil) == "/checkout/x.iff")
     }
 
     @Test func knownDifferencesAreExplainedNotDisagreements() throws {

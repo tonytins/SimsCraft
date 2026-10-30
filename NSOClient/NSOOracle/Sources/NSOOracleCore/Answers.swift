@@ -21,7 +21,7 @@ public struct Answers {
     /// prints them: the GUID (8 hex digits), then the `OBJD` label, the resource name, the
     /// semi-global (or `-`), routines by name, BHAVs, tuning tables, and the entry point table
     /// (`condition:action` pairs, or `none`); or `missing`, or `error` and the error's kind.
-    public func objectListing() -> [String] {
+    public func objectListing(contentDirectory: URL? = nil) -> [String] {
         let vm = try? VM(content: content, seed: 1)
         return content.objects.references.enumerated().map { index, reference in
             let guid = String(format: "%08x", reference.guid)
@@ -34,10 +34,22 @@ public struct Answers {
             guard let object else { return "\(guid)\tmissing" }
             let resource = object.resource
             let routines = (try? resource.mainFile.chunks(BHAV.self).count).map(String.init) ?? "error"
-            return [guid, object.definition.label, resource.name, resource.semiGlobal?.name ?? "-",
+            return [guid, object.definition.label, Self.resourceName(resource.name, contentDirectory: contentDirectory),
+                    resource.semiGlobal?.name ?? "-",
                     "\(resource.treesByName.count)", routines, "\(resource.tuning?.tables.count ?? 0)",
                     entryPoints(of: reference.guid, id: Int16(truncatingIfNeeded: index + 1), in: vm)].joined(separator: "\t")
         }
+    }
+
+    /// A resource's name as both oracles print it: a standalone object's path relative to
+    /// FreeSO's content folder (`Objects/3TileClock.iff`), so results from different checkouts
+    /// compare; any other name as it is.
+    static func resourceName(_ name: String, contentDirectory: URL?) -> String {
+        guard name.hasPrefix("/"), let contentDirectory else { return name }
+        let folder = contentDirectory.standardizedFileURL.path
+        let base = folder.hasSuffix("/") ? folder : folder + "/"
+        let path = URL(fileURLWithPath: name).standardizedFileURL.path
+        return path.hasPrefix(base) ? String(path.dropFirst(base.count)) : name
     }
 
     /// The entry point table an entity builds, as `fso-oracle` prints it.

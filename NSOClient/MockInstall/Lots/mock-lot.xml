@@ -36,7 +36,6 @@
     <object guid="0x4D4F4302" level="1" x="3" y="7" dir="0" group="0" />
     <object guid="0x4D4F4305" level="1" x="4" y="2" dir="0" group="0" />
     <object guid="0x4D4F4306" level="1" x="2" y="4" dir="0" group="0" />
-    <object guid="0x4D4F4307" level="1" x="3" y="4" dir="0" group="0" />
     <object guid="0x4D4F43FF" level="1" x="8" y="8" dir="0" group="0" />
   </objects>
   <sounds />

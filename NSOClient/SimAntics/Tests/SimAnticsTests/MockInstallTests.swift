@@ -165,10 +165,9 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
         let lot = try Blueprint(xml: try Data(contentsOf: lotFile))
         let leftOut = try vm.load(lot)
         #expect(leftOut.map(\.object.guid) == [0x4D4F_43FF])
-        #expect(vm.entities.last?.object.guid == mockSimGUID)
         #expect(vm.globalState[11] == -1)                                   // the job level
         #expect(vm.entities.map(\.object.guid) == [mockChairGUID, mockChairGUID, mockLeftGUID, mockRightGUID, mockLeftGUID, mockRightGUID,
-                                                   mockLampGUID, mockRegisterGUID, mockSimGUID])
+                                                   mockLampGUID, mockRegisterGUID])
 
         let (outside, inside) = (vm.entities[0], vm.entities[1])
         #expect(outside.position.isOutOfWorld)                              // level 0 stays out of the world
@@ -178,6 +177,17 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
         #expect(vm.entities[2].position == .center(ofTileX: 7, y: 3, level: 1) && vm.entities[3].position.x == 104)
         #expect(vm.entities[2...3].allSatisfy { $0.objectData[Int(ObjectVariable.groupID.rawValue)] == 9 })
         #expect(vm.entities[4...5].allSatisfy { $0.objectData[Int(ObjectVariable.groupID.rawValue)] == 0 })
+    }
+
+    /// `mock-lot-sim.xml` is the same lot with the Sim, which loads but reports its setup as not
+    /// ported, so comparisons count the lot as not measured until Sims are.
+    @Test func theLotWithTheSimReportsItsSetup() throws {
+        let vm = try VM(content: try GameContent(.init(gameDirectory: mockInstall)), seed: 1)
+        let file = mockInstall.deletingLastPathComponent().appendingPathComponent("Lots/mock-lot-sim.xml")
+        try vm.load(try Blueprint(xml: try Data(contentsOf: file)))
+        let sim = try #require(vm.entities.last)
+        #expect(sim.object.guid == mockSimGUID && sim.isAvatar)
+        #expect(vm.reportedErrors.contains { $0.objectID == sim.objectID && $0.error == .unsupported(VM.simSetupGap) })
     }
 
     /// The chair (tile 3, 3) and the lamp (tile 4, 2) are a tile apart diagonally: one tile away,

@@ -304,6 +304,18 @@ options:
         /// OBJD has the GUID; or <c>error</c> and the exception type if loading fails.
         /// Loading can register objects again (patched files), so the GUIDs are taken first.
         /// </remarks>
+        /// <summary>
+        /// A resource's name as both oracles print it: a standalone object's path relative to the
+        /// content folder (<c>Objects/3TileClock.iff</c>), so results from different checkouts
+        /// compare; any other name as it is.
+        /// </summary>
+        private static string ResourceName(string name)
+        {
+            if (!Path.IsPathRooted(name)) return name;
+            var relative = Path.GetRelativePath(FSOEnvironment.ContentDir, name);
+            return relative.StartsWith("..") ? name : relative.Replace('\\', '/');
+        }
+
         private static void ListObjects(TextWriter results)
         {
             var provider = Content.Content.Get().WorldObjects;
@@ -325,7 +337,7 @@ options:
                         var semiGlobal = resource.SemiGlobal?.Iff?.Filename;
                         line = string.Join("\t",
                             item.OBJ.ChunkLabel,
-                            resource.Name,
+                            ResourceName(resource.Name),
                             semiGlobal == null ? "-" : Path.GetFileNameWithoutExtension(semiGlobal).ToLowerInvariant(),
                             resource.TreeByName.Count,
                             resource.MainIff.List<Files.Formats.IFF.Chunks.BHAV>()?.Count ?? 0,

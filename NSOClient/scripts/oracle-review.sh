@@ -21,6 +21,7 @@
 set -euo pipefail
 
 repository="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$repository/NSOClient/scripts/oracle-lots.sh"
 review=false
 mock=false
 case "${1:-}" in
@@ -90,16 +91,18 @@ for install in "${installs[@]}"; do
             file="$(basename "$lot")"
             mapfile -t leave < <(awk -F'\t' -v f="$file" '$1 == f { print "--leave-out"; print $2 }' "$fso_folder/lots.leftout")
             nso run-lot --blueprint "$lot" --ticks "$lot_ticks" --every "$lot_every" "${leave[@]}" | sed "s|^|$file |"
-        done <"$fso_folder/lots.run"
+        done < <(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/lots.run")
     }
     timed run-lot run_lots >"$folder/lots.digests"
     mapfile -t leave < <(awk '{ print "--leave-out"; print $1 }' "$fso_folder/primitives.leftout")
     for requests in "$fso_folder"/*.requests.jsonl; do
         primitive="$(basename "$requests" .requests.jsonl)"
-        timed "run-primitive $primitive" nso run-primitive --blueprint "$(cat "$fso_folder/primitives.lot")" "${leave[@]}" \
+        timed "run-primitive $primitive" nso run-primitive \
+            --blueprint "$(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/primitives.lot")" "${leave[@]}" \
             <"$requests" >"$folder/$primitive.responses.jsonl"
     done
-    timed room-maps "$nso_binary" room-maps <"$fso_folder/rooms.lots" >"$folder/rooms.jsonl"
+    timed room-maps "$nso_binary" room-maps < <(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/rooms.lots") \
+        >"$folder/rooms.jsonl"
     timed sprites nso sprites >"$folder/sprites.tsv"
     timed operands nso operands >"$folder/operands.tsv"
 

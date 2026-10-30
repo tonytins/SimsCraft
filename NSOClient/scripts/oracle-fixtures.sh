@@ -12,7 +12,8 @@
 #   objects.tsv                   list-objects: what loads for every object
 #   objects.digests               run-objects: each object alone for 30 ticks
 #   lots.run, lots.digests        the lots with objects, and run-lot on each (lines prefixed with
-#                                 its file name)
+#                                 its file name); lots.run, primitives.lot, and rooms.lots name
+#                                 lots relative to where they come from (oracle-lots.sh)
 #   lots.leftout                  the objects fso-oracle left out of each (file name, tab, GUID)
 #   PRIMITIVE.requests.jsonl      generated cases for each ported primitive (OracleCases/make_cases.py)
 #   PRIMITIVE.responses.jsonl     run-primitive responses to them
@@ -26,6 +27,7 @@
 set -euo pipefail
 
 repository="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$repository/NSOClient/scripts/oracle-lots.sh"
 mock=false
 if [[ "${1:-}" == "--mock" ]]; then
     mock=true
@@ -34,14 +36,16 @@ fi
 output="${1:-${TMPDIR:-/tmp}/fso-oracle-fixtures}"
 if $mock; then
     game="$repository/NSOClient/MockInstall/TSOClient"
-    lots=("$repository"/NSOClient/MockInstall/Lots/*.xml)
-    primitive_lot="$repository/NSOClient/MockInstall/Lots/mock-lot.xml"
+    lots_folder="NSOClient/MockInstall/Lots"
+    primitive_lot="repository/NSOClient/MockInstall/Lots/mock-lot.xml"
 else
     game="${TSO_GAME_DIR:?set TSO_GAME_DIR to your TSO install, or pass --mock}"
-    lots=("$repository"/NSOClient/Lots/*.xml)
-    primitive_lot="$repository/TSOClient/tso.content/Content/Blueprints/empty_lot_fso.xml"
+    lots_folder="NSOClient/Lots"
+    primitive_lot="freeso/Blueprints/empty_lot_fso.xml"
 fi
-empty_lot="$repository/TSOClient/tso.content/Content/Blueprints/empty_lot_fso.xml"
+lots=()
+for lot in "$repository/$lots_folder"/*.xml; do lots+=("repository/$lots_folder/$(basename "$lot")"); done
+empty_lot="freeso/Blueprints/empty_lot_fso.xml"
 # Kept in step with the NSOOracle tests (lotRunsMatchFreeSO).
 # A full in-game day (150 ticks a game minute), compared every game hour.
 lot_ticks=216000
@@ -88,7 +92,7 @@ run_lots() {
         oracle run-lot --blueprint "$lot" --ticks "$lot_ticks" --every "$lot_every" 2>"$output/lot.log" | sed "s|^|$file |"
         cat "$output/lot.log" >>"$output/lots.log"
         left_out "$output/lot.log" | sed "s|^|$file\t|" >>"$output/lots.leftout"
-    done <"$output/lots.run"
+    done < <(resolve_lots "$output" "$game" "$repository" <"$output/lots.run")
 }
 : >"$output/lots.log"
 timed run-lot run_lots >"$output/lots.digests"
@@ -96,7 +100,8 @@ timed run-lot run_lots >"$output/lots.digests"
 # The cases name the lot's objects by GUID, in object ID order (1 is the caller, 2 the stack
 # object), and its multi-tile masters, so they're read from the lot run-primitive loads.
 echo "$primitive_lot" >"$output/primitives.lot"
-lot=$(echo '{"opcode":2,"stackObject":2}' | oracle run-primitive --blueprint "$primitive_lot" 2>"$output/primitives.log")
+primitive_lot_path="$(echo "$primitive_lot" | resolve_lots "$output" "$game" "$repository")"
+lot=$(echo '{"opcode":2,"stackObject":2}' | oracle run-primitive --blueprint "$primitive_lot_path" 2>"$output/primitives.log")
 left_out "$output/primitives.log" >"$output/primitives.leftout"
 ORACLE_GUIDS=$(echo "$lot" | python3 -I -c 'import json, sys; print(",".join(entry[1] for entry in json.load(sys.stdin)["lot"]))')
 ORACLE_MASTERS=$(echo "$lot" | python3 -I -c 'import json, sys; print(",".join(group[1] for group in json.load(sys.stdin)["groups"] if group[1]))')
@@ -104,16 +109,19 @@ export ORACLE_GUIDS ORACLE_MASTERS
 for primitive in "${primitives[@]}"; do
     echo "Running $primitive cases..."
     python3 -I "$repository/NSOClient/SimAntics/OracleCases/make_cases.py" "$primitive" "$output/$primitive.requests.jsonl"
-    timed "run-primitive $primitive" oracle run-primitive --blueprint "$primitive_lot" \
+    timed "run-primitive $primitive" oracle run-primitive --blueprint "$primitive_lot_path" \
         <"$output/$primitive.requests.jsonl" >"$output/$primitive.responses.jsonl" 2>"$output/$primitive.log"
 done
 
 echo "Room maps..."
 python3 -I "$repository/NSOClient/SimAntics/OracleCases/make_blueprints.py" "$output/blueprints" >/dev/null
 # FreeSO's empty_lot.xml has a DTD, which .NET refuses to read, so only empty_lot_fso.xml joins them.
-{ cat "$output/blueprints/blueprints.txt"; echo "$empty_lot"
-  ls "$repository"/NSOClient/Lots/*.xml "$repository"/NSOClient/MockInstall/Lots/*.xml; } >"$output/rooms.lots"
-timed room-maps oracle room-maps <"$output/rooms.lots" >"$output/rooms.jsonl" 2>"$output/rooms.log"
+{ sed 's|.*/|results/blueprints/|' "$output/blueprints/blueprints.txt"; echo "$empty_lot"
+  for lot in "$repository"/NSOClient/Lots/*.xml "$repository"/NSOClient/MockInstall/Lots/*.xml; do
+      echo "repository/${lot#"$repository/"}"
+  done; } >"$output/rooms.lots"
+timed room-maps oracle room-maps < <(resolve_lots "$output" "$game" "$repository" <"$output/rooms.lots") \
+    >"$output/rooms.jsonl" 2>"$output/rooms.log"
 
 echo "Sprites..."
 timed sprites oracle sprites >"$output/sprites.tsv" 2>"$output/sprites.log"

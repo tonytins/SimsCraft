@@ -82,7 +82,8 @@ extension NSOOracle {
         @OptionGroup var install: InstallOptions
 
         func run() async throws {
-            for line in Answers(content: try await install.load()).objectListing() { print(line) }
+            let answers = Answers(content: try await install.load())
+            for line in answers.objectListing(contentDirectory: install.contentDirectory) { print(line) }
         }
     }
 
