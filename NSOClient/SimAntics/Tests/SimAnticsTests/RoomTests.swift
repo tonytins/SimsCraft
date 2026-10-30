@@ -176,7 +176,7 @@ struct RoomTests {
         #expect(objects == [Blueprint.Object(guid: 0xABCD, level: 1, x: 2, y: 3, direction: .south, group: 7),
                             Blueprint.Object(guid: 0xFF, direction: .east),
                             Blueprint.Object(guid: 0, direction: .west),           // no GUID reads as 0
-                            Blueprint.Object(guid: 1, direction: .west)])          // an odd dir is west
+                            Blueprint.Object(guid: 1, direction: .west, dir: 3)])  // an odd dir is west, and kept
         #expect(throws: BlueprintError.self) {
             try Blueprint(xml: Data(#"<house><size>4</size><objects><object guid="chair"/></objects></house>"#.utf8))
         }

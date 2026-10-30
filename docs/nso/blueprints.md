@@ -1,6 +1,6 @@
 # Blueprints
 
-**Design, settled 2026-10-29.** Nothing here is built yet.
+**Design, settled 2026-10-29.** Reading is built (`Blueprint` in SimAntics); writing and NewSO's sections aren't yet.
 
 A blueprint is a lot as an XML file: its walls, floors, objects, and more. It's how TSO shipped
 its job lots, how FreeSO saves and shares lots, and how NewSO will save, share, debug, and test

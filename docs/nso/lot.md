@@ -164,11 +164,11 @@ ported yet.
 
 ## Blueprints
 
-This reads FreeSO's dialect of the format. [blueprints.md](blueprints.md) has the plan for reading and
-writing TSO's own dialect, which FreeSO's leaves parts out of.
-
-`Blueprint` reads FreeSO's lot XML (`XmlHouseData`): the size, the category, floors, pools,
-walls, and objects. `architecture()` builds the walls and floors as FreeSO's `VMWorldActivator` does, floors
+`Blueprint` reads lot XML in both dialects ([blueprints.md](blueprints.md)): TSO's own, as
+1.1097.1.0's job lots and `blueprint.dtd` have it, and FreeSO's (`XmlHouseData`). That's the size,
+the category, floors, pools, walls, objects, and sounds, and from TSO's dialect also the revision,
+each object's name and `hidden`, the flag layers, and puddles. Whatever it doesn't know, it keeps
+(`unknownElements`, and each part's `otherAttributes`). `architecture()` builds the walls and floors as FreeSO's `VMWorldActivator` does, floors
 first, then pools (always on the ground floor), then walls, and generates the rooms:
 
 ```swift
@@ -179,7 +179,9 @@ vm.tick()                                                // the tick the lot ser
 ```
 
 Values are read as .NET's `XmlSerializer` reads them: missing attributes are 0, and floor patterns
-are truncated to 16 bits. A malformed file throws `BlueprintError.malformed`; a tile off the lot
+are truncated to 16 bits. A malformed file throws `BlueprintError.malformed`, except for one TSO
+quirk it repairs, a `<` followed by whitespace (`wasRepaired`); a `DOCTYPE` is never fetched; a
+blueprint a newer NewSO wrote throws `BlueprintError.newerVersion`; a tile off the lot
 throws `BlueprintError.offLot`, where FreeSO fails with an index out of range. Lots are 1 to 255
 tiles a side.
 
