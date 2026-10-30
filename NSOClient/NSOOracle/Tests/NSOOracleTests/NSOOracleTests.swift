@@ -261,13 +261,17 @@ extension ComparisonTests {
     }
 
     @Test func knownDifferencesAreExplainedNotDisagreements() throws {
-        let difference = try #require(KnownDifference.all.first { $0.id == "DIFF-27" })
+        // A made-up difference: the list is empty while NewSO has none in the sprites.
+        let difference = KnownDifference(id: "DIFF-99", comparison: "Sprites",
+                                         keyPrefix: "objectdata/objects/objspf.far/made-up.spf\tSPR2\t1\t", reason: "a test")
         let key = difference.keyPrefix + "0"
         let comparison = Comparison.sprites(fso: ["\(key)\t1\t1\t0\t0\t1\t7\taaaa\tdddd"],
-                                            nso: ["\(key)\t1\t1\t0\t0\t1\t7\tbbbb\tdddd"])
-        #expect(comparison.explained == ["DIFF-27": 1])
+                                            nso: ["\(key)\t1\t1\t0\t0\t1\t7\tbbbb\tdddd"], known: [difference])
+        #expect(comparison.explained == ["DIFF-99": 1])
         #expect(comparison.mismatches.isEmpty)
-        #expect(comparison.summary.contains("1 differ by design (DIFF-27)"))
+        #expect(comparison.summary.contains("1 differ by design (DIFF-99)"))
+        #expect(Comparison.sprites(fso: ["\(key)\t1\t1\t0\t0\t1\t7\taaaa\tdddd"],
+                                   nso: ["\(key)\t1\t1\t0\t0\t1\t7\tbbbb\tdddd"]).mismatches.count == 1)
     }
 }
 

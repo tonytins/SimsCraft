@@ -14,16 +14,20 @@ public struct KnownDifference: Sendable, Equatable {
     /// What NewSO does differently, and why.
     public var reason: String
 
-    public static let all: [KnownDifference] = [
-        KnownDifference(
-            id: "DIFF-27", comparison: "Sprites",
-            keyPrefix: "objectdata/objects/objspf.far/mockchair.spf\tSPR2\t102\t",
-            reason: "SPR2 alpha past 31 saturates at 255, where FreeSO's byte cast wraps (MockInstall's frame uses 40)"
-        ),
-    ]
+    public init(id: String, comparison: String, keyPrefix: String, reason: String) {
+        self.id = id
+        self.comparison = comparison
+        self.keyPrefix = keyPrefix
+        self.reason = reason
+    }
 
-    /// The known difference that covers a record of a comparison, if any.
-    public static func covering(_ key: String, in comparison: String) -> KnownDifference? {
-        all.first { $0.comparison == comparison && key.hasPrefix($0.keyPrefix) }
+    /// None at the moment: DIFF-27, the only one, was withdrawn on 2026-10-29, when TSO's own
+    /// skill objects turned out to rely on the FreeSO behavior it changed.
+    public static let all: [KnownDifference] = []
+
+    /// The known difference among `known` that covers a record of a comparison, if any.
+    public static func covering(_ key: String, in comparison: String,
+                                known: [KnownDifference] = all) -> KnownDifference? {
+        known.first { $0.comparison == comparison && key.hasPrefix($0.keyPrefix) }
     }
 }

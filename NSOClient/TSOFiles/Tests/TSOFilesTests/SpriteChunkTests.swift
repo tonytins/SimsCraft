@@ -223,13 +223,14 @@ private func pixel(_ image: SpriteImage, _ x: Int, _ y: Int) -> [UInt8] {
     #expect(image.depth == [7, 8])
 }
 
-@Test func alphaPastFiveBitsSaturates() throws {
-    // 40 × 8.2258… is 329: FreeSO's byte cast wraps it to 73; NewSO keeps it at 255 (DIFF-27).
+@Test func alphaPastFiveBitsWrapsAsFreeSOs() throws {
+    // 40 × 8.2258… is 329, which FreeSO's byte cast wraps to 73. TSO's skill objects store 200
+    // (1,645, wrapped to 109), so NewSO keeps the wrap.
     var rows = SpriteRows()
     rows.row([(2, 1, [7, 2, 40, 0xEE])])
     rows.end()
     let image = try SPR2(record: sprite(width: 1, height: 1, flags: 0x7, rows: rows)).decode(frameAt: 0, palette: try rampPalette())
-    #expect(pixel(image, 0, 0) == [2, 4, 6, 255])
+    #expect(pixel(image, 0, 0) == [2, 4, 6, 73])
 }
 
 @Test(arguments: [(UInt16(0), UInt16(9)), (0xA3A3, 9), (12, 12)])

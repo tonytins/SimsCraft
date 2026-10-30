@@ -247,7 +247,7 @@ public struct Comparison: Sendable, Equatable {
     /// FreeSO fails on counts as matched if NSOClient fails too, and as recovered if it decodes;
     /// so does each frame of a chunk FreeSO can't read (its record has `-` for the frame).
     /// A disagreement a ``KnownDifference`` covers counts as explained.
-    public static func sprites(fso: [String], nso: [String]) -> Comparison {
+    public static func sprites(fso: [String], nso: [String], known: [KnownDifference] = KnownDifference.all) -> Comparison {
         var result = Comparison(name: "Sprites")
         func keyed(_ lines: [String]) -> [String: [String]] {
             var records: [String: [String]] = [:]
@@ -276,7 +276,7 @@ public struct Comparison: Sendable, Equatable {
                 if mine.first == "error" { result.matched += 1 } else { result.recovered += 1 }
             } else if mine == record {
                 result.matched += 1
-            } else if let difference = KnownDifference.covering(key, in: "Sprites") {
+            } else if let difference = KnownDifference.covering(key, in: "Sprites", known: known) {
                 result.explained[difference.id, default: 0] += 1
             } else {
                 result.mismatches.append("\(key.replacingOccurrences(of: "\t", with: " ")): FreeSO \(record) NSOClient \(mine)")
