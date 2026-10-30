@@ -164,6 +164,9 @@ ported yet.
 
 ## Blueprints
 
+This reads FreeSO's dialect of the format. [blueprints.md](blueprints.md) has the plan for reading and
+writing TSO's own dialect, which FreeSO's leaves parts out of.
+
 `Blueprint` reads FreeSO's lot XML (`XmlHouseData`): the size, the category, floors, pools,
 walls, and objects. `architecture()` builds the walls and floors as FreeSO's `VMWorldActivator` does, floors
 first, then pools (always on the ground floor), then walls, and generates the rooms:

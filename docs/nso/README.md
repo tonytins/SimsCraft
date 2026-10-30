@@ -39,6 +39,7 @@ the client; the libraries themselves take no configuration library.
 | TSOContent | Finds an install and loads objects, globals, and patches from it | [content.md](content.md) |
 | SimAntics | Runs object behavior: the VM, entities, threads, primitives, and variables | [simantics.md](simantics.md) |
 | SimAntics (lot model) | Positions, the tile index, walls, floors, rooms, and blueprints | [lot.md](lot.md) |
+| SimAntics (blueprints, planned) | TSO's lot format, read and written as Maxis intended, and NewSO's extensions | [blueprints.md](blueprints.md) |
 | SimsScript | Routines as readable listings and text assembly, and a small compiler; `simsscript list` | [tools.md](tools.md#simsscript) |
 | NSOInterface | The client's windows and controls on raylib-swift, from CityLimits through cs2swift | [client.md](client.md) |
 | Client | `newso`: shows a lot running, or runs it headless and logs it | [client.md](client.md) |
