@@ -14,7 +14,7 @@ swift run --package-path NSOClient/TSOFilesCheck -c release tsofiles-check
 
 - **With a folder argument,** it checks that folder.
 - **Without one,** it checks every install named by `TSO_GAME_DIR` (1.1097.1.0 since 2026-10-28;
-  the 2002 copy before that), `TSO_CLASSIC_DIR` (the 2002 copy), and `TSO_BETA_DIR` (the 2002
+  the base game before that), `TSO_CLASSIC_DIR` (the base game), and `TSO_BETA_DIR` (the 2002
   beta), in that order, as TSOContent's `InstallKind` lists them, read through `TSOConfig`.
   `--install game`, `classic`, or `beta` picks one, and can be repeated. Two variables naming the
   same folder check it once. Each install's header shows the version its `version` file records.

@@ -8,9 +8,9 @@
 <h1 align="center">SimsCraft</h1>
 
 <p align="center">
-  <b>an open-source Swift reimplementation of FreeSO's engine-agnostic libraries.</b><br>
-  File I/O, content loading, and SimAntics<br>
-  Backwards compatible with 1.0 and Beta
+  <b>an open-source Swift reimplementation of The Sims based on Swift and Raylib.</b><br>
+  Designed for LAN and small scale use<br>
+  Support for Beta, Base Game, and New & Improved
 </p>
 
 ## Getting Around

@@ -29,25 +29,28 @@ are in [`AGENTS.md`](../AGENTS.md); they apply to people and AI assistants alike
 
 ## Terms
 
-| Term | Meaning |
-| --- | --- |
-| *The Sims Online* (TSO) | Maxis and EA's online Sims game, released in 2002 and renamed *EA-Land* before it closed in 2008 |
-| FreeSO | An open-source C# reimplementation of TSO, built on MonoGame. NSOClient is checked against it |
-| NewSO | The game SimsCraft is making: TSO playable again, small and LAN-first |
-| NSOClient | NewSO's Swift code: the libraries that reimplement FreeSO's engine-independent parts, the client, and the tools |
-| `newso` | NewSO's client. It shows a lot running; `--headless` runs one with no window and logs it |
-| Install | A copy of TSO's game files on disk (a `TSOClient` folder). The repository holds none; tests that need one read the `TSO_GAME_DIR` environment variable, or use [`NSOClient/MockInstall`](../NSOClient/MockInstall/README.md), a tiny made-up install |
-| Production, classic, beta | The installs the project is tested on: 1.1097.1.0 (January 2005), a 2002 copy (1.145.1.0), and the 2002 beta (1.3.2.121). FreeSO was built against TSO after its New & Improved update (October 2003), likely around 1.1097.1.0 |
-| SimAntics | The virtual machine that runs object behavior in The Sims games |
-| Routine (`BHAV`), primitive | A routine is a small program an object runs; each of its instructions is either a call to another routine or a primitive, one of the VM's built-in operations |
-| IFF, chunk | Maxis's resource file format. An object's IFF holds chunks: its definition (`OBJD`), routines (`BHAV`), strings (`STR#`), sprites, and so on |
-| FAR, DBPF | Archive formats that bundle many files, such as all the objects' IFFs |
-| PIFF | FreeSO's patch format: a file of changes to apply to one of the game's IFFs |
-| GUID | The 32-bit number that identifies an object type |
-| Semi-global | A library of routines shared by a family of objects, such as all chairs |
-| Lot, tick | A property Sims live on and objects are placed on; one step of the simulation |
-| Oracle | `fso-oracle` runs FreeSO's code and `nso-oracle` runs NSOClient's, through the same experiments on the same install; the report on whether their records agree is how NSOClient is measured |
-| MOMI | TSO's in-universe name for its game masters; in `newso`, the window of system messages |
+| Term                        | Meaning                                                                                                                                                                                                                                              |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| *The Sims Online* (TSO)     | Maxis and EA's online Sims game, released in 2002 and renamed *EA-Land* before it closed in 2008                                                                                                                                                     |
+| FreeSO                      | An open-source C# reimplementation of TSO, built on MonoGame. NSOClient is checked against it                                                                                                                                                        |
+| NewSO                       | The game SimsCraft is making: TSO playable again, small and LAN-first                                                                                                                                                                                |
+| NSOClient                   | NewSO's Swift code: the libraries that reimplement FreeSO's engine-independent parts, the client, and the tools                                                                                                                                      |
+| `newso`                     | NewSO's client. It shows a lot running; `--headless` runs one with no window and logs it                                                                                                                                                             |
+| Install                     | A copy of TSO's game files on disk (a `TSOClient` folder). The repository holds none; tests that need one read the `TSO_GAME_DIR` environment variable, or use [`NSOClient/MockInstall`](../NSOClient/MockInstall/README.md), a tiny made-up install |
+| SimAntics                   | The virtual machine that runs object behavior in The Sims games                                                                                                                                                                                      |
+| Routine (`BHAV`), primitive | A routine is a small program an object runs; each of its instructions is either a call to another routine or a primitive, one of the VM's built-in operations                                                                                        |
+| update-46                   | The version of FreeSO that NewSO was built against.                                                                                                                                                                                                  |
+| IFF, chunk                  | Maxis's resource file format. An object's IFF holds chunks: its definition (`OBJD`), routines (`BHAV`), strings (`STR#`), sprites, and so on                                                                                                         |
+| FAR, DBPF                   | Archive formats that bundle many files, such as all the objects' IFFs                                                                                                                                                                                |
+| PIFF                        | FreeSO's patch format. PIFF was used to patch items their engine struggled to run.                                                                                                                                                                   |
+| GUID                        | The 32-bit number that identifies an object type                                                                                                                                                                                                     |
+| Semi-global                 | A library of routines shared by a family of objects, such as all chairs                                                                                                                                                                              |
+| Lot, tick                   | A property Sims live on and objects are placed on; one step of the simulation                                                                                                                                                                        |
+| Oracle                      | `fso-oracle` runs FreeSO's code and `nso-oracle` runs NSOClient's, through the same experiments on the same install; the report on whether their records agree is how NSOClient is measured                                                          |
+| MOMI                        | TSO's in-universe name for its game masters; in `newso`, the window of system messages                                                                                                                                                               |
+| Beta                        | An early retail copy (v1.3.2.121) that a select number people could get. Players at this time got founder's badge on their profile.                                                                                                                  |
+| Base Game                   | v1.145.1.0, the earliest known retail copy available online.                                                                                                                                                                                         |
+| New & Improved (N&I)        | An October 2003 re-release, likely at around 1.1097.1.0, that brought with it pets, jobs, and more. (Anything added since then, but before EA-Land, is known as New & Improved.)                                                                     |
 
 - **To look up what a SimAntics primitive, scope, or data field means:**
   [simantics/README.md](simantics/README.md).

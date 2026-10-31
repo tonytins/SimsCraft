@@ -5,8 +5,8 @@ FreeSO that don't depend on a game engine: the file formats, the content system,
 virtual machine that runs object behavior. They aim to get the same results as FreeSO, as its code
 stood at beta/update-46, in August 2017 (in [`TSOClient/`](../../TSOClient/)), without copying that
 code. Around them are NewSO's own client, `newso`, which shows a lot running, and the tools that
-check the libraries against FreeSO. It all keeps working on older copies of the game, a 2002 copy
-and a 2002 beta, whose files differ from the ones FreeSO expects.
+check the libraries against FreeSO. It all keeps working on older copies of the game, a base game
+and a beta, whose files differ from the ones FreeSO expects.
 
 This folder describes how the code behaves today. For what's finished and the evidence for it, see
 the [scorecard](../scorecard.md); for what comes next, the [roadmap](../roadmap.md). Unfamiliar
@@ -63,7 +63,7 @@ A few rules hold everywhere. Knowing them makes each package easier to follow.
 - **Values, not singletons.** Archives and chunks are immutable `Sendable` values, often over
   memory-mapped bytes. FreeSO reaches content through a global `Content.Get()`; here a
   `GameContent` is created and passed in, so tests and tools can load several installs side by side.
-- **Degrade gracefully on older installs.** Where the 2002 copy's or the beta's files differ from the
+- **Degrade gracefully on older installs.** Where the base game's or the beta's files differ from the
   New & Improved files FreeSO expects, NSOClient skips what doesn't fit, reports it, and keeps going. For example,
   a PIFF patch that doesn't fit an object is skipped, not fatal. [`install-differences.md`](../results/install-differences.md)
   records how the production and beta installs differ.
@@ -89,7 +89,7 @@ environment variables:
 | --- | --- |
 | `TSO_GAME_DIR` | The main install's `TSOClient` folder: the copy closest to FreeSO's files (1.1097.1.0 on the owner's machine) |
 | `TSO_CLASSIC_DIR` | An older production copy's `TSOClient` folder, such as the 2002 one (1.145.1.0) |
-| `TSO_BETA_DIR` | The 2002 beta's `TSOClient` folder |
+| `TSO_BETA_DIR` | The beta's `TSOClient` folder |
 | `NSO_USER_DIR` | NewSO's user folder, whose `Mods` folder holds a player's custom objects and patches (default: the OS's usual NewSO folder) |
 | `FSO_CONTENT_DIR` | FreeSO's `Content` folder, for its patches and custom objects (default: beside the executable, else the FreeSO snapshot's) |
 | `TSO_ORACLE_DIR` | A folder of FreeSO's records of the experiments, written by `NSOClient/scripts/oracle-fixtures.sh` (or `oracle-review.sh`), for the tests that compare NSOClient with FreeSO |

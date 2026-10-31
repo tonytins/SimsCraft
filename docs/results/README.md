@@ -33,9 +33,9 @@ loads that FreeSO can't.
 
 Each copy of the game gets its own section, with the date and the commit it was run on:
 *Production* is 1.1097.1.0 (`TSO_GAME_DIR`), the copy closest to the files FreeSO expects;
-*Classic* is the 2002 copy (1.145.1.0, `TSO_CLASSIC_DIR`); *Beta* is the 2002 beta (1.3.2.121,
+*Classic* is the base game (1.145.1.0, `TSO_CLASSIC_DIR`); *Beta* is the beta (1.3.2.121,
 `TSO_BETA_DIR`); and *Mock* is `NSOClient/MockInstall`, a small made-up install anyone can run the
-experiments on. Until 2026-10-29, the Production section was measured on the 2002 copy. A new run
+experiments on. Until 2026-10-29, the Production section was measured on the base game. A new run
 replaces only the sections of the copies it covered, and earlier reports are in the file's git
 history. Results can differ from one copy of the game to another.
 
@@ -46,8 +46,8 @@ stops a change that introduces a new disagreement until someone has looked at it
 
 ## install-differences.md
 
-It compares each copy with the next newer one: the 2002 beta (1.3.2.121) with the 2002 copy
-(1.145.1.0), then the 2002 copy with 1.1097.1.0, which came after New & Improved. Each step
+It compares each copy with the next newer one: the beta (1.3.2.121) with the base game
+(1.145.1.0), then the base game with 1.1097.1.0, which came after New & Improved. Each step
 lists the files only one of the two has and, for files in both that differ, which objects and
 resources inside changed, so it shows what the patches between them changed. When NSOClient or
 FreeSO behaves differently on two copies, it shows what changed in the game's files, before anyone

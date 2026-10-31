@@ -48,7 +48,7 @@ bhav 4096 "main" version 0x8002 type 0 arguments 4 locals 2 flags 0x0000
 ```
 
 Expression and calls are readable; other primitives keep their 8 operand bytes in hex until
-they're ported, so nothing is lost. Every routine in the 2002 beta (15,723) converts to text and
+they're ported, so nothing is lost. Every routine in the beta (15,723) converts to text and
 back unchanged.
 
 ## The language

@@ -7,7 +7,7 @@ by hand, so notes go here instead. Like the rest of this folder, this page holds
 and object IDs, never the game's own data.
 
 The copies are 1.1097.1.0 (`TSO_GAME_DIR`, after New & Improved, the closest to what FreeSO was
-built against), the 2002 copy (1.145.1.0, `TSO_CLASSIC_DIR`), and the 2002 beta (1.3.2.121,
+built against), the base game (1.145.1.0, `TSO_CLASSIC_DIR`), and the beta (1.3.2.121,
 `TSO_BETA_DIR`).
 
 ## The skill objects' alpha

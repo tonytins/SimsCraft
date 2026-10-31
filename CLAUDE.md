@@ -36,7 +36,7 @@ Key entrypoints:
 
 [The Sims Online](https://en.wikipedia.org/wiki/The_Sims_Online) (TSO) was an MMORPG based on The Sims. When the servers shutdown,  [FreeSO](https://github.com/riperiperi/FreeSO) (FSO) re-implementated the game with their own open source server and client. Now, their servers have shutdown. With no new alternatives, FSO has been refactoring the client to serve as an "archive" client that can be used for self-hosting.
 
-SimsCraft started as FSOdoc, an attempt to document a snapshot of FSO 2017 code, but has since grown to use that knowledge to start over fresh with a new client and server  intended for small scale use, known as NewSO (NSO).
+SimsCraft started as FSOdoc, an early attempt to document a snapshot of FSO update-46 with AI, but has since grown to use that knowledge to start over fresh with a new client and server intended for small scale use, known as NewSO (NSO), which lives in ``NSOClient/``.
 
 The goals:
 
@@ -45,13 +45,15 @@ The goals:
 - **Reimplement the game in Swift**. This is a new implementation, not a line-by-line port, that is intended for a lot server of our own, LAN play, and the client.
 - **Go past that baseline:** SimAntics extensions, scripting, and older games' data such as The Sims 1.
 
-### FreeSO is the Evidence
+### Learn from Available Sources
 
-Because TSO's servers shutdown decades ago now, FSO's code provides the only source of truth on how the game used to play. Even though FSO took some creative liberties (as will NSO), the underlining game is the same.
+Because TSO's servers shutdown decades ago now, FSO's code provides the only source of truth on how the game works. Even though FSO took some creative liberties (as will NSO), the underlining game remains the same.
+
+Learn from everything available: FSO's code, the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game uses SimAntics), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), and [TSO Mania](https://www.tsomania.net/) for intended behaviour. Treat them as leads to verify against the code or the oracles. SimCraft choose update-46 because FSO's later switch to full 3D is not how TSO was intended to be rendered.
 
 ### Small and LAN first
 
-TSO was an massively multiplayer online game (MMO or MMOG). NSO doesn't assume someone is capable of hosting that much infrastructure. The project's goal is a handful of players on a self-hosted single server or a LAN, aiming for something similar to [Luanti](https://www.luanti.org/en/) (formerly Minetest). MMOG scale will come, as that is what TSO was built for, but only in opt-in form.
+TSO was an massively multiplayer online game (MMO or MMOG). NSO doesn't assume someone is capable of hosting that much infrastructure. The project's goal is a handful of players on a self-hosted server or LAN, aiming for something similar to [Luanti](https://github.com/luanti-org/luanti) (formerly Minetest) or [Space Station 14](https://github.com/space-wizards).
 
 FSO's former lot server (repurposed for their IDE, Volcanic) shows that it's possible.
 
@@ -77,7 +79,7 @@ git status --short -- TSOClient Charvatia FSOInstaller Other                    
 
 Treat them as two sides of an experiment, not an answer key and a student:
 
-- **A disagreement is a finding,** not a failure. Explain it before fixing it: it may be an NSOClient bug, a FreeSO bug NewSO fixes (record it, and make the comparison expect it), a quirk the game relies on, or another deliberate difference.
+- **A disagreement is a finding, not a failure**. Explain it before fixing it: it may be an NSOClient bug, a FreeSO bug NewSO fixes (record it, and make the comparison expect it), a quirk the game relies on, or another deliberate difference.
 - **Inconclusive isn't agreement**. A case one side couldn't measure is counted by reason, never as a pass.
 - **Keep the experiments repeatable**. Where FreeSO's own code isn't, change the oracle as little as possible and document it in its README.
 - **The checks are a gate, not the goal**. They stop on a new disagreement so someone looks at it.
@@ -119,12 +121,12 @@ NSOClient reads files nobody controls: original installs, patched objects, user 
 
 FSO was built against a snapshot of TSO New & Improved (N&I), likely 1.1097.1.0, when the Mystic Tree was first introduced. However, those copies came from EA's own servers and are now hard to come by. NSO, meanwhile, was first built against a more easily accessible ISO images, Beta (1.3.2.121) and the later the 2002 retail copy (1.145.1.0), before rediscovering 1.1097.1.0.
 
-So although NSO needs to account for any discrepancies made leading up to 1.1097.1.0 out of sheer necessity, the project should expect newer data just out of good practice. Forward compatibility now means backwards compatibility later.
+So although NSO needs to account for any discrepancies made leading up to 1.1097.1.0 out of sheer necessity, the project should design their applications to expect newer data from newer versions of itself just out of good practice. Forward compatibility now means backwards compatibility later.
 
 - **Port every version FreeSO reads**. FreeSO is the only reference the project has for understanding The Sims Online, so its version branches are the spec. Test the versions the installs lack with synthetic files, and mark them in the scorecard as unverified on real data.
-- **Unknown isn't corrupt**. Data newer than a reader knows (a chunk type, a higher version, extra trailing fields, an enum value) is skipped or kept raw and reported wherever the format lets the rest be read. It's never a trap, and never dropped without a report. Data that is actually broken, such as a size past the end, is still an error. Where FreeSO does something else with unknown data (leaves it empty, say), do what serves NewSO, and record the difference.
+- **Unknown isn't corrupt**. Data newer than a reader knows (a chunk type, a higher version, extra trailing fields, an enum value) is skipped or kept raw and reported wherever the format lets the rest be read. It's never a trap, and never dropped without a report. Data that is actually broken, such as a size past the end, is still an error.
 - **Keep what you don't understand**. Anything that rewrites a file (patching, saving, re-encoding a BHAV) carries the parts it can't read through unchanged instead of dropping them.
-- **NewSO's own formats stay readable by older NewSO**. When NewSO writes a format of its own, or extends one of FreeSO's, version it. Add new data as parts an older build can skip or keep, and say which is safe. A change an older build can't safely skip takes a new major version, which older builds refuse with a clear message. CityLimits' saves work this way (its ``docs/saving.md``, "Opening a newer save").
+- **NewSO's own formats stay readable by older NewSO**. When NewSO writes a format of its own, or extends one of FreeSO's, version it. Add new data as parts an older build can skip or keep, and say which is safe. A change an older build can't safely skip takes a new major version, which older builds refuse with a clear message.
 
 ### Library rules
 
@@ -144,9 +146,8 @@ These apply to the NSOClient libraries. Tools (``tsofiles-check``, the oracles) 
 
 ### The client
 
-The client is ``NSOClient/Client`` (``newso``), built on ``NSOClient/NSOInterface``. ``swift run --package-path NSOClient/Client newso`` opens a lot from ``TSO_GAME_DIR`` (or the beta, or MockInstall); ``--lot`` picks another. It loads FreeSO's content folder (``FSO_CONTENT_DIR``) and the player's mods (``NSO_USER_DIR``'s ``Mods/Objects`` and ``Mods/Patch``), as TSOContent's ``FreeSOContentLocator`` and ``UserFolderLocator`` find them. ``--screenshot <file.png>`` saves a frame after ``--ticks`` ticks, framed with ``--zoom`` (1, TSO's near, to 5), ``--focus x,y``, and ``--rotation`` (0 to 3). ``--headless`` opens no window and needs no display: the lot runs ``--ticks`` ticks back to back (a game day, 216,000, by default; a game week at most) and logs to standard error, through swift-log, each system message as it arrives, a line each game hour, and a summary, every line stamped with the tick and game time rather than the clock; ``--verbose`` logs the same with the window open. Use it to check a lot's behavior over game time; a game day runs in seconds. What it shows is worked out in its ``LotScene`` target, without raylib, so it's tested without a window. It's built on [raylib-swift](https://github.com/tonytins/raylib-swift), the owner's own raylib binding, which keeps raylib's function names and adds Swift enums (``IsKeyDown(.space)``) and colors (``.rayWhite``). It will reuse the generalized parts of the owner's [CityLimits](https://github.com/tonytins/citylimits) interface library (``WindowFrame``, ``TextField``, ``TextArea``, ``ButtonRow``, its loading screen, and its map view), translated from C# and Raylib-cs by the owner's [cs2swift](https://github.com/tonytins/cs2swift). Its output is regenerated, never edited: change the C# in CityLimits and run cs2swift again, and keep Swift-only code in files of its own.
 
-- **Syncing**. ``NSOClient/scripts/sync-interface.sh <CityLimits> <cs2swift>`` rewrites ``NSOInterface/Sources/NSOInterface/CityLimits/`` from CityLimits' files; NewSO's own Swift goes in ``NSOInterface/Sources/NSOInterface/NewSO/``. Read cs2swift's warnings at each sync.
+
 - **TSO's interface**. These windows and controls are the base for NewSO's take on TSO's ``.uis`` screens.
 - **Seeing it**. ``swift run --package-path NSOClient/NSOInterface interface-demo`` opens a window with the controls; ``--screenshot <file.png>`` draws a few frames hidden and saves the last, for checking a change without anyone at the screen.
 - **Building on Linux** needs the X11 and GL headers (``libx11-dev`` and friends, as in CI). 

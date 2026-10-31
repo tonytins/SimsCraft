@@ -11,7 +11,7 @@ extends them.
 
 **TSO's dialect** is Maxis' own. 1.1097.1.0 ships 23 blueprints in `housedata/blueprints/` (the
 nightclub, restaurant, and robot factory job lots, 2004) and the format's definition beside them,
-`blueprint.dtd`. The 2002 copy and the beta have none. It's written for people to read:
+`blueprint.dtd`. The base game and the beta have none. It's written for people to read:
 
 - a `<revision>` with author, date, and change number, from Maxis' version control;
 - comments naming each section ("0-parent objects", "Level 0 Floors");
