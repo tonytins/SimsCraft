@@ -5,7 +5,7 @@ FreeSO that don't depend on a game engine: the file formats, the content system,
 virtual machine that runs object behavior. They aim to get the same results as FreeSO, as its code
 stood at beta/update-46, in August 2017 (in [`TSOClient/`](../../TSOClient/)), without copying that
 code. Around them are NewSO's own client, `newso`, which shows a lot running, and the tools that
-check the libraries against FreeSO. It all keeps working on older copies of the game, a base game
+check the libraries against FreeSO. It all keeps working on older copies of the game, the base game
 and a beta, whose files differ from the ones FreeSO expects.
 
 This folder describes how the code behaves today. For what's finished and the evidence for it, see

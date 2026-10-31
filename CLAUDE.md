@@ -34,7 +34,7 @@ Key entrypoints:
 
 ## About this Project
 
-[The Sims Online](https://en.wikipedia.org/wiki/The_Sims_Online) (TSO) was an MMORPG based on The Sims. When the servers shutdown,  [FreeSO](https://github.com/riperiperi/FreeSO) (FSO) re-implementated the game with their own open source server and client. Now, their servers have shutdown. With no new alternatives, FSO has been refactoring the client to serve as an "archive" client that can be used for self-hosting.
+[The Sims Online](https://en.wikipedia.org/wiki/The_Sims_Online) (TSO) was an MMORPG based on The Sims. When the servers shutdown, [FreeSO](https://github.com/riperiperi/FreeSO) (FSO) re-implementated the game with their own open source server and client. Now, their servers have shutdown. With no new alternatives, FSO has been refactoring the client to serve as an "archive" client that can be used for self-hosting.
 
 SimsCraft started as FSOdoc, an early attempt to document a snapshot of FSO update-46 with AI, but has since grown to use that knowledge to start over fresh with a new client and server intended for small scale use, known as NewSO (NSO), which lives in ``NSOClient/``.
 
@@ -45,17 +45,17 @@ The goals:
 - **Reimplement the game in Swift**. This is a new implementation, not a line-by-line port, that is intended for a lot server of our own, LAN play, and the client.
 - **Go past that baseline:** SimAntics extensions, scripting, and older games' data such as The Sims 1.
 
+### Small and LAN first
+
+TSO was an massively multiplayer online game (MMO or MMOG). NSO doesn't assume someone is capable of hosting that much infrastructure. The project's goal is a handful of players on a self-hosted server or LAN, aiming for something similar to [Luanti](https://github.com/luanti-org) (formerly Minetest) or [Space Station 14](https://github.com/space-wizards). FSO's former lot server (repurposed for their IDE, Volcanic) shows that it's possible.
+
+NSO is targeting a player base of 1-50 with potential *endurance* for up to 500.
+
 ### Learn from Available Sources
 
 Because TSO's servers shutdown decades ago now, FSO's code provides the only source of truth on how the game works. Even though FSO took some creative liberties (as will NSO), the underlining game remains the same.
 
-Learn from everything available: FSO's code, the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game uses SimAntics), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), and [TSO Mania](https://www.tsomania.net/) for intended behaviour. Treat them as leads to verify against the code or the oracles. SimCraft choose update-46 because FSO's later switch to full 3D is not how TSO was intended to be rendered.
-
-### Small and LAN first
-
-TSO was an massively multiplayer online game (MMO or MMOG). NSO doesn't assume someone is capable of hosting that much infrastructure. The project's goal is a handful of players on a self-hosted server or LAN, aiming for something similar to [Luanti](https://github.com/luanti-org/luanti) (formerly Minetest) or [Space Station 14](https://github.com/space-wizards).
-
-FSO's former lot server (repurposed for their IDE, Volcanic) shows that it's possible.
+Learn from everything available: FSO's code, the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game uses SimAntics), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), [The Modding Guide](https://cyndersanity.github.io/sims-legacy-mod-guide/index.html), and [TSO Mania](https://www.tsomania.net/) for intended behaviour. Treat them as leads to verify against the code or the oracles. SimCraft choose update-46 because FSO's later switch to full 3D is not how TSO was intended to be rendered.
 
 ## Common Commands
 
@@ -119,7 +119,7 @@ NSOClient reads files nobody controls: original installs, patched objects, user 
 
 ### Forward compatibility
 
-FSO was built against a snapshot of TSO New & Improved (N&I), likely 1.1097.1.0, when the Mystic Tree was first introduced. However, those copies came from EA's own servers and are now hard to come by. NSO, meanwhile, was first built against a more easily accessible ISO images, Beta (1.3.2.121) and the later the 2002 retail copy (1.145.1.0), before rediscovering 1.1097.1.0.
+FSO was built against a snapshot of TSO New & Improved (N&I), likely 1.1097.1.0, when the Mystic Tree was first introduced. However, those copies came from EA's own servers and are now hard to come by. NSO, meanwhile, was first built against a more easily accessible ISO images, Beta (1.3.2.121) and the later the 2002 retail copy (1.145.1.0), before rediscovering 1.1097.1.0, and NewSO will meet more data newer than any of them: FreeSO's content, mods, and later saves of its own.
 
 So although NSO needs to account for any discrepancies made leading up to 1.1097.1.0 out of sheer necessity, the project should design their applications to expect newer data from newer versions of itself just out of good practice. Forward compatibility now means backwards compatibility later.
 

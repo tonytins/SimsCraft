@@ -9,7 +9,7 @@ page and [roadmap.md](roadmap.md) disagree, this page wins and the roadmap gets 
 passed, TSOContent 59 passed (including TSOConfig's 2; 12 need `TSO_GAME_DIR`), SimAntics 113 passed
 (1 needs `TSO_GAME_DIR`), SimsScript 12 passed (1 needs `TSO_GAME_DIR`), NSOOracle 15 passed (5 need
 `TSO_GAME_DIR` and `TSO_ORACLE_DIR`), Client 21 passed. Tests that need either variable are skipped without it. The
-owner has three installs: 1.1097.1.0 (`TSO_GAME_DIR`, which the tests and oracle use), a base game
+owner has three installs: 1.1097.1.0 (`TSO_GAME_DIR`, which the tests and oracle use), the base game
 (1.145.1.0, `TSO_CLASSIC_DIR`), and a beta (`TSO_BETA_DIR`). FreeSO targets TSO after its New &
 Improved update (October 2003), likely around 1.1097.1.0. **Until 2026-10-28 `TSO_GAME_DIR` named the
 base game, so "production" in every real-install result before then means 1.145.1.0.** On the older
