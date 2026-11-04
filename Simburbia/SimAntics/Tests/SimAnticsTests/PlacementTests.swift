@@ -46,6 +46,35 @@ import TSOFiles
         }
     }
 
+    /// The upper part of stairs or an elevator lays the floor it stands on upstairs, or clears
+    /// it, as FreeSO's user placement does; a lot's elevator once disagreed by a room for want of it.
+    @Test func userPlacementLaysOrClearsTheFloorUnderAnUpperPart() throws {
+        let levelOffset = 54
+        try withLot(lampWords: [levelOffset: 1]) { vm, lamp throws in
+            let entity = lamp.objects[0]
+            // Out of the world, nothing changes.
+            set(entity, .placementFlags, PlacementFlags.onFloor.rawValue)
+            try entity.executeEntryPoint(.userPlace, runImmediately: true)
+            #expect(try vm.architecture.floor(atX: 4, y: 4, level: 2) == 0)
+            // Upstairs with no floor, OnFloor lays pattern 1.
+            try vm.move(entity, to: tile(4, 4, level: 2))
+            try entity.executeEntryPoint(.userPlace, runImmediately: true)
+            #expect(try vm.architecture.floor(atX: 4, y: 4, level: 2) == 1)
+            // InAir clears it again.
+            set(entity, .placementFlags, PlacementFlags.inAir.rawValue)
+            try entity.executeEntryPoint(.userPlace, runImmediately: true)
+            #expect(try vm.architecture.floor(atX: 4, y: 4, level: 2) == 0)
+        }
+        // Without a level offset, user placement leaves the floor alone.
+        try withLot { vm, lamp throws in
+            let entity = lamp.objects[0]
+            set(entity, .placementFlags, PlacementFlags.onFloor.rawValue)
+            try vm.move(entity, to: tile(4, 4, level: 2))
+            try entity.executeEntryPoint(.userPlace, runImmediately: true)
+            #expect(try vm.architecture.floor(atX: 4, y: 4, level: 2) == 0)
+        }
+    }
+
     @Test func checksTheFloor() throws {
         try withLot { vm, lamp throws in
             let entity = lamp.objects[0]

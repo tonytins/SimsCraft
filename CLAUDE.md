@@ -171,6 +171,7 @@ Markdown: one ``#`` heading per file, lowercase kebab-case file names, plain sho
 
 ## Before you finish
 
+- Reviews, by a person or an agent, follow [REVIEW.md](./REVIEW.md); agents also follow [AGENTS.md](./AGENTS.md).
 - Every package you touched, and every package that depends on it, builds with no new warnings and passes its tests. Leave the rest to CI. If you touched a reader and an install is set, the scan reports 0 failures; without one, say you couldn't run it.
 - Look over your diff for force unwraps by eye; the search can't tell ``!`` from ``!=``.
 - Bring the docs up to date in the same change: flip the [scorecard](./docs/scorecard.md) rows you moved, with evidence; update the [roadmap](./docs/roadmap.md)'s milestone, focus, and revision history; and fix any ``docs/fso/`` page the port showed to be wrong.

@@ -210,8 +210,17 @@ public final class Entity {
     @discardableResult
     public func executeEntryPoint(at index: Int, runImmediately: Bool, stackObject: Entity? = nil,
                                   arguments: [Int16]? = nil) throws(SimAnticsError) -> Bool {
-        // Entry point 11 (user placement) also fixes floors under stairs in FreeSO; entities have
-        // no position yet, which skips that in FreeSO too.
+        // User placement (entry point 11) also lays or clears the floor under the upper part of
+        // stairs and elevators (an OBJD level offset above 0), as FreeSO's "auto floor removal/
+        // placement for stairs" in `VMEntity.ExecuteEntryPoint` does: `InAir` clears it, and
+        // `OnFloor` lays pattern 1 where there was none. An object out of the world is skipped.
+        if index == EntryPointIndex.userPlace.rawValue, object.definition.levelOffset > 0, !position.isOutOfWorld {
+            let x = Int(position.tileX), y = Int(position.tileY), level = Int(position.level)
+            let floor = try vm.architecture.floor(atX: x, y: y, level: level)
+            let flags = PlacementFlags(rawValue: objectData[Int(ObjectVariable.placementFlags.rawValue)])
+            if flags.contains(.inAir) { try vm.architecture.setFloor(0, atX: x, y: y, level: level) }
+            if flags.contains(.onFloor) && floor == 0 { try vm.architecture.setFloor(1, atX: x, y: y, level: level) }
+        }
         guard let table = entryPoints else { throw .nullReference("no entry point table") }
         guard index < table.count, table[index].actionFunction > 255,
               let routine = try vm.routine(opcode: table[index].actionFunction, codeOwner: object) else { return false }
