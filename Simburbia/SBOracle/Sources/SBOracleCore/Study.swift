@@ -38,6 +38,14 @@ public enum Study {
         return Array((untested + seen).prefix(max(0, count)))
     }
 
+    /// Which of `count` floor plans a lot is laid out on, picked by its seed (a different stream
+    /// from the sample's and the facings').
+    public static func floorPlan(of count: Int, seed: UInt64) -> Int {
+        guard count > 1 else { return 0 }
+        var generator = Generator(state: seed ^ 0xF100_8F1A_F100_8F1A)
+        return Int(generator.next() % UInt64(count))
+    }
+
     /// The tiles the grid uses on a lot this size, row by row.
     static func gridTiles(lotSize: Int) -> [(x: Int, y: Int)] {
         stride(from: spacing, to: lotSize - spacing, by: spacing).flatMap { y in

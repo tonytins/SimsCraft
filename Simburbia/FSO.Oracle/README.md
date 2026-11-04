@@ -15,7 +15,11 @@ turn out to be Simburbia's bug, FreeSO's quirk, or a deliberate difference.
 
 The experiments must be repeatable: the same install, inputs, and seed give the same records.
 Where FreeSO's own code isn't, the oracle makes the smallest change that makes it so, and says
-which below (lot loading, and money transactions' timing).
+which below (lot loading, and money transactions' timing). One change is of runtime rather than
+of FreeSO: TSO's own blueprints (1.1097.1.0's job lots, and FreeSO's `empty_lot.xml`) name
+`blueprint.dtd` in a DOCTYPE, which FreeSO's `XmlHouseData.Parse` read on .NET Framework 4.5 but
+.NET since Core refuses outright, so the oracle drops the DOCTYPE, unread, before FreeSO's reader
+sees the lot.
 
 ## Running it
 
@@ -227,7 +231,9 @@ Reads blueprint XML paths from standard input, one per line. For each, it loads 
 | `rooms` | every room after FreeSO's unused room 0, each `[id, lightBaseRoom, floor, isOutside, area, isPool, adjacentRooms, [x, y, width, height], supportRooms]`; `floor` is 0 for the ground floor, and `adjacentRooms` is in FreeSO's iteration order |
 
 If loading throws, the line is `{"file":…,"error":Type}` and the full exception goes to standard
-error. FreeSO's blueprints have floors but no walls, so `Simburbia/SimAntics/OracleCases/make_blueprints.py`
+error. One of TSO's own does: `nightclub00_01.xml` has a stray `<` FreeSO's reader stops at, which
+Simburbia tolerates, so the comparison counts it as answered where FreeSO failed. TSO's job lots
+are read from the install (`housedata/blueprints`), never copied here. FreeSO's blueprints have floors but no walls, so `Simburbia/SimAntics/OracleCases/make_blueprints.py`
 writes synthetic ones (no game data) with walls, fences, diagonals, pools, and upper floors. The
 SBOracle's tests read each blueprint with the Swift `Blueprint` and compare every field.
 

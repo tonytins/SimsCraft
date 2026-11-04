@@ -94,8 +94,12 @@ N by 0xGUID:`, naming the object that reached it, and what.
 `sb-oracle study` asks how objects behave over game time, without running every object of an
 install. Until its time budget runs out (`--minutes`, five in a review), it builds lots: about
 thirty objects both sides load (`--fso-objects`, from `fso-oracle list-objects`), picked by a seed
-with those its ledger hasn't seen first, on a grid of FreeSO's emptied `empty_lot_fso.xml`, each
-facing a direction the seed picks. Each lot runs a game day, with a digest every game hour:
+with those its ledger hasn't seen first, on a grid of a floor plan, each facing a direction the
+seed picks. The floor plans (`--floor-plan`, repeatable) are lots emptied of their own objects,
+and the seed picks one per lot: FreeSO's `empty_lot_fso.xml` by default, and in a review on a
+real install, TSO's own job lots too, so objects meet real walls, counters, and doors. A plan
+FreeSO can't read (TSO's `nightclub00_01.xml`) is dropped for the rest of the run. Each lot runs
+a game day, with a digest every game hour:
 
 1. On Simburbia first, since it's quick. An object that reaches something Simburbia doesn't
    support yet is recorded as such and set aside, and the lot runs again without it. If the

@@ -111,6 +111,13 @@ for install in "${installs[@]}"; do
     # takes a fixed seed for a minute.
     study=(study --game "$game" --fso-objects "$fso_folder/objects.tsv" --out "$folder/study"
            --fso-oracle "$repository/Simburbia/FSO.Oracle/bin/Release/net10.0/fso-oracle")
+    # On a real install, the samples also go on the floor plans of TSO's own job lots, emptied.
+    if [[ "$name" != mock ]]; then
+        study+=(--floor-plan "$repository/TSOClient/tso.content/Content/Blueprints/empty_lot_fso.xml")
+        for plan in "$game"/housedata/blueprints/*.xml; do
+            if [[ -f "$plan" ]]; then study+=(--floor-plan "$plan"); fi
+        done
+    fi
     if [[ "$name" == mock ]]; then
         study+=(--seed 1 --minutes 1 --ledger "$folder/ledger.tsv")
     elif $review; then

@@ -383,10 +383,17 @@ options:
         /// A Sim is also left out if FreeSO can't build its avatar, as on MockInstall, which has
         /// no skeletons: <c>VMAvatar</c>'s constructor throws there, which would stop the whole
         /// lot. The Swift side must load the same adapted lot.
+        ///
+        /// TSO's own blueprints (1.1097.1.0's job lots) name <c>blueprint.dtd</c> in a DOCTYPE.
+        /// FreeSO's <c>XmlHouseData.Parse</c> read that on .NET Framework 4.5, but .NET since Core
+        /// refuses any DTD, so the DOCTYPE is dropped, never read: a change of runtime, not of lot.
         /// </remarks>
         private static byte[] BlueprintForInstall(string path)
         {
-            var document = XDocument.Load(path);
+            XDocument document;
+            using (var reader = System.Xml.XmlReader.Create(path, new System.Xml.XmlReaderSettings { DtdProcessing = System.Xml.DtdProcessing.Ignore, XmlResolver = null }))
+                document = XDocument.Load(reader);
+            document.DocumentType?.Remove();
             var objects = Content.Content.Get().WorldObjects;
             foreach (var element in document.Descendants("object").ToList())
             {

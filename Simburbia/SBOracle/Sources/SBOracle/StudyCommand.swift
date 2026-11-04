@@ -41,8 +41,11 @@ struct StudyCommand: AsyncParsableCommand {
     @Option(help: "Objects on each lot.")
     var objects = Study.objectsPerLot
 
-    @Option(help: "The lot whose walls and floors each sample goes on, its own objects taken out (default: Blueprints/empty_lot_fso.xml in the content folder).")
-    var blueprint: String?
+    @Option(name: .customLong("floor-plan"), help: """
+        A lot whose walls and floors a sample may go on, its own objects taken out; each lot's seed \
+        picks one. Repeatable (default: Blueprints/empty_lot_fso.xml in the content folder).
+        """)
+    var floorPlans: [String] = []
 
     @Option(help: "fso-oracle's executable, already built (dotnet build Simburbia/FSO.Oracle -c Release).")
     var fsoOracle = fsoOracleExecutable.path
@@ -71,9 +74,11 @@ struct StudyCommand: AsyncParsableCommand {
 
         let candidates = try Self.candidates(content, fsoObjects: URL(fileURLWithPath: fsoObjects))
         let leads = Self.leadParts(content)
-        let baseFile = blueprint.map { URL(fileURLWithPath: $0) }
-            ?? install.contentDirectory.appendingPathComponent("Blueprints/empty_lot_fso.xml")
-        let base = try Blueprint(xml: try Data(contentsOf: baseFile))
+        let planFiles = floorPlans.isEmpty ? [install.contentDirectory.appendingPathComponent("Blueprints/empty_lot_fso.xml")]
+            : floorPlans.map { URL(fileURLWithPath: $0) }
+        let plans = try planFiles.map { file in (name: file.lastPathComponent, lot: try Blueprint(xml: try Data(contentsOf: file))) }
+        // Plans FreeSO couldn't run a lot on (TSO's nightclub00_01.xml, say), set aside for the rest of the run.
+        var unusable: Set<Int> = []
         var book = (ledger.flatMap { try? String(contentsOfFile: $0, encoding: .utf8) }).map(StudyLedger.init(tsv:)) ?? StudyLedger()
         let firstSeed = seed ?? UInt64(Date().timeIntervalSince1970)
         guard FileManager.default.isExecutableFile(atPath: fsoOracle) else {
@@ -90,6 +95,10 @@ struct StudyCommand: AsyncParsableCommand {
             defer { lotSeed &+= 1 }
             var sample = Study.sample(candidates, count: objects, seed: lotSeed, tested: book.tested)
             guard !sample.isEmpty else { break }
+            let usable = plans.indices.filter { !unusable.contains($0) }
+            guard !usable.isEmpty else { break }
+            let planIndex = usable[Study.floorPlan(of: usable.count, seed: lotSeed)]
+            let base = plans[planIndex].lot
 
             // Simburbia first, since it's quick: set aside each object that reaches something it
             // doesn't support yet, and run the lot again without it.
@@ -134,8 +143,9 @@ struct StudyCommand: AsyncParsableCommand {
                 continue
             }
             guard theirs.lines.first?.hasPrefix("tick") == true else {
-                records.append("lot\t\(lotSeed)\t\(lot.objects.count)\tinconclusive\tFreeSO couldn't run it")
-                print("lot \(lotSeed): inconclusive, FreeSO couldn't run it")
+                records.append("lot\t\(lotSeed)\t\(lot.objects.count)\tinconclusive\tFreeSO couldn't run it on \(plans[planIndex].name)")
+                print("lot \(lotSeed): inconclusive, FreeSO couldn't run it on \(plans[planIndex].name); not using that floor plan again")
+                if plans.count > 1 { unusable.insert(planIndex) }
                 continue
             }
             let comparison = Comparison.lotRuns(fso: theirs.lines.map { "\(file) \($0)" }, nso: ours.map { "\(file) \($0)" })
@@ -145,7 +155,7 @@ struct StudyCommand: AsyncParsableCommand {
                     records.append("object\t\(String(format: "0x%08X", object.guid))\tagree")
                     book.record(object.guid, name: nameOf(object.guid, content), result: "agree", seed: lotSeed)
                 }
-                print("lot \(lotSeed): \(lot.objects.count) objects agree")
+                print("lot \(lotSeed): \(lot.objects.count) objects agree on \(plans[planIndex].name)")
                 continue
             }
 

@@ -121,8 +121,8 @@ headless run of the owner's house covers a game day in about 9 seconds.
 
 `simburbia --version` prints Simburbia's version, which the owner's GitVersion plugin works out
 as the client builds: the base in [`Simburbia/GitVersion.txt`](../../Simburbia/GitVersion.txt)
-(`0.1.1000`), plus each commit since that touches `Simburbia/`, after the .NET SDK's
-`major.minor.1xxx`. The branch and commit follow it (`0.1.1003+main.1a2b3c4d5e6f`), and `.dirty`
+(`0.1.100`), plus each commit since that touches `Simburbia/`, after the .NET SDK's
+`major.minor.1xx` feature bands. The branch and commit follow it (`0.1.103+main.1a2b3c4d5e6f`), and `.dirty`
 when the working tree has staged changes. A build needs the whole history: a shallow clone fails
 on purpose, since its count would be wrong.
 

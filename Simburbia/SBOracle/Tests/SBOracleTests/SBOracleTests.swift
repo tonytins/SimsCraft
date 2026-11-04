@@ -18,6 +18,7 @@ let leastObjects = onMockInstall ? 10 : 2_000
 /// A blueprint by file name: from the fixtures' synthetic lots, FreeSO's, the repository's, or the mock install's.
 func blueprintFile(_ file: String) throws -> URL {
     let candidates = [try required(oracleDirectory).appendingPathComponent("blueprints/\(file)"),
+                      try required(gameDirectory).appendingPathComponent("housedata/blueprints/\(file)"),
                       freeSOContent.appendingPathComponent("Blueprints/\(file)"),
                       repository.appendingPathComponent("Simburbia/Lots/\(file)"),
                       repository.appendingPathComponent("Simburbia/MockInstall/Lots/\(file)")]
@@ -245,6 +246,19 @@ extension ComparisonTests {
         #expect(opcodes == Set(PrimitiveTable.unportedOperands.keys))
     }
 
+    /// TSO's nightclub00_01.xml has a stray "<" FreeSO's reader fails on and Simburbia tolerates.
+    @Test func lotsOnlySimburbiaReadsAreAnsweredWhereFreeSOFailed() {
+        let rooms = Comparison.roomMaps(fso: [#"{"file":"club.xml","error":"XmlException"}"#],
+                                        nso: [#"{"file":"club.xml","size":[64,64],"maps":[],"rooms":[]}"#])
+        #expect(rooms.recovered == 1 && rooms.mismatches.isEmpty && rooms.skipped.isEmpty)
+        let both = Comparison.roomMaps(fso: [#"{"file":"bad.xml","error":"XmlException"}"#],
+                                       nso: [#"{"file":"bad.xml","error":"malformed"}"#])
+        #expect(both.recovered == 0 && both.skipped.values.reduce(0, +) == 1)
+        let lots = Comparison.lotRuns(fso: ["house.xml tick 0 seed 1 entities 2 digest a"],
+                                      nso: ["house.xml tick 0 seed 1 entities 2 digest a", "club.xml tick 0 seed 1 entities 9 digest b"])
+        #expect(lots.matched == 1 && lots.recovered == 1 && lots.mismatches.isEmpty)
+    }
+
     @Test func standaloneObjectsAreNamedRelativeToTheContentFolder() {
         let content = URL(fileURLWithPath: "/checkout/TSOClient/tso.content/Content", isDirectory: true)
         #expect(Answers.resourceName("/checkout/TSOClient/tso.content/Content/Objects/3TileClock.iff", contentDirectory: content)
@@ -328,6 +342,13 @@ extension ComparisonTests {
         #expect(lot.objects.allSatisfy { $0.level == 1 && [0, 2, 4, 6].contains($0.dir) })
         #expect(lot == Study.lot(objects, on: base, seed: 7))
         #expect(lot.objects.map(\.dir) != Study.lot(objects, on: base, seed: 8).objects.map(\.dir))
+    }
+
+    @Test func aSeedPicksTheFloorPlan() {
+        let picks = (UInt64(1)...40).map { Study.floorPlan(of: 3, seed: $0) }
+        #expect(Set(picks) == [0, 1, 2])
+        #expect(picks == (UInt64(1)...40).map { Study.floorPlan(of: 3, seed: $0) })
+        #expect(Study.floorPlan(of: 1, seed: 9) == 0 && Study.floorPlan(of: 0, seed: 9) == 0)
     }
 
     @Test func shrinkingFindsTheObjectThatDisagrees() {

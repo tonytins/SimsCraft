@@ -153,6 +153,11 @@ public struct Comparison: Sendable, Equatable {
                 result.mismatches.append("\(lot): FreeSO \(first?.0 ?? "\(lines.count) lines") Simburbia \(first?.1 ?? "\(mine.count) lines")")
             }
         }
+        // A lot FreeSO couldn't load prints nothing; one Simburbia ran anyway, such as TSO's
+        // nightclub00_01.xml, is answered where FreeSO failed.
+        for (lot, mine) in actual where expected[lot] == nil && mine.first?.hasPrefix("tick") == true {
+            result.recovered += 1
+        }
         return result
     }
 
@@ -223,7 +228,8 @@ public struct Comparison: Sendable, Equatable {
         let ours = objects(nso)
         for (file, theirs) in objects(fso).sorted(by: { $0.key < $1.key }) {
             guard theirs["error"] == nil else {
-                result.skip("FreeSO couldn't load it")
+                // A lot FreeSO can't read and Simburbia can, such as TSO's nightclub00_01.xml.
+                if let mine = ours[file], mine["error"] == nil { result.recovered += 1 } else { result.skip("FreeSO couldn't load it") }
                 continue
             }
             guard let mine = ours[file], mine["error"] == nil else {

@@ -44,6 +44,13 @@ else
 fi
 lots=()
 for lot in "$repository/$lots_folder"/*.xml; do lots+=("repository/$lots_folder/$(basename "$lot")"); done
+# TSO's own blueprints, the job lots 1.1097.1.0 ships (older installs have none), read from the
+# install, never copied here. They join the room maps; their lot runs wait for Sims, since each
+# one's controller reaches online_jobs_call at once.
+install_lots=()
+for lot in "$game"/housedata/blueprints/*.xml; do
+    if [[ -f "$lot" ]]; then install_lots+=("install/housedata/blueprints/$(basename "$lot")"); fi
+done
 empty_lot="freeso/Blueprints/empty_lot_fso.xml"
 # Kept in step with the SBOracle tests (lotRunsMatchFreeSO).
 # A full in-game day (150 ticks a game minute), compared every game hour.
@@ -110,8 +117,9 @@ done
 
 echo "Room maps..."
 python3 -I "$repository/Simburbia/SimAntics/OracleCases/make_blueprints.py" "$output/blueprints" >/dev/null
-# FreeSO's empty_lot.xml has a DTD, which .NET refuses to read, so only empty_lot_fso.xml joins them.
-{ sed 's|.*/|results/blueprints/|' "$output/blueprints/blueprints.txt"; echo "$empty_lot"
+# FreeSO's empty_lot.xml and TSO's job lots name a DTD; fso-oracle drops it, as .NET since Core refuses one.
+{ sed 's|.*/|results/blueprints/|' "$output/blueprints/blueprints.txt"; echo "$empty_lot"; echo "freeso/Blueprints/empty_lot.xml"
+  if (( ${#install_lots[@]} > 0 )); then printf '%s\n' "${install_lots[@]}"; fi
   for lot in "$repository"/Simburbia/Lots/*.xml "$repository"/Simburbia/MockInstall/Lots/*.xml; do
       echo "repository/${lot#"$repository/"}"
   done; } >"$output/rooms.lots"
