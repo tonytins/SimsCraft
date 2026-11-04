@@ -1,5 +1,5 @@
 {
-    "dotnet.defaultSolution": "NSOClient/NSOClient.slnx",
+    "dotnet.defaultSolution": "Simburbia/Simburbia.slnx",
     "files.exclude": {
         "**/.git": true,
         "**/.svn": true,

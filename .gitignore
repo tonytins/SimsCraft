@@ -435,5 +435,5 @@ FodyWeavers.xsd
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore,visualstudio,visualstudiocode,swiftpm
 
 # Game files extracted next to the installer script (EA data, never versioned)
-NSOClient/scripts/tso/
+Simburbia/scripts/tso/
 *.local.*
