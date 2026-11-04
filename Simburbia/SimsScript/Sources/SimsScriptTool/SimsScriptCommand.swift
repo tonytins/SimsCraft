@@ -14,7 +14,7 @@ struct SimsScriptCommand: ParsableCommand {
 }
 
 /// The Simburbia folder, which holds MockInstall, next to FreeSO's content in the snapshot.
-private let nsoclient = URL(fileURLWithPath: #filePath)
+private let simburbiaFolder = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
 extension SimsScriptCommand {
@@ -45,8 +45,8 @@ extension SimsScriptCommand {
         func run() throws {
             let directory = game.map { URL(fileURLWithPath: $0, isDirectory: true) }
                 ?? InstallKind.installs(in: ProcessInfo.processInfo.environment).first { $0.kind == .game }?.directory
-                ?? nsoclient.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
-            let snapshot = nsoclient.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
+                ?? simburbiaFolder.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
+            let snapshot = simburbiaFolder.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
             let content = try GameContent(.init(gameDirectory: directory,
                                                 freeSOContentDirectory: try FreeSOContentLocator(fallback: snapshot).locate(),
                                                 modsDirectory: try UserFolderLocator().modsDirectory()))

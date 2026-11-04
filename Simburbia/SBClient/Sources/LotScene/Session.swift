@@ -21,23 +21,23 @@ public struct ClientOptions: Sendable, Equatable {
     /// - Parameters:
     ///   - installs: the installs the configuration names, as ``InstallKind/installs(named:)``
     ///     lists them.
-    ///   - nsoclient: the Simburbia folder, which holds MockInstall, Lots, and (next to it)
+    ///   - simburbiaFolder: the Simburbia folder, which holds MockInstall, Lots, and (next to it)
     ///     FreeSO's content.
     ///   - freeSOContent: FreeSO's content folder, as ``FreeSOContentLocator`` finds it, or `nil`
     ///     for the copy in SimsCraft's FreeSO snapshot. MockInstall gets none either way:
     ///     FreeSO's patches target real installs.
     ///   - modsDirectory: Simburbia's mods folder (``UserFolderLocator/modsDirectory()``), or `nil`.
-    public init(game: String? = nil, lot: String? = nil, installs: [NamedInstall], nsoclient: URL,
+    public init(game: String? = nil, lot: String? = nil, installs: [NamedInstall], simburbiaFolder: URL,
                 freeSOContent: URL? = nil, modsDirectory: URL? = nil) {
-        let mockInstall = nsoclient.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
+        let mockInstall = simburbiaFolder.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
         let chosen = game.map { URL(fileURLWithPath: $0, isDirectory: true) } ?? installs.first?.directory
         let usesMock = chosen == nil
         gameDirectory = chosen ?? mockInstall
         self.lot = lot.map { URL(fileURLWithPath: $0) }
-            ?? nsoclient.appendingPathComponent(usesMock ? "MockInstall/Lots/mock-lot.xml" : "Lots/tonys-house.xml")
+            ?? simburbiaFolder.appendingPathComponent(usesMock ? "MockInstall/Lots/mock-lot.xml" : "Lots/tonys-house.xml")
         // FreeSO's patches target real installs; MockInstall is made up and has none.
         self.freeSOContent = usesMock ? nil
-            : freeSOContent ?? nsoclient.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
+            : freeSOContent ?? simburbiaFolder.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
         self.modsDirectory = modsDirectory
     }
 }

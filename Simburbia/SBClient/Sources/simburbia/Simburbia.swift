@@ -85,8 +85,8 @@ struct Simburbia: ParsableCommand {
     func run() throws {
         let config = ConfigReader(provider: EnvironmentVariablesProvider())
         let installs = InstallKind.installs(in: config)
-        let snapshot = Self.nsoclient.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
-        let options = ClientOptions(game: game, lot: lot, installs: installs, nsoclient: Self.nsoclient,
+        let snapshot = Self.simburbiaFolder.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
+        let options = ClientOptions(game: game, lot: lot, installs: installs, simburbiaFolder: Self.simburbiaFolder,
                                     freeSOContent: try FreeSOContentLocator(config: config, fallback: snapshot).locate(),
                                     modsDirectory: try UserFolderLocator(config: config).modsDirectory())
         if let rewriteBlueprint {
@@ -141,7 +141,7 @@ struct Simburbia: ParsableCommand {
     }
 
     /// The Simburbia folder, which holds MockInstall and Lots.
-    static let nsoclient = URL(fileURLWithPath: #filePath)
+    static let simburbiaFolder = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 }
 

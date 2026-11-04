@@ -7,15 +7,15 @@ import Testing
 import TSOContent
 import TSOFiles
 
-private let nsoclient = URL(fileURLWithPath: #filePath)
+private let simburbiaFolder = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
 private func mockSession() throws -> LotSession {
-    try LotSession(ClientOptions(installs: [], nsoclient: nsoclient))
+    try LotSession(ClientOptions(installs: [], simburbiaFolder: simburbiaFolder))
 }
 
 @Test func optionsFallBackToMockInstall() {
-    let options = ClientOptions(installs: [], nsoclient: nsoclient)
+    let options = ClientOptions(installs: [], simburbiaFolder: simburbiaFolder)
     #expect(options.gameDirectory.path.hasSuffix("MockInstall/TSOClient"))
     #expect(options.lot.lastPathComponent == "mock-lot.xml")
     #expect(options.freeSOContent == nil)
@@ -23,19 +23,19 @@ private func mockSession() throws -> LotSession {
 
 @Test func optionsPreferTheFirstInstallNamed() {
     let installs = InstallKind.installs(in: ["TSO_BETA_DIR": "/games/beta", "TSO_CLASSIC_DIR": "/games/classic"])
-    let options = ClientOptions(installs: installs, nsoclient: nsoclient)
+    let options = ClientOptions(installs: installs, simburbiaFolder: simburbiaFolder)
     #expect(options.gameDirectory.path == "/games/classic")
     #expect(options.lot.lastPathComponent == "tonys-house.xml")
     #expect(options.freeSOContent?.path.hasSuffix("TSOClient/tso.content/Content") == true)
     let chosen = ClientOptions(game: "/games/tso", lot: "/lots/a.xml",
-                               installs: InstallKind.installs(in: ["TSO_GAME_DIR": "/elsewhere"]), nsoclient: nsoclient)
+                               installs: InstallKind.installs(in: ["TSO_GAME_DIR": "/elsewhere"]), simburbiaFolder: simburbiaFolder)
     #expect(chosen.gameDirectory.path == "/games/tso")
     #expect(chosen.lot.path == "/lots/a.xml")
 }
 
 @Test func aMissingLotIsReported() {
     #expect(throws: ClientError.self) {
-        try LotSession(ClientOptions(lot: "/no/such/lot.xml", installs: [], nsoclient: nsoclient))
+        try LotSession(ClientOptions(lot: "/no/such/lot.xml", installs: [], simburbiaFolder: simburbiaFolder))
     }
 }
 
@@ -123,12 +123,12 @@ func gameDurationsLeaveOutWhatsZero(minutes: Double, text: String) {
     try FileManager.default.createDirectory(at: mods.appendingPathComponent("Objects"), withIntermediateDirectories: true)
     try Data("not an IFF".utf8).write(to: mods.appendingPathComponent("Objects/broken.iff"))
     // A copy of the mock chair: its GUID already belongs to the install's chair.
-    let chair = try FAR1Archive(contentsOf: nsoclient.appendingPathComponent("MockInstall/TSOClient/objectdata/objects/objiff.far"),
+    let chair = try FAR1Archive(contentsOf: simburbiaFolder.appendingPathComponent("MockInstall/TSOClient/objectdata/objects/objiff.far"),
                                 variant: .b)
     let entry = try #require(chair.entries.first { $0.fileName == "mockchair.iff" })
     try chair.data(for: entry).write(to: mods.appendingPathComponent("Objects/copy.iff"))
 
-    let session = try LotSession(ClientOptions(installs: [], nsoclient: nsoclient, modsDirectory: mods))
+    let session = try LotSession(ClientOptions(installs: [], simburbiaFolder: simburbiaFolder, modsDirectory: mods))
     #expect(session.contentProblems.count == 2)
     #expect(session.contentProblems[0].hasPrefix("Couldn't read the custom object broken.iff"))
     #expect(session.contentProblems[1].hasPrefix("Left out the custom object Mock Chair (copy.iff): its GUID 4d4f4301 belongs to"))
@@ -284,13 +284,13 @@ private func simdLength(_ vector: SIMD3<Float>) -> Float {
     let folder = FileManager.default.temporaryDirectory.appendingPathComponent("hidden-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: folder) }
-    let mockLot = nsoclient.appendingPathComponent("MockInstall/Lots/mock-lot.xml")
+    let mockLot = simburbiaFolder.appendingPathComponent("MockInstall/Lots/mock-lot.xml")
     let xml = try String(contentsOf: mockLot, encoding: .utf8)
         .replacingOccurrences(of: #"<object guid="0x4D4F4305""#, with: #"<object hidden="1" guid="0x4D4F4305""#)
     let lot = folder.appendingPathComponent("hidden-lamp.xml")
     try xml.write(to: lot, atomically: true, encoding: .utf8)
 
-    let session = try LotSession(ClientOptions(lot: lot.path, installs: [], nsoclient: nsoclient))
+    let session = try LotSession(ClientOptions(lot: lot.path, installs: [], simburbiaFolder: simburbiaFolder))
     let lamp = try #require(session.vm.entities.first { $0.object.guid == 0x4D4F_4305 })
     #expect(session.hiddenByBlueprint == [lamp.objectID: 0x4D4F_4305])
     #expect(lamp.objectData[Int(ObjectVariable.hidden.rawValue)] == 0)   // the VM never sees it
@@ -303,7 +303,7 @@ private func simdLength(_ vector: SIMD3<Float>) -> Float {
 }
 
 @Test func rewritesABlueprintInTSOsDialectWithNames() throws {
-    let options = ClientOptions(installs: [], nsoclient: nsoclient)
+    let options = ClientOptions(installs: [], simburbiaFolder: simburbiaFolder)
     let original = try Blueprint(xml: try Data(contentsOf: options.lot))
     let rewritten = try Blueprint(xml: try options.blueprintInTSOsDialect())
     #expect(rewritten.formatVersion == "1.0" && rewritten.simburbiaVersion == 1)

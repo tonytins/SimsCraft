@@ -54,7 +54,7 @@ extension ScriptOracle {
 }
 
 /// The Simburbia folder, which holds MockInstall, next to FreeSO's content in the snapshot.
-private let nsoclient = URL(fileURLWithPath: #filePath)
+private let simburbiaFolder = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
 extension ScriptOracle {
@@ -88,9 +88,9 @@ extension ScriptOracle {
             let installs = InstallKind.installs(in: ConfigReader(provider: EnvironmentVariablesProvider()))
             let game = game.map { URL(fileURLWithPath: $0, isDirectory: true) }
                 ?? installs.first { $0.kind == .game }?.directory
-                ?? nsoclient.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
+                ?? simburbiaFolder.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
             let lotFile = blueprint.map { URL(fileURLWithPath: $0) }
-                ?? nsoclient.appendingPathComponent("../TSOClient/tso.content/Content/Blueprints/empty_lot_fso.xml")
+                ?? simburbiaFolder.appendingPathComponent("../TSOClient/tso.content/Content/Blueprints/empty_lot_fso.xml")
                     .standardizedFileURL
             let lot = try Blueprint(xml: try Data(contentsOf: lotFile))
             let objects = FileManager.default.temporaryDirectory

@@ -190,8 +190,8 @@ import Testing
     }
 
     @Test func roundTripsEveryBlueprintTheProjectHas() throws {
-        let nsoclient = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../..").standardizedFileURL
-        let folders = ["Lots", "MockInstall/Lots", "../TSOClient/tso.content/Content/Blueprints"].map { nsoclient.appendingPathComponent($0) }
+        let simburbiaFolder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../..").standardizedFileURL
+        let folders = ["Lots", "MockInstall/Lots", "../TSOClient/tso.content/Content/Blueprints"].map { simburbiaFolder.appendingPathComponent($0) }
         var count = 0
         for folder in folders {
             for file in (try? FileManager.default.contentsOfDirectory(atPath: folder.path))?.filter({ $0.hasSuffix(".xml") }) ?? [] {

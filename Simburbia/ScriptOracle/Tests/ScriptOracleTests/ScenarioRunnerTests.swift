@@ -4,12 +4,12 @@ import SimAntics
 import Testing
 
 /// Simburbia's folder, holding MockInstall, next to FreeSO's content in the snapshot.
-private let nsoclient = URL(fileURLWithPath: #filePath)
+private let simburbiaFolder = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-private let mockInstall = nsoclient.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
+private let mockInstall = simburbiaFolder.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
 
 private func emptyLot() throws -> Blueprint {
-    try Blueprint(xml: try Data(contentsOf: nsoclient
+    try Blueprint(xml: try Data(contentsOf: simburbiaFolder
         .appendingPathComponent("../TSOClient/tso.content/Content/Blueprints/empty_lot_fso.xml").standardizedFileURL))
 }
 
