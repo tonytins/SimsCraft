@@ -43,4 +43,34 @@ let mockInstall = URL(fileURLWithPath: #filePath)
     @Test func loadsTheGlobal() throws {
         #expect(try content.global().chunk(BHAV.self, id: 256) != nil)
     }
+
+    @Test func readsTheMadeUpWallsAndFloors() throws {
+        let floors = try FloorProvider(files: content.files)
+        #expect(floors.entries.map(\.id) == [1, 2, 256, 257, 65534, 65535])
+        #expect(floors.entries.map(\.name) == ["Mock Grass", "Mock Planks", "Mock Tile", "Mock Carpet", "Mock Water", "Mock Pool"])
+        #expect(floors.failures.isEmpty && floors.missingArchives.count == 3)
+        for id: UInt16 in [1, 2, 256, 257] {
+            let floor = try #require(try floors.floor(id: id))
+            let palette = try floor.file.chunk(PALT.self, id: 1)
+            for sprite in [floor.far, floor.medium, floor.near] {
+                let image = try #require(sprite).decode(frameAt: 0, palette: palette)
+                #expect(image.width > 0 && image.rgba != nil)
+            }
+        }
+        #expect(try floors.globalSprite(id: 0x420)?.frames.count == 1)
+        #expect(try floors.globalSprite(id: 0x80F)?.frames.count == 3)
+
+        let walls = try WallProvider(files: content.files)
+        #expect(walls.entries.map(\.id) == [1, 2, 3, 256, 257])
+        #expect(walls.styleEntries.map(\.name) == ["Mock Wall", "Mock Picket Fence", "Mock Iron Fence", "Mock Privacy Fence", "Mock Banister"])
+        #expect(walls.failures.isEmpty && walls.missingArchives.count == 3)
+        for id: UInt16 in [1, 2, 3, 252, 253, 256, 257] {
+            let pattern = try #require(try walls.pattern(id: id))
+            #expect([pattern.far, pattern.medium, pattern.near].allSatisfy { $0?.frames.count == 4 })
+        }
+        let wall = try #require(try walls.style(id: 1))
+        #expect(wall.wallsDown.near?.id == 1027)
+        #expect(try walls.style(id: 2)?.wallsDown.near?.id == 1028) // no cut-down masks: the full ones
+        #expect(try walls.junctions().near?.frames.count == 46)
+    }
 }

@@ -70,4 +70,32 @@ struct RealInstallTests {
         #expect(failures.isEmpty, "\(failures.count) failures, first: \(failures.prefix(5))")
         #expect(tuningFailures.isEmpty, "\(tuningFailures.prefix(5))")
     }
+
+    /// Every wall and floor in the catalog reads, with its sprites at every zoom, and so does
+    /// every wall style.
+    @Test func readsEveryWallAndFloor() throws {
+        let floors = try FloorProvider(files: content.files)
+        let walls = try WallProvider(files: content.files)
+        var floorsWithoutSprites: [UInt16] = [], patternsWithoutSprites: [UInt16] = []
+        for entry in floors.entries where entry.id < FloorProvider.waterID {
+            let floor = try #require(try floors.floor(id: entry.id))
+            if floor.far == nil || floor.medium == nil || floor.near == nil { floorsWithoutSprites.append(entry.id) }
+        }
+        for entry in walls.entries {
+            let pattern = try #require(try walls.pattern(id: entry.id))
+            if pattern.far == nil || pattern.medium == nil || pattern.near == nil { patternsWithoutSprites.append(entry.id) }
+        }
+        let styles = try (1...255).compactMap { try walls.style(id: UInt16($0)) }
+        let withMasks = styles.filter { $0.wallsUp.near != nil }.map(\.id)
+        print("""
+            TSOContent real install: \(floors.entries.count) floors (\(floors.globalCount) global), \
+            \(walls.entries.count) wall patterns, styles with masks \(withMasks), \
+            missing archives \(floors.missingArchives + walls.missingArchives); \
+            without every sprite: floors \(floorsWithoutSprites), patterns \(patternsWithoutSprites)
+            """)
+        #expect(floors.failures.isEmpty, "\(floors.failures.prefix(5))")
+        #expect(walls.failures.isEmpty, "\(walls.failures.prefix(5))")
+        #expect(floors.globalCount == 29)
+        #expect(try walls.junctions().near != nil)
+    }
 }

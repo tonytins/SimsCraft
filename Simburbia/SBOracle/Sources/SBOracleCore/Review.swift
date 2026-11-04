@@ -70,6 +70,8 @@ public enum Review {
           layouts, FreeSO's empty lot, a house built in-game, and a small made-up lot.
         - **Sprites:** every object graphic in the game's sprite archives, decoded: each frame's size,
           position, palette, and checksums of its pixels and depth, and each drawing group's layout.
+        - **Architecture:** for every wall pattern, wall style, and floor the game has, which of its
+          graphics each zoom level draws with.
         - **Operands:** every instruction of a primitive Simburbia can read but doesn't run yet, in the
           game's objects and globals: each field of what it asks for, as FreeSO's own code reads it.
 

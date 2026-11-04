@@ -77,7 +77,13 @@ In order:
    - [x] A. The schematic lot view, the inspector, time controls (pause, three speeds), rotation,
      zoom, pan, and floors; `--screenshot` for checks. The owner's house loads and runs.
    - [ ] B. Sprites in place of the boxes, as Hyde Park lands: objects draw with their sprites
-     (Hyde Park E1), sorted per pixel by their depth (E2); walls and floors are next.
+     (Hyde Park E1), sorted per pixel by their depth (E2). Walls and floors in four steps, as
+     update-46 draws them (floors as textured tiles, walls as masked sprites); grass waits:
+     - [x] B1. Wall and floor content: TSOContent's `FloorProvider` and `WallProvider`, made-up
+       walls and floors in MockInstall, and `architecture` on both oracles, agreeing on every ID.
+     - [ ] B2. Floors as textured tiles in each zoom and rotation, with pools and water.
+     - [ ] B3. Standing walls: patterns masked by styles, both edges, diagonals, fences, with depth.
+     - [ ] B4. Cutaways and joins: walls cut down, the cutaway styles beside doors, end caps, junctions.
 3. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
    with FreeSO (the alpha gate's lot job). Each phase ends with the oracles' experiments agreeing.
    On the real installs, Sims come from the game's person template with a made-up identity defined
@@ -238,6 +244,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | minor | The client's 2B, step B1: wall and floor content. TSOContent's `FloorProvider` and `WallProvider` port FreeSO's providers (global floors, styles, patterns, junctions, and the `housedata` archives numbered in FreeSO's order); `fso-oracle architecture` and `sb-oracle architecture` agree on every ID on all three installs and MockInstall. MockInstall gains made-up walls and floors (`generators/mock_build.py`) and the Kenney Sim (CC0) for the fourth pass. Two known differences: floors are named from the floor strings, where FreeSO reads the wallpaper ones (DIFF-29), and the base game's and beta's missing archives hold nothing, where FreeSO stops (DIFF-30). Hyde Park F (images) isn't needed for walls and floors. |
 | 2026-11-04 | patch | The study's lots now sit on floor plans: the seed picks FreeSO's empty lot or one of TSO's job lots emptied of its objects (`--floor-plan`), so objects meet real walls and doors; a plan FreeSO can't read is dropped for the run. Room maps also cover FreeSO's `empty_lot.xml` (`fso-oracle` ignores its DTD) and the 23 job lots: all agree, and the nightclub lot FreeSO fails to read is counted as answered by Simburbia alone. Running the job lots over time waits for the fourth pass. Simburbia's version base corrected to `0.1.100`, after the .NET SDK's `1xx` bands. |
 | 2026-11-04 | patch | The study's first finding, fixed: user placement now lays or clears the floor under the upper part of stairs and elevators (an `OBJD` level offset above 0: `InAir` clears it, `OnFloor` lays pattern 1 where there's none), as FreeSO's `VMEntity.ExecuteEntryPoint` does. Simburbia had skipped it, since objects were only ever created out of the world until lots placed them; without it an elevator's upstairs tile wasn't its own room, so room numbers upstairs were one short. All 12 lots the first study found disagreeing now agree over a game day. `AGENTS.md` and `REVIEW.md` added, after AmtrakStatus and NVFlare. |
 | 2026-11-03 | minor | The oracles' object experiment is now a randomized study (`sb-oracle study`), replacing running every object alone, which took hours. For five minutes it samples lots of about thirty objects by a recorded seed, lays them on a grid with random facings, and runs each a game day on both VMs; an object reaching something unported is set aside (mapped to its multi-tile lead, or found by halving on Simburbia alone), and a disagreeing lot is halved to the fewest objects. A ledger per install (`docs/results/sb-study-<install>.tsv`) carries coverage between reviews. First run on 1.1097.1.0: 22 of 35 lots agree; 12 disagree at tick 0, a placement finding still to explain. The review script runs it; CI's mock review runs a minute with a fixed seed. |

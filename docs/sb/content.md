@@ -157,6 +157,36 @@ print(try doorGlobals.chunks(BHAV.self).count, doorGlobals.tuning != nil)
 Both `GlobalResource` and `ObjectResource` conform to `IFFResource`, which is what SimAntics reads
 code and tuning through: `chunk(_:id:)`, `chunks(_:)`, `tuningTable(id:)`, and `semiGlobal`.
 
+## Walls and floors
+
+`FloorProvider` and `WallProvider` port FreeSO's `WorldFloorProvider` and `WorldWallProvider`. They
+aren't part of `GameContent`, since servers don't draw: the client makes them from the install's
+file index. Each reads its catalog when it's made and parses a sprite when it's asked for.
+
+```swift
+let floors = try FloorProvider(files: content.files)
+let walls = try WallProvider(files: content.files)
+let carpet = try floors.floor(id: 256)          // far, medium, and near SPR2s, and the file with their palettes
+let brick = try walls.pattern(id: 2)            // a wall pattern: SPR# with a frame per side
+let fence = try walls.style(id: 2)              // a wall style's masks, with walls up and cut down
+```
+
+| IDs | Floors | Walls |
+| --- | --- | --- |
+| Global | 1 up, from `floors.iff`, named by `build.iff`'s floor strings | patterns 0 to 255 and styles 1 to 255, from `walls.iff` |
+| Archives | 256 up, from `housedata/floors` to `floors4` | patterns 256 up, from `housedata/walls` to `walls4` |
+| Others | 65534 (water) and 65535 (pool), catalog entries only; their tiles come from `globalSprite(id:)` | junction pieces, from `junctions()` |
+
+Archive IDs follow FreeSO's order: each archive in turn, its IFFs in manifest order. An IFF that
+doesn't read keeps its ID, so the ones after it keep theirs, and is listed in `failures`. An
+archive the install doesn't have holds none, and is listed in `missingArchives`: the base game
+and the beta have only the first of each. An unknown wall pattern from 256 up is drawn as the
+first archive pattern, a tolerance FreeSO had.
+
+On 1.1097.1.0 there are 234 floors (29 global) and 304 wall patterns with catalog entries; on the
+base game and the beta, 169 and 221. `sb-oracle architecture` and `fso-oracle architecture` agree
+on every ID on all three and on `MockInstall`.
+
 ## Errors
 
 Every failure is a `ContentError`:

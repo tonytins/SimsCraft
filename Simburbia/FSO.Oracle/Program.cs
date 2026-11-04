@@ -28,6 +28,7 @@ namespace FSO.Oracle
        fso-oracle run-scenarios [options] --scenarios DIR
        fso-oracle operands [options]
        fso-oracle sprites [--game DIR]
+       fso-oracle architecture [--game DIR]
 
 sprites decodes every SPR2, SPR#, and DGRP in the install's objspf*.far archives with
 FreeSO's readers and prints one line per frame or drawing group, with hashes of the
@@ -58,6 +59,9 @@ and prints its room map and rooms as one JSON line (see README.md).
 list-objects loads every registered object through FreeSO's content system and prints
 one tab-separated line per object (see README.md).
 
+architecture prints which sprite chunks FreeSO's wall and floor providers find for each
+wall pattern, wall style, and floor (see ArchitectureDump.cs).
+
 Standard output carries only results; FreeSO's own messages go to standard error.
 
 options:
@@ -73,7 +77,7 @@ options:
 
         public static int Main(string[] args)
         {
-            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "run-scenarios", "operands", "sprites" }.Contains(args[0]))
+            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "run-scenarios", "operands", "sprites", "architecture" }.Contains(args[0]))
             {
                 Console.Error.WriteLine(Usage);
                 return 2;
@@ -121,6 +125,11 @@ options:
             if (args[0] == "list-objects")
             {
                 ListObjects(results);
+                return 0;
+            }
+            if (args[0] == "architecture")
+            {
+                ArchitectureDump.Run(results);
                 return 0;
             }
             if (args[0] == "operands")

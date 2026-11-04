@@ -103,6 +103,7 @@ for install in "${installs[@]}"; do
     timed room-maps "$nso_binary" room-maps < <(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/rooms.lots") \
         >"$folder/rooms.jsonl"
     timed sprites nso sprites >"$folder/sprites.tsv"
+    timed architecture nso architecture >"$folder/architecture.tsv"
     timed operands nso operands >"$folder/operands.tsv"
 
     # The randomized study: sampled objects on lots, a game day on both sides, for a time budget

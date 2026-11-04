@@ -21,6 +21,7 @@
 #                                 room-maps reads
 #   rooms.jsonl                   room-maps for them
 #   sprites.tsv                   sprites: every object sprite frame and drawing group, decoded
+#   architecture.tsv              architecture: the sprite chunks each wall, wall style, and floor resolves to
 #   operands.tsv                  operands: each operand Simburbia decodes but doesn't run, field by field
 #   timings.tsv, *.log            seconds per command, and fso-oracle's messages
 set -euo pipefail
@@ -128,6 +129,9 @@ timed room-maps oracle room-maps < <(resolve_lots "$output" "$game" "$repository
 
 echo "Sprites..."
 timed sprites oracle sprites >"$output/sprites.tsv" 2>"$output/sprites.log"
+
+echo "Architecture..."
+timed architecture oracle architecture >"$output/architecture.tsv" 2>"$output/architecture.log"
 
 echo "Operands..."
 timed operands oracle operands >"$output/operands.tsv" 2>"$output/operands.log"

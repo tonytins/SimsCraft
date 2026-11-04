@@ -81,6 +81,7 @@ disagreement is a finding to explain, and a case one side couldn't measure is in
 | `run-lot` | One lot (`--blueprint`) loaded with its objects and run, with a state digest after loading and as it ticks; `--leave-out GUID` leaves out an object `fso-oracle` left out, and `--dump` adds every entity's digested fields |
 | `run-primitive` | `fso-oracle`'s JSON requests on standard input, each on a freshly loaded lot (`--blueprint`, `--leave-out`), answered in its format: the lot as loaded, the exit code, registers, and every effect; `unsupported` where a primitive isn't ported |
 | `room-maps` | Each blueprint path on standard input: its room maps and rooms |
+| `architecture` | Which sprite chunks each wall pattern, wall style, and floor resolves to |
 | `study` | The randomized study (below): sampled objects on lots, a game day on both VMs, for a time budget |
 | `compare` | Whether both sides' records agree, experiment by experiment, and with `--review FILE`, that install's section of the report written; `--strict` exits with an error on any disagreement |
 

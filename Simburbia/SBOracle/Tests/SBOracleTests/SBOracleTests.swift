@@ -127,6 +127,15 @@ struct FixtureComparisonTests {
         #expect(comparison.skipped.isEmpty, "\(comparison.skipsByCount)")
     }
 
+    /// Every wall pattern, wall style, and floor resolves to the same sprite chunks.
+    @Test func architectureMatchesFreeSO() throws {
+        let comparison = Comparison.architecture(fso: try lines("architecture.tsv"), nso: Answers.architecture(in: try required(gameDirectory)))
+        print(comparison.summary)
+        #expect(comparison.matched >= (onMockInstall ? 500 : 900))
+        #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
+        #expect(comparison.skipped.isEmpty, "\(comparison.skipsByCount)")
+    }
+
     /// Every operand of a primitive Simburbia decodes but doesn't run. MockInstall's objects use
     /// none, so there it only checks that both sides agree on having none.
     @Test func operandsMatchFreeSO() throws {

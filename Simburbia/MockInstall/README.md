@@ -1,8 +1,9 @@
 # Mock install
 
 **Nothing in this folder is from The Sims Online.** It's a tiny, made-up install, for testing
-only. Every object, routine, and name here was written for SimsCraft's tests, and none of it
-comes from, or stands for, EA's game data. It can't be played.
+only. Every object, routine, wall, floor, and name in `TSOClient/` was written for SimsCraft's
+tests, and none of it comes from, or stands for, EA's game data. It can't be played.
+`GameData/` holds the mock Sim to come, Kenney's CC0 character (see [its README](GameData/README.md)).
 
 It exists so tests and CI can run without a copy of TSO: point `TSO_GAME_DIR` at `TSOClient/` here,
 and anything that reads an install (`tsofiles-check`, TSOContent, the SimAntics VM) reads this one
@@ -26,6 +27,11 @@ It follows the layout of a real install, with only what the content system needs
 | `tuning.dat` | The global tuning a Sim's motives read, made up: `lotmotives` (a weight of 1 for every lot category and motive) and `simmotives` (small decay rates, 16 waking hours) |
 | `avatardata/skeletons/skeletons.dat` | A FAR3 holding `adult.skel`, a made-up skeleton of one bone (`ROOT`), laid out as 1.1097.1.0's is |
 | `objectdata/globals/mockglobals.iff` | The objects' semi-global: one routine (8192) that returns true |
+| `objectdata/globals/build.iff` | The build catalog's strings: five wall styles (`STR#` 0x81), two floors (0x82), three wallpapers (0x83), and pool and water (0x85). There's one more wallpaper than floors, as in the real tables, since FreeSO counts the global floors from the wallpaper strings (DIFF-29) |
+| `objectdata/globals/walls.iff` | Wall styles 1 (wall), 2, 12, 13, and 14 (fences, banister), and 7 and 8 (the cutaway styles), with cut-down masks for 1, 7, and 8; patterns 1 to 3 (plaster, brick, blue paint), 248 to 251 (the fences' own), and 252 and 253 (the cutaway overlays); and the 46 junction pieces. Each sprite has the four sides FreeSO draws, at its sizes for each zoom |
+| `objectdata/globals/floors.iff` | Floors 1 (straw, standing in for grass) and 2 (planks), 16 pool tiles at each zoom with their corners, and 16 water tiles with a depth layer |
+| `housedata/walls/walls.far` | Two archive wall patterns, 256 (`mockstone.wll`) and 257 (`mockpanel.wll`) |
+| `housedata/floors/floors.far` | Two archive floors, 256 (`mocktile.flr`) and 257 (`mockcarpet.flr`). Like the base game, the mock has no `walls2` to `walls4` or `floors2` to `floors4` (DIFF-30) |
 
 | GUID | Object | Notes |
 | --- | --- | --- |
@@ -69,7 +75,7 @@ being measured; FreeSO runs both, and Simburbia's side of the Sim's lot counts a
 Queen Margaret's fourth pass.
 
 `fso-oracle` reads it too: its game overlay adds placeholders for what FreeSO loads and
-Simburbia doesn't (audio, tuning, wall and floor globals, and so on). CI runs both oracles on
+Simburbia doesn't (audio, tuning, the missing wall and floor archives, and so on). CI runs both oracles on
 it and reports whether they agree:
 
 ```sh
@@ -83,6 +89,7 @@ The files are kept as they are, not generated. Add to them as tests need: anothe
 chunk type, a quirk to cover. Update the tables above when you do, and keep everything made up.
 
 `generators/` keeps the scripts that made some of the files, to show how they were built:
-`mock_sim.py` gave the Sim its body strings, animation names, skeleton, and tuning. Each ran once
+`mock_sim.py` gave the Sim its body strings, animation names, skeleton, and tuning, and
+`mock_build.py` wrote the walls and floors. Each ran once
 on the committed files and refuses to run again on files it has already patched. The script that
 made `objspf.far` wasn't kept.

@@ -248,6 +248,41 @@ public struct Comparison: Sendable, Equatable {
 
     // MARK: Parsing
 
+    /// `architecture`: the sprite chunks each wall pattern, wall style, floor, and floor sprite
+    /// resolves to, keyed by kind and ID. An ID that fails on both sides counts as matched, and
+    /// as recovered when only FreeSO's fails.
+    public static func architecture(fso: [String], nso: [String]) -> Comparison {
+        var result = Comparison(name: "Architecture")
+        func keyed(_ lines: [String]) -> [String: [String]] {
+            var records: [String: [String]] = [:]
+            for line in lines {
+                let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+                guard fields.count >= 2 else { continue }
+                records[fields.prefix(2).joined(separator: " ")] = Array(fields.dropFirst(2))
+            }
+            return records
+        }
+        let theirs = keyed(fso)
+        let ours = keyed(nso)
+        for (key, record) in theirs.sorted(by: { $0.key < $1.key }) {
+            guard let mine = ours[key] else {
+                result.skip("Simburbia has no record")
+                continue
+            }
+            if record.first == "error" {
+                if mine.first == "error" { result.matched += 1 } else { result.recovered += 1 }
+            } else if mine == record {
+                result.matched += 1
+            } else {
+                result.mismatches.append("\(key): FreeSO \(record) Simburbia \(mine)")
+            }
+        }
+        for key in ours.keys where theirs[key] == nil {
+            result.skip("FreeSO has no record")
+        }
+        return result
+    }
+
     /// `sprites`: each sprite frame's size, position, palette, flags, and pixel hashes, and
     /// each drawing group's listing, keyed by entry, chunk type, chunk ID, and frame. A frame
     /// FreeSO fails on counts as matched if Simburbia fails too, and as recovered if it decodes;

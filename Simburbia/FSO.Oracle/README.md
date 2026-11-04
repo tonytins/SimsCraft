@@ -78,6 +78,26 @@ that throws doesn't hide the rest. `sb-oracle sprites` prints the same from Simb
 `compare` reads both as `sprites.tsv`. Differences Simburbia makes on purpose are listed in
 SBOracle's `KnownDifference` and counted as such, not as disagreements.
 
+## Walls and floors: `architecture`
+
+`architecture` asks FreeSO's wall and floor providers (`Content.WorldWalls`, `Content.WorldFloors`)
+for every ID the lot view can ask for, and prints which sprite chunk each zoom gets, as a chunk ID
+and frame count (`1537:4`), or `-` for none. One tab-separated line each:
+
+| Line | For | Then |
+| --- | --- | --- |
+| `floor ID` | each floor catalog entry | its file (`global` for the global ones), then the far, medium, and near sprites |
+| `floor-sprite ID` | each pool (0x400 to 0x43F) and water (0x800 to 0x80F) sprite there is | the sprite |
+| `wall ID` | patterns 0 to 255, then each archive pattern | its file, then the far, medium, and near sprites |
+| `style ID` | styles 1 to 255 | the full masks at each zoom, then the cut-down ones |
+| `junctions -` | the junction pieces | the far, medium, and near sprites |
+
+An ID that throws prints `error` and the exception's type. Catalog names and prices aren't
+printed, since Simburbia reads some from other strings on purpose (the scorecard's DIFF-29).
+The pixels themselves are compared once the client draws walls and floors. `sb-oracle
+architecture` prints the same from TSOContent's providers, and `compare` reads both as
+`architecture.tsv`.
+
 ## The state digest (version 0)
 
 SHA-256 over little-endian values, in this order:
@@ -305,9 +325,9 @@ each one on standard error:
 - `packingslips/objecttable.xml` and `catalog.xml` copies with display names
   filled in from file names, since the beta's tables have none;
 - for an install with only what Simburbia reads, such as `Simburbia/MockInstall`: empty
-  tuning, audio archives with one track, sound groups, a data definition, wall and floor
-  globals with build-mode string tables, the first wall and floor archives, and an empty
-  `cities` folder;
+  tuning, audio archives with one track, sound groups, a data definition, and an empty
+  `cities` folder (and, where the install has none, wall and floor globals with build-mode
+  string tables and the first wall and floor archives; MockInstall has its own since 2026-11-04);
 - blueprint objects the install doesn't have, or that FreeSO can't load (such as one whose FreeSO patch doesn't fit the install, or a Sim whose avatar FreeSO can't build because the install has no skeletons, as on MockInstall), are left out of the lot and reported.
 
 The install is never written to. FreeSO's user data (such as the sandbox
