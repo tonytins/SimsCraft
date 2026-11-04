@@ -88,15 +88,15 @@ and frame count (`1537:4`), or `-` for none. One tab-separated line each:
 | --- | --- | --- |
 | `floor ID` | each floor catalog entry | its file (`global` for the global ones), the far, medium, and near sprites, then their pixels |
 | `floor-sprite ID` | each pool (0x400 to 0x43F) and water (0x800 to 0x80F) sprite there is | the sprite, then its pixels |
-| `wall ID` | patterns 0 to 255, then each archive pattern | its file, then the far, medium, and near sprites |
-| `style ID` | styles 1 to 255 | the full masks at each zoom, then the cut-down ones |
-| `junctions -` | the junction pieces | the far, medium, and near sprites |
+| `wall ID` | patterns 0 to 255, then each archive pattern | its file, the far, medium, and near sprites, then their pixels |
+| `style ID` | styles 1 to 255 | the full masks at each zoom, then the cut-down ones, then their pixels |
+| `junctions -` | the junction pieces | the far, medium, and near sprites, then their pixels |
 
 An ID that throws prints `error` and the exception's type. Catalog names and prices aren't
 printed, since Simburbia reads some from other strings on purpose (the scorecard's DIFF-29).
-A floor's pixels are each frame of its sprites as FreeSO decodes it to draw, with the sprite's
-`FloorCopy` and `ZAsAlpha` set as the providers set them: the size, then the FNV-1a 64 hash of
-its RGBA (`128x64:0123abcd...`), comma-separated. Wall pixels are compared once walls are drawn. `sb-oracle
+The pixels are each frame of the line's sprites as FreeSO decodes it to draw (a floor's with
+its sprite's `FloorCopy` and `ZAsAlpha` set as the providers set them): the size, then the
+FNV-1a 64 hash of its RGBA (`128x64:0123abcd...`), comma-separated. `sb-oracle
 architecture` prints the same from TSOContent's providers, and `compare` reads both as
 `architecture.tsv`.
 

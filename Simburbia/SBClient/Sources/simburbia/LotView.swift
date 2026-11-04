@@ -94,7 +94,8 @@ final class LotView {
     /// are drawn a little back and down (``SpriteZoom/floorBias(scale:towardViewer:)``), as FreeSO
     /// draws them, so the sprites standing on them aren't cut off. With `floors`, floors are drawn
     /// with their textures; without, as plain tiles tinted by room.
-    func draw(_ scene: LotScene, camera: Camera3D, floors: FloorPass?, objectsWithSprites: Set<Int16>,
+    /// With `wallsAsSprites`, walls and fences are left to ``WallPass``.
+    func draw(_ scene: LotScene, camera: Camera3D, floors: FloorPass?, wallsAsSprites: Bool, objectsWithSprites: Set<Int16>,
               selected: Int16?, hovered: Int16?) {
         let eye = SIMD3(camera.position.x, camera.position.y, camera.position.z)
         let offset = eye - target
@@ -108,7 +109,8 @@ final class LotView {
                 guard floors == nil else { continue }
                 box.center += bias
             case .ground: box.center += bias
-            case .wall, .fence, .object: break
+            case .wall, .fence: if wallsAsSprites { continue }
+            case .object: break
             }
             draw(box, color: color(of: box), outline: false)
         }

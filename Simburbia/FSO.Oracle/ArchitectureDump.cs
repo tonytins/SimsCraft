@@ -14,14 +14,14 @@ namespace FSO.Oracle
     /// <item><c>floor ID FILE FAR MEDIUM NEAR PIXELS</c> for each floor catalog entry, in ID order.</item>
     /// <item><c>floor-sprite ID SPRITE PIXELS</c> for each pool (0x400 to 0x43F) and water (0x800 to
     /// 0x80F) sprite <c>GetGlobalSPR</c> finds.</item>
-    /// <item><c>wall ID FILE FAR MEDIUM NEAR</c> for patterns 0 to 255 and each archive pattern.</item>
-    /// <item><c>style ID UP-FAR UP-MEDIUM UP-NEAR DOWN-FAR DOWN-MEDIUM DOWN-NEAR</c> for styles 1 to 255.</item>
-    /// <item><c>junctions - FAR MEDIUM NEAR</c>.</item>
+    /// <item><c>wall ID FILE FAR MEDIUM NEAR PIXELS</c> for patterns 0 to 255 and each archive pattern.</item>
+    /// <item><c>style ID UP-FAR UP-MEDIUM UP-NEAR DOWN-FAR DOWN-MEDIUM DOWN-NEAR PIXELS</c> for styles 1 to 255.</item>
+    /// <item><c>junctions - FAR MEDIUM NEAR PIXELS</c>.</item>
     /// </list>
     ///
     /// A sprite is <c>-</c> when there's none, else its chunk ID and frame count (<c>1537:4</c>).
     /// FILE is the catalog entry's file name, <c>global</c> for a global one. PIXELS lists each frame
-    /// of the floor's sprites, far to near, as FreeSO decodes it for drawing (its sprite's
+    /// of the sprites, in the order listed, as FreeSO decodes it for drawing (its sprite's
     /// <c>FloorCopy</c> and <c>ZAsAlpha</c> set as the providers set them): the size, then the FNV-1a 64
     /// hash of its RGBA (<c>128x64:0123abcd...</c>), comma-separated, or <c>-</c> with no frames. An ID that throws
     /// prints <c>error</c> and the exception's type. Catalog names and prices aren't printed:
@@ -61,7 +61,8 @@ namespace FSO.Oracle
                 {
                     var wall = walls.Get(id);
                     var file = id < 256 ? "global" : walls.Entries[id].FileName;
-                    return wall == null ? $"{file}\t-\t-\t-" : $"{file}\t{Sprite(wall.Far)}\t{Sprite(wall.Medium)}\t{Sprite(wall.Near)}";
+                    return wall == null ? $"{file}\t-\t-\t-\t-"
+                        : $"{file}\t{Sprite(wall.Far)}\t{Sprite(wall.Medium)}\t{Sprite(wall.Near)}\t{Pixels(wall.Far, wall.Medium, wall.Near)}";
                 });
             }
             for (ushort id = 1; id < 256; id++)
@@ -70,13 +71,16 @@ namespace FSO.Oracle
                 Line(results, $"style\t{id}", () =>
                 {
                     var style = walls.GetWallStyle(styleID);
-                    return style == null ? "-\t-\t-\t-\t-\t-" : string.Join("\t",
+                    return style == null ? "-\t-\t-\t-\t-\t-\t-" : string.Join("\t",
                         Sprite(style.WallsUpFar), Sprite(style.WallsUpMedium), Sprite(style.WallsUpNear),
-                        Sprite(style.WallsDownFar), Sprite(style.WallsDownMedium), Sprite(style.WallsDownNear));
+                        Sprite(style.WallsDownFar), Sprite(style.WallsDownMedium), Sprite(style.WallsDownNear),
+                        Pixels(style.WallsUpFar, style.WallsUpMedium, style.WallsUpNear,
+                               style.WallsDownFar, style.WallsDownMedium, style.WallsDownNear));
                 });
             }
             Line(results, "junctions\t-", () =>
-                $"{Sprite(walls.Junctions.Far)}\t{Sprite(walls.Junctions.Medium)}\t{Sprite(walls.Junctions.Near)}");
+                $"{Sprite(walls.Junctions.Far)}\t{Sprite(walls.Junctions.Medium)}\t{Sprite(walls.Junctions.Near)}\t" +
+                Pixels(walls.Junctions.Far, walls.Junctions.Medium, walls.Junctions.Near));
         }
 
         private static void Line(TextWriter results, string key, Func<string> record)
@@ -111,6 +115,37 @@ namespace FSO.Oracle
                         bytes[i * 4 + 1] = color.G;
                         bytes[i * 4 + 2] = color.B;
                         bytes[i * 4 + 3] = color.A;
+                    }
+                    return $"{frame.Width}x{frame.Height}:{SpriteDump.Hash(bytes)}";
+                }
+                catch (Exception error)
+                {
+                    return "error:" + error.GetType().Name;
+                }
+            }).ToList();
+            return frames.Count == 0 ? "-" : string.Join(",", frames);
+        }
+
+        /// <summary>Each frame of the wall sprites, decoded as FreeSO decodes them to draw.</summary>
+        private static string Pixels(params Files.Formats.IFF.Chunks.SPR[] sprites)
+        {
+            var frames = sprites.Where(sprite => sprite?.Frames != null).SelectMany(sprite => sprite.Frames).Select(frame =>
+            {
+                try
+                {
+                    frame.DecodeIfRequired();
+                    var bytes = new byte[frame.Width * frame.Height * 4];
+                    for (var y = 0; y < frame.Height; y++)
+                    {
+                        for (var x = 0; x < frame.Width; x++)
+                        {
+                            var color = frame.GetPixel(x, y);
+                            var at = (y * frame.Width + x) * 4;
+                            bytes[at] = color.R;
+                            bytes[at + 1] = color.G;
+                            bytes[at + 2] = color.B;
+                            bytes[at + 3] = color.A;
+                        }
                     }
                     return $"{frame.Width}x{frame.Height}:{SpriteDump.Hash(bytes)}";
                 }

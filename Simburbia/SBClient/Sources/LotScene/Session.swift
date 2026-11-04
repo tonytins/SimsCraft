@@ -118,6 +118,9 @@ public final class LotSession {
     /// The install's floors, for drawing them; `nil` if they couldn't be read, and the client
     /// draws floors as plain tiles instead, with why in ``contentProblems``.
     public let floors: FloorImages?
+    /// The install's walls, for drawing them; `nil` if they couldn't be read, and the client draws
+    /// walls as boxes instead, with why in ``contentProblems``.
+    public let walls: WallImages?
     /// Whether time is stopped.
     public var isPaused = false
     /// The index into ``speeds``.
@@ -142,6 +145,14 @@ public final class LotSession {
         } catch {
             problems.append("The floors can't be read, so they're drawn plain: \(error)")
             floors = nil
+        }
+        do {
+            let provider = try WallProvider(files: content.files)
+            problems += provider.failures.map { "Wall \($0.path) can't be read: \($0.reason)" }
+            walls = WallImages(walls: provider, floors: floors)
+        } catch {
+            problems.append("The walls can't be read, so they're drawn plain: \(error)")
+            walls = nil
         }
         contentProblems = problems
         let xml: Data
@@ -200,10 +211,10 @@ public final class LotSession {
         return "\(level)\(suffix) Floor"
     }
 
-    /// Every system message so far: the content's problems, floors that couldn't be decoded, then
+    /// Every system message so far: the content's problems, floors and walls that couldn't be decoded, then
     /// each error the VM reported.
     public var systemMessages: [String] {
-        contentProblems + (floors?.failures ?? []) + SystemMessages.messages(of: vm)
+        contentProblems + (floors?.failures ?? []) + (walls?.failures ?? []) + SystemMessages.messages(of: vm)
     }
 
     /// The game time as `h:mm`.

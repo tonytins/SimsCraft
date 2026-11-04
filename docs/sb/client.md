@@ -46,10 +46,18 @@ explains why a 3D camera rather than FreeSO's 2D batches.
   carry the neighboring tiles' halves. Pools and water take one of 16 shapes from the tiles
   beside them and stay upright on screen as the view turns. Floors are opaque, and texels
   under half alpha aren't drawn. Pool corners aren't drawn, as update-46's 3D floors don't.
-- **Walls and the ground** are flat shapes for now, colored by kind; grass waits. The walls of the
-  floor in view are cut down so the rooms show, as TSO does. Floors and the ground are drawn a
-  little back and down, as FreeSO draws its floors, so the feet of objects standing on them show.
-  If the install's floors can't be read, they're drawn as plain tiles tinted by room, and MOMI
+- **Walls** are sprites, as update-46's `WallComponent` draws them: each side and diagonal takes
+  its pattern, masked by its style (a full wall, a cut-down one, a fence), turned with the view,
+  and placed from its tile's top corner on screen. Each pixel's depth comes from FreeSO's
+  generated gradients, so walls and objects hide each other where they should. W toggles TSO's
+  walls-down mode on the floor in view, which is on by default (`--walls up` starts with walls
+  standing); floors below keep their walls up, and a door's wall is left out where it's cut.
+  Diagonal tiles draw their two floor halves. Not yet: the cutaway mode, end caps where walls
+  stop, junction pieces where they meet, and the wall styles doors and windows make from their
+  own sprites, so a wall still shows behind a window's frame.
+- **The ground** is a flat shape for now; grass waits. Floors and the ground are drawn a little
+  back and down, as FreeSO draws its floors, so the feet of objects standing on them show. If
+  the install's floors or walls can't be read, they're drawn as plain tiles and boxes, and MOMI
   says why.
 - **An object without a sprite** for the view is drawn as a box.
 
@@ -61,7 +69,7 @@ explains why a 3D camera rather than FreeSO's 2D batches.
 | Mouse wheel | Zoom |
 | Right-drag | Pan |
 | Page Up and Page Down | Change the floor in view |
-| W | Show walls whole, or cut down |
+| W | Walls up, or down on the floor in view |
 | Click an object | Inspect it |
 | Escape | Close the open window |
 

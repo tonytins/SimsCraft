@@ -15,6 +15,11 @@ final class SpriteDepth {
     private let shader: Shader
     private let depthTextureLocation: Int32
     private let depthLineLocation: Int32
+    /// Walls' variant: the alpha comes from a third texture, the wall style's mask.
+    private let wallShader: Shader
+    private let wallDepthTextureLocation: Int32
+    private let wallDepthLineLocation: Int32
+    private let wallMaskLocation: Int32
     private var view = Matrix()
     private var projection = Matrix()
 
@@ -22,18 +27,25 @@ final class SpriteDepth {
     /// draws sprites back to front without depth, as before.
     init?() {
         let shader = LoadShaderFromMemory(Self.vertexShader, Self.fragmentShader)
-        guard IsShaderValid(shader) else {
+        let wallShader = LoadShaderFromMemory(Self.vertexShader, Self.wallFragmentShader)
+        guard IsShaderValid(shader), IsShaderValid(wallShader) else {
             UnloadShader(shader)
+            UnloadShader(wallShader)
             return nil
         }
         self.shader = shader
         depthTextureLocation = GetShaderLocation(shader, "depthTexture")
         depthLineLocation = GetShaderLocation(shader, "depthLine")
+        self.wallShader = wallShader
+        wallDepthTextureLocation = GetShaderLocation(wallShader, "depthTexture")
+        wallDepthLineLocation = GetShaderLocation(wallShader, "depthLine")
+        wallMaskLocation = GetShaderLocation(wallShader, "maskTexture")
     }
 
     /// Releases the shader; call before the window closes.
     func unload() {
         UnloadShader(shader)
+        UnloadShader(wallShader)
     }
 
     /// Takes this frame's 3D camera, as `BeginMode3D` would set it up for an orthographic camera.
@@ -78,6 +90,19 @@ final class SpriteDepth {
         EndShaderMode()
     }
 
+    /// Draws one wall sprite: the pattern's colour where the style's mask is, with its depth, as
+    /// FreeSO's `psZWall` does.
+    func drawWall(_ texture: Texture2D, mask: Texture2D, depth: Texture2D, back: SIMD3<Float>, front: SIMD3<Float>,
+                  source: Rectangle, destination: Rectangle) {
+        var line = SIMD2<Float>(windowDepth(of: back), windowDepth(of: front))
+        BeginShaderMode(wallShader)
+        withUnsafePointer(to: &line) { SetShaderValue(wallShader, wallDepthLineLocation, $0, Int32(ShaderUniformDataType.vec2.rawValue)) }
+        SetShaderValueTexture(wallShader, wallDepthTextureLocation, depth)
+        SetShaderValueTexture(wallShader, wallMaskLocation, mask)
+        DrawTexturePro(texture, source, destination, .zero, 0, .white)
+        EndShaderMode()
+    }
+
     // raylib's default vertex shader for OpenGL 3.3.
     private static let vertexShader = """
         #version 330
@@ -106,6 +131,28 @@ final class SpriteDepth {
         out vec4 finalColor;
         void main() {
             vec4 color = texture(texture0, fragTexCoord) * colDiffuse * fragColor;
+            if (color.a == 0.0) discard;
+            float stored = texture(depthTexture, fragTexCoord).r;
+            float along = (1.0 - stored) / 0.4;
+            gl_FragDepth = depthLine.x + along * (depthLine.y - depthLine.x);
+            finalColor = color;
+        }
+        """
+
+    // A wall: the pattern's colour, the mask's alpha (FreeSO's psZWall), and the sprite's depth.
+    private static let wallFragmentShader = """
+        #version 330
+        in vec2 fragTexCoord;
+        in vec4 fragColor;
+        uniform sampler2D texture0;
+        uniform sampler2D depthTexture;
+        uniform sampler2D maskTexture;
+        uniform vec4 colDiffuse;
+        uniform vec2 depthLine;
+        out vec4 finalColor;
+        void main() {
+            vec4 color = texture(texture0, fragTexCoord) * colDiffuse * fragColor;
+            color.a = texture(maskTexture, fragTexCoord).a;
             if (color.a == 0.0) discard;
             float stored = texture(depthTexture, fragTexCoord).r;
             float along = (1.0 - stored) / 0.4;

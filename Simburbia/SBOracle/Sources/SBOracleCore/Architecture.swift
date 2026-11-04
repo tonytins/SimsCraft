@@ -46,20 +46,23 @@ extension Answers {
         for id in Array(UInt16(0)...255) + walls.entries.map(\.id).filter({ $0 >= 256 }) {
             line("wall\t\(id)") {
                 let file = id < 256 ? "global" : walls.entry(id: id)?.fileName ?? "-"
-                guard let pattern = try walls.pattern(id: id) else { return "\(file)\t-\t-\t-" }
-                return [file, sprite(pattern.far), sprite(pattern.medium), sprite(pattern.near)].joined(separator: "\t")
+                guard let pattern = try walls.pattern(id: id) else { return "\(file)\t-\t-\t-\t-" }
+                return [file, sprite(pattern.far), sprite(pattern.medium), sprite(pattern.near),
+                        pixels([pattern.far, pattern.medium, pattern.near], in: pattern.file)].joined(separator: "\t")
             }
         }
         for id in UInt16(1)...255 {
             line("style\t\(id)") {
-                guard let style = try walls.style(id: id) else { return Array(repeating: "-", count: 6).joined(separator: "\t") }
-                return [style.wallsUp.far, style.wallsUp.medium, style.wallsUp.near,
-                        style.wallsDown.far, style.wallsDown.medium, style.wallsDown.near].map(sprite).joined(separator: "\t")
+                guard let style = try walls.style(id: id) else { return Array(repeating: "-", count: 7).joined(separator: "\t") }
+                let masks = [style.wallsUp.far, style.wallsUp.medium, style.wallsUp.near,
+                             style.wallsDown.far, style.wallsDown.medium, style.wallsDown.near]
+                return (masks.map(sprite) + [pixels(masks, in: walls.globals)]).joined(separator: "\t")
             }
         }
         line("junctions\t-") {
             let junctions = try walls.junctions()
-            return [sprite(junctions.far), sprite(junctions.medium), sprite(junctions.near)].joined(separator: "\t")
+            return [sprite(junctions.far), sprite(junctions.medium), sprite(junctions.near),
+                    pixels([junctions.far, junctions.medium, junctions.near], in: walls.globals)].joined(separator: "\t")
         }
         return lines
     }
@@ -71,6 +74,22 @@ extension Answers {
             sprite.frames.indices.map { index in
                 do {
                     let image = try FloorProvider.texture(of: sprite, frameAt: index, in: file, depthAsAlpha: depthAsAlpha)
+                    return "\(image.width)x\(image.height):" + (image.rgba.map(hash) ?? "-")
+                } catch {
+                    return "error:\(String(describing: error).prefix { $0 != "(" })"
+                }
+            }
+        }
+        return frames.isEmpty ? "-" : frames.joined(separator: ",")
+    }
+
+    /// Each frame of wall sprites as the client draws them: decoded with their palette from
+    /// `file` (none is opaque black, FreeSO's default), as `pixels` for floors writes them.
+    private static func pixels(_ sprites: [SPR?], in file: IFFFile) -> String {
+        let frames = sprites.compactMap { $0 }.flatMap { sprite in
+            sprite.frames.indices.map { index in
+                do {
+                    let image = try sprite.decode(frameAt: index, palette: try file.chunk(PALT.self, id: sprite.paletteID))
                     return "\(image.width)x\(image.height):" + (image.rgba.map(hash) ?? "-")
                 } catch {
                     return "error:\(String(describing: error).prefix { $0 != "(" })"

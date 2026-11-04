@@ -16,6 +16,9 @@ final class ClientApp {
     private let textures: SpriteTextures
     /// The floors' textures; `nil` when the install's floors couldn't be read.
     private var floors: FloorPass?
+    /// The walls' sprites; `nil` without readable walls or the depth shader, and walls are boxes.
+    private var walls: WallPass?
+    private var wallSprites: [WallSprite] = []
     /// Sprite depth; `nil` if the shader didn't compile, and sprites draw back to front only.
     private var depth: SpriteDepth?
     // Kept between frames, so drawing doesn't allocate.
@@ -30,7 +33,7 @@ final class ClientApp {
     /// Opens the window, which is hidden when the client only takes a screenshot, at a zoom
     /// step and centered on a tile when they're given, with the interface its documents describe.
     init(session: LotSession, interface: Interface, hidden: Bool, zoomStep: Int? = nil, focus: SIMD2<Float>? = nil,
-         rotation: Int = 0, log: RunLog? = nil) {
+         rotation: Int = 0, wallsDown: Bool = true, log: RunLog? = nil) {
         self.session = session
         self.log = log
         textures = SpriteTextures(library: library)
@@ -47,6 +50,7 @@ final class ClientApp {
         momi = MomiWindow(script: interface.momi)
         depth = SpriteDepth()
         floors = session.floors.map(FloorPass.init)
+        walls = depth == nil ? nil : session.walls.map(WallPass.init)
 
         rebuildScene()
         view.center(on: scene.center)
@@ -54,6 +58,7 @@ final class ClientApp {
         if let zoomStep { view.setZoomStep(zoomStep) }
         if let focus { view.center(on: SIMD3(focus.x + 0.5, 0, focus.y + 0.5)) }
         view.rotate(by: rotation)
+        view.wallsCut = wallsDown
         rebuildSprites()
     }
 
@@ -66,6 +71,7 @@ final class ClientApp {
         }
         textures.unloadAll()
         floors?.unloadAll()
+        walls?.unloadAll()
         depth?.unload()
         CloseWindow()
     }
@@ -81,6 +87,7 @@ final class ClientApp {
         UnloadImage(image)
         textures.unloadAll()
         floors?.unloadAll()
+        walls?.unloadAll()
         depth?.unload()
         CloseWindow()
         return saved
@@ -97,6 +104,13 @@ final class ClientApp {
                                library: library, hiddenByBlueprint: session.hiddenByBlueprint, into: &sprites)
         objectsWithSprites.removeAll(keepingCapacity: true)
         for sprite in sprites { objectsWithSprites.insert(sprite.objectID) }
+        if walls != nil {
+            // With walls cut, the floor in view has its walls down, as TSO's walls-down mode does.
+            let tiles = session.vm.architecture.width * session.vm.architecture.height
+            wallSprites = LotScene.wallSprites(of: session.vm.architecture, level: view.level, zoom: view.spriteZoom,
+                                               worldRotation: view.worldRotation,
+                                               wallsDown: view.wallsCut ? Array(repeating: true, count: tiles) : nil)
+        }
     }
 
     // MARK: Frame
@@ -156,7 +170,8 @@ final class ClientApp {
         let camera = view.camera(screenHeight: Int(GetScreenHeight()))
         BeginDrawing()
         ClearBackground(Color(r: 34, g: 44, b: 58, a: 255))
-        view.draw(scene, camera: camera, floors: floors, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
+        view.draw(scene, camera: camera, floors: floors, wallsAsSprites: walls != nil, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
+        if let walls, let depth { walls.draw(wallSprites, camera: camera, depth: depth, scale: view.spriteScale, level: view.level) }
         view.drawSprites(sprites, camera: camera, textures: textures, depth: depth, order: &drawOrder, selected: inspector.selected, hovered: hovered)
         let state = topBarState
         topBar.update(state)
