@@ -1,4 +1,4 @@
-import NSOInterface
+import Hudini
 import LotScene
 import Raylib
 import SimAntics
@@ -7,13 +7,13 @@ import SimAntics
 final class Inspector {
     private static let size = Vector2(x: 380, y: 260)
     private static let lineHeight = 18
-    private let frame = WindowFrame("Object")
+    private let frame = WindowFrame(title: "Object", theme: .simburbia)
 
     /// The object being inspected, by its ID in the VM; `nil` hides the window.
     var selected: Int16?
 
     private var bounds: Rectangle {
-        frame.place(Self.size, Vector2(x: Float(GetScreenWidth()) - Self.size.x - 20, y: 50))
+        frame.place(size: Self.size, at: Vector2(x: Float(GetScreenWidth()) - Self.size.x - 20, y: 50))
     }
 
     func close() {
@@ -29,8 +29,8 @@ final class Inspector {
     func update() -> Bool {
         guard selected != nil else { return false }
         let bounds = self.bounds
-        if frame.followPointer(bounds) { return true }
-        if frame.update(bounds) == .close {
+        if frame.followPointer(in: bounds) { return true }
+        if frame.update(in: bounds) == .close {
             close()
             return true
         }
@@ -41,11 +41,11 @@ final class Inspector {
         let inspection = Inspection(entity)
         let bounds = self.bounds
         frame.title = inspection.title
-        frame.draw(bounds)
-        let content = WindowFrame.content(bounds)
+        frame.draw(in: bounds)
+        let content = WindowFrame.content(in: bounds)
         var y = Int(content.y) + 10
         for line in inspection.lines {
-            DrawText(line, Int(content.x) + 12, y, 14, Theme.text)
+            DrawText(line, Int(content.x) + 12, y, 14, InterfaceTheme.simburbia.text)
             y += Self.lineHeight
         }
     }

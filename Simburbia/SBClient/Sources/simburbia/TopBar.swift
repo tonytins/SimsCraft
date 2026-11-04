@@ -1,4 +1,4 @@
-import NSOInterface
+import Hudini
 import LotScene
 import Raylib
 
@@ -118,12 +118,12 @@ final class HelpWindow {
         ("PgUp/PgDn", "Floor"), ("W", "Walls"), ("Click on Object", "Inspect"),
     ]
     private static let size = Vector2(x: 300, y: Float(36 + keys.count * lineHeight + 12))
-    private let frame = WindowFrame("Help")
+    private let frame = WindowFrame(title: "Help", theme: .simburbia)
 
     var isOpen = false
 
     private var bounds: Rectangle {
-        frame.place(Self.size, Vector2(x: Float(GetScreenWidth()) / 2 + 40, y: (Float(GetScreenHeight()) - Self.size.y) / 2))
+        frame.place(size: Self.size, at: Vector2(x: Float(GetScreenWidth()) / 2 + 40, y: (Float(GetScreenHeight()) - Self.size.y) / 2))
     }
 
     func contains(_ point: Vector2) -> Bool {
@@ -134,8 +134,8 @@ final class HelpWindow {
     func update() -> Bool {
         guard isOpen else { return false }
         let bounds = self.bounds
-        if frame.followPointer(bounds) { return true }
-        if frame.update(bounds) == .close {
+        if frame.followPointer(in: bounds) { return true }
+        if frame.update(in: bounds) == .close {
             isOpen = false
             return true
         }
@@ -145,11 +145,11 @@ final class HelpWindow {
     func draw() {
         guard isOpen else { return }
         let bounds = self.bounds
-        frame.draw(bounds)
-        let content = WindowFrame.content(bounds)
+        frame.draw(in: bounds)
+        let content = WindowFrame.content(in: bounds)
         var y = Int(content.y) + 12
         for (key, effect) in Self.keys {
-            DrawText(key, Int(content.x) + 12, y, Self.fontSize, Theme.text)
+            DrawText(key, Int(content.x) + 12, y, Self.fontSize, InterfaceTheme.simburbia.text)
             let right = Int(content.x + content.width) - 12
             DrawText(effect, right - MeasureText(effect, Self.fontSize), y, Self.fontSize, Self.effectColor)
             y += Self.lineHeight
@@ -166,7 +166,7 @@ final class MomiWindow {
     private static let size = Vector2(x: 420, y: 260)
     private static let logBackground = Color(r: 34, g: 34, b: 34, a: 255)     // #222222
     private static let inputBackground = Color(r: 20, g: 20, b: 20, a: 255)   // #141414
-    private let frame = WindowFrame("MOMI")
+    private let frame = WindowFrame(title: "MOMI", theme: .simburbia)
     private var wrapped: [String] = []
     private var wrappedCount = -1
     /// How many lines the log is scrolled up from its newest.
@@ -175,17 +175,17 @@ final class MomiWindow {
     var isOpen = false
 
     private var bounds: Rectangle {
-        frame.place(Self.size, Vector2(x: Float(GetScreenWidth()) / 2 - Self.size.x - 40,
+        frame.place(size: Self.size, at: Vector2(x: Float(GetScreenWidth()) / 2 - Self.size.x - 40,
                                        y: (Float(GetScreenHeight()) - Self.size.y) / 2))
     }
 
     private var log: Rectangle {
-        let content = WindowFrame.content(bounds)
+        let content = WindowFrame.content(in: bounds)
         return Rectangle(x: content.x + 10, y: content.y + 10, width: content.width - 20, height: content.height - 66)
     }
 
     private var input: Rectangle {
-        let content = WindowFrame.content(bounds)
+        let content = WindowFrame.content(in: bounds)
         return Rectangle(x: content.x + 10, y: content.y + content.height - 46, width: content.width - 20, height: 36)
     }
 
@@ -201,8 +201,8 @@ final class MomiWindow {
         if CheckCollisionPointRec(GetMousePosition(), log) {
             scroll = max(0, scroll + Int(GetMouseWheelMove().rounded()))
         }
-        if frame.followPointer(bounds) { return true }
-        if frame.update(bounds) == .close {
+        if frame.followPointer(in: bounds) { return true }
+        if frame.update(in: bounds) == .close {
             isOpen = false
             return true
         }
@@ -212,11 +212,11 @@ final class MomiWindow {
     func draw(_ messages: [String]) {
         guard isOpen else { return }
         let bounds = self.bounds
-        frame.draw(bounds)
+        frame.draw(in: bounds)
         let log = self.log
         // Wrapping measures text, so it's redone only when a message arrives.
         if messages.count != wrappedCount {
-            wrapped = messages.flatMap { TextWrap.lines($0, Self.fontSize, Int(log.width) - 16) }
+            wrapped = messages.flatMap { TextWrapper.lines(for: $0, fontSize: Self.fontSize, maximumWidth: Int(log.width) - 16) }
             wrappedCount = messages.count
         }
         DrawRectangleRec(log, Self.logBackground)
@@ -226,14 +226,14 @@ final class MomiWindow {
         let shown = wrapped[max(0, end - visible)..<max(0, end)]
         var y = Int(log.y) + 6
         if wrapped.isEmpty {
-            DrawText("No messages.", Int(log.x) + 8, y, Self.fontSize, Theme.textDim)
+            DrawText("No messages.", Int(log.x) + 8, y, Self.fontSize, InterfaceTheme.simburbia.secondaryText)
         }
         for line in shown {
-            DrawText(line, Int(log.x) + 8, y, Self.fontSize, Theme.text)
+            DrawText(line, Int(log.x) + 8, y, Self.fontSize, InterfaceTheme.simburbia.text)
             y += Self.lineHeight
         }
         let input = self.input
         DrawRectangleRec(input, Self.inputBackground)
-        DrawText("Replies arrive with online play.", Int(input.x) + 8, Int(input.y) + 11, Self.fontSize, Theme.textDim)
+        DrawText("Replies arrive with online play.", Int(input.x) + 8, Int(input.y) + 11, Self.fontSize, InterfaceTheme.simburbia.secondaryText)
     }
 }

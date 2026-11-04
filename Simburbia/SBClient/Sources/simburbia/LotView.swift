@@ -1,5 +1,5 @@
 import Foundation
-import NSOInterface
+import Hudini
 import LotScene
 import Raylib
 import SimAntics
@@ -108,7 +108,7 @@ final class LotView {
         }
         for box in scene.objects where box.level <= level {
             guard case .object(let id) = box.kind, !objectsWithSprites.contains(id) else { continue }
-            let color = id == selected ? Theme.accent : id == hovered ? Color(r: 150, g: 200, b: 255, a: 255) : objectColor(id)
+            let color = id == selected ? InterfaceTheme.simburbia.accent : id == hovered ? Color(r: 150, g: 200, b: 255, a: 255) : objectColor(id)
             draw(box, color: color, outline: true)
         }
         EndMode3D()

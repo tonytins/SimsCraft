@@ -1,4 +1,4 @@
-import NSOInterface
+import Hudini
 import LotScene
 import Raylib
 import SimAntics
@@ -151,7 +151,7 @@ final class ClientApp {
             inspector.draw(entity)
         } else if let id = hovered, let entity = session.vm.entity(id: id) {
             let mouse = GetMousePosition()
-            DrawText(Inspection(entity).title, Int(mouse.x) + 14, Int(mouse.y) + 10, 16, Theme.text)
+            DrawText(Inspection(entity).title, Int(mouse.x) + 14, Int(mouse.y) + 10, 16, InterfaceTheme.simburbia.text)
         }
         momi.draw(session.systemMessages)
         help.draw()

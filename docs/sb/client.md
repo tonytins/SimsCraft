@@ -68,8 +68,10 @@ which also serves as Simburbia's fallback and debug interface:
   disabled until there's online play.
 - **The inspector** shows a clicked object: what it is, where it is, and what it's running.
 
-The windows and controls come from the owner's CityLimits through cs2swift, in
-[`Simburbia/NSOInterface`](../../Simburbia/NSOInterface/); `interface-demo` there shows them on their own.
+The windows and controls come from [Hudini](https://github.com/tonytins/Hudini), the owner's
+interface library for raylib-swift, which grew out of the NSOInterface package this repository
+used to have. Its `hudini-demo` shows them on their own. Simburbia's colors are
+`InterfaceTheme.simburbia`, for now Hudini's standard palette.
 
 ## Without a window
 

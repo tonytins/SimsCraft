@@ -14,7 +14,8 @@ let package = Package(
         .package(path: "../TSOFiles"),
         .package(path: "../TSOContent"),
         .package(path: "../SimAntics"),
-        .package(path: "../NSOInterface"),
+        // The owner's interface library, which NSOInterface grew into; it has no releases yet.
+        .package(url: "https://github.com/tonytins/Hudini", branch: "main"),
         .package(url: "https://github.com/tonytins/raylib-swift", branch: "main"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.0"),
         // The owner's build-tool plugin: the version from Simburbia/GitVersion.txt and the commits since.
@@ -34,7 +35,7 @@ let package = Package(
             "LotScene",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
             .product(name: "Configuration", package: "swift-configuration"),
-            .product(name: "NSOInterface", package: "NSOInterface"),
+            .product(name: "Hudini", package: "hudini"),
             .product(name: "Logging", package: "swift-log"),
             .product(name: "Raylib", package: "raylib-swift"),
             .product(name: "SimAntics", package: "SimAntics"),

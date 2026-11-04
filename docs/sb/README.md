@@ -25,7 +25,7 @@ point one way:
 TSOFiles ──▶ TSOContent ──▶ SimAntics ──▶ SimsScript ──▶ ScriptOracle (sso-oracle)
                                 │
                                 ├──▶ SBOracle (sb-oracle)
-                                └──▶ Client (simburbia) ◀── NSOInterface ◀── raylib-swift
+                                └──▶ SBClient (simburbia) ◀── Hudini ◀── raylib-swift
 
 TSOFiles and TSOContent ──▶ TSOFilesCheck (tsofiles-check)
 ```
@@ -41,7 +41,7 @@ the client; the libraries themselves take no configuration library.
 | SimAntics (lot model) | Positions, the tile index, walls, floors, rooms, and blueprints | [lot.md](lot.md) |
 | SimAntics (blueprints, planned) | TSO's lot format, read and written as Maxis intended, and Simburbia's extensions | [blueprints.md](blueprints.md) |
 | SimsScript | Routines as readable listings and text assembly, and a small compiler; `simsscript list` | [tools.md](tools.md#simsscript) |
-| NSOInterface | The client's windows and controls on raylib-swift, from CityLimits through cs2swift | [client.md](client.md) |
+| Hudini (the owner's library, not in this repository) | The client's windows and controls on raylib-swift; it also reads TSO's `.uis` screens and `.cst` text | [client.md](client.md) |
 | Client | `simburbia`: shows a lot running, or runs it headless and logs it | [client.md](client.md) |
 | TSOFilesCheck | `tsofiles-check`, which opens everything in each install and compares two | [tools.md](tools.md) |
 | SBOracle | `sb-oracle`, which runs `fso-oracle`'s experiments on Simburbia and reports whether the two agree | [tools.md](tools.md#sb-oracle) |

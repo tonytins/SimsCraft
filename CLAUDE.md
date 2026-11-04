@@ -15,7 +15,6 @@ Key entrypoints:
   - ``TSOContent/`` - the content system, and the list of installs (``InstallKind``); its ``TSOConfig`` product reads them through swift-configuration
   - ``SimAntics/`` - the VM
   - ``SimsScript/`` - BHAV text assembly and an LSL-like compiler (proof of concept)
-  - ``NSOInterface/`` - the client's windows and controls on raylib-swift, until Hudini replaces it (see [The client](#the-client))
   - ``SBClient/`` - ``simburbia``, Simburbia's client, which loads, runs, and shows a lot
   - ``FSO.Oracle/``, ``SBOracle/``, ``ScriptOracle/`` - the oracles (see [The oracles](#the-oracles))
   - ``MockInstall/`` - a tiny made-up TSO install for tests and CI
@@ -151,7 +150,7 @@ These apply to the Simburbia libraries. Tools (``tsofiles-check``, the oracles) 
 ### The client
 
 - **TSO's interface**. These windows and controls are the base for Simburbia's take on TSO's ``.uis`` screens.
-- **Seeing it**. ``swift run --package-path Simburbia/NSOInterface interface-demo`` opens a window with the controls; ``--screenshot <file.png>`` draws a few frames hidden and saves the last, for checking a change without anyone at the screen.
+- **Seeing it**. ``simburbia --screenshot <file.png>`` draws a few frames in a hidden window and saves the last, for checking a change without anyone at the screen. The windows and controls come from [Hudini](https://github.com/tonytins/Hudini), the owner's interface library; its ``hudini-demo`` shows them on their own.
 - **Building on Linux** needs the X11 and GL headers (``libx11-dev`` and friends, as in CI). 
 - **Use the ``raylib-swift`` skill** in ``.agents/skills/raylib-swift/`` for any work that imports Raylib: it covers the API's Swift shapes, the lifecycle, the frame, textures, render textures, input, the examples to read, and how to check a visual change on a private display. These rules win where the two disagree.
 - **The libraries never import raylib**. Rendering reads simulation state and never writes it. If something can't be tested without a window, it belongs in the client.
