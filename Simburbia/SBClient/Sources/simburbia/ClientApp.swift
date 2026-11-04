@@ -36,8 +36,9 @@ final class ClientApp {
     /// With --verbose, the run's log.
     private let log: RunLog?
 
-    /// Opens the window, which is hidden when the client only takes a screenshot, at a zoom
-    /// step and centered on a tile when they're given, with the interface its documents describe.
+    /// Sets up the lot's view in the open window (``ClientWindow``), at a zoom step and centered on
+    /// a tile when they're given, with the interface its documents describe. `hidden` is a window
+    /// that only takes a screenshot.
     init(session: LotSession, interface: Interface, hidden: Bool, zoomStep: Int? = nil, focus: SIMD2<Float>? = nil,
          rotation: Int = 0, walls wallMode: WallMode = .cutaway, log: RunLog? = nil) {
         self.session = session
@@ -45,12 +46,7 @@ final class ClientApp {
         followsPointer = !hidden
         textures = SpriteTextures(library: library)
         lastMinute = session.vm.clock.minutes
-        SetTraceLogLevel(.warning)
-        SetConfigFlags(hidden ? [.windowHidden] : [.windowResizable, .vsyncHint, .msaa4xHint])
-        InitWindow(1280, 720, "Simburbia - \(session.lotName)")
-        SetTargetFPS(60)
-        // Escape closes the inspector instead of the client.
-        SetExitKey(.null)
+        SetWindowTitle("Simburbia - \(session.lotName)")
         topBar = TopBar(script: interface.topBar)
         inspector = Inspector(script: interface.inspector)
         help = HelpWindow(script: interface.help)
@@ -67,6 +63,18 @@ final class ClientApp {
         view.rotate(by: rotation)
         view.wallMode = wallMode
         rebuildSprites()
+    }
+
+    /// Makes what the first frames would make, the textures of what's in view among them, by
+    /// drawing a frame where it isn't seen, so the lot doesn't stutter as it appears. The loading
+    /// screen calls it before giving way.
+    func warmUp() {
+        let target = LoadRenderTexture(GetScreenWidth(), GetScreenHeight())
+        guard IsRenderTextureValid(target) else { return }
+        BeginTextureMode(target)
+        drawWorld(camera: view.camera(screenHeight: Int(GetScreenHeight())))
+        EndTextureMode()
+        UnloadRenderTexture(target)
     }
 
     /// Runs until the window is closed.
@@ -217,10 +225,7 @@ final class ClientApp {
     private func draw() {
         let camera = view.camera(screenHeight: Int(GetScreenHeight()))
         BeginDrawing()
-        ClearBackground(Color(r: 34, g: 44, b: 58, a: 255))
-        view.draw(scene, camera: camera, floors: floors, wallsAsSprites: walls != nil, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
-        if let walls, let depth { walls.draw(wallSprites, camera: camera, depth: depth, scale: view.spriteScale, level: view.level) }
-        view.drawSprites(sprites, camera: camera, textures: textures, depth: depth, order: &drawOrder, selected: inspector.selected, hovered: hovered)
+        drawWorld(camera: camera)
         let state = topBarState
         topBar.update(state)
         topBar.draw(state)
@@ -234,6 +239,14 @@ final class ClientApp {
         momi.window.draw()
         help.window.draw()
         EndDrawing()
+    }
+
+    /// The lot: floors, walls, and objects, without the interface.
+    private func drawWorld(camera: Camera3D) {
+        ClearBackground(Color(r: 34, g: 44, b: 58, a: 255))
+        view.draw(scene, camera: camera, floors: floors, wallsAsSprites: walls != nil, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
+        if let walls, let depth { walls.draw(wallSprites, camera: camera, depth: depth, scale: view.spriteScale, level: view.level) }
+        view.drawSprites(sprites, camera: camera, textures: textures, depth: depth, order: &drawOrder, selected: inspector.selected, hovered: hovered)
     }
 
     private var topBarState: TopBar.State {

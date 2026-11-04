@@ -25,6 +25,22 @@ It also loads FreeSO's content folder and Simburbia's mods (`FSO_CONTENT_DIR` an
 or a custom object whose GUID is taken, becomes a system message in MOMI and counts as an error in
 the top bar.
 
+## Loading
+
+The window opens on a loading screen at once, as TSO's does, while the install and the lot load
+on another thread; the session is handed to the window once, when it's ready. Until TSO's art is
+read (step C2), the screen is Simburbia's logo on TSO's dark blue (`#09182F`). Under it, a caption
+and lines that slide in from the right one after another, as FreeSO's `LoadingScreen` slides them:
+each takes a second and comes in only when loading has reached its share, so the screen shows
+for at least four seconds. The text is TSO's own when there's an install (the caption is table
+154's entry 5, the lines table 155's entries 6 to 9, read with Hudini's `CSTCatalog` from
+`gamedata`), else Simburbia's (`Interface/uitext/_1_loading.cst`).
+
+Loading reports its progress: the install's content, its floors and walls, the lot and its first
+tick, then the textures of what's in view, which the client makes by drawing a frame off screen
+so the lot doesn't stutter as it appears. Half a second after the last line settles, the lot
+appears. `--loading-screenshot FILE` saves a frame of the screen as its second line slides in.
+
 ## The window
 
 The lot is drawn through raylib's 3D camera at TSO's view: looking down 30° from the horizon, at a

@@ -2,6 +2,7 @@ import ArgumentParser
 import Configuration
 import Foundation
 import LotScene
+import Raylib
 import SimAntics
 import TSOConfig
 import TSOContent
@@ -59,6 +60,13 @@ struct Simburbia: ParsableCommand {
     @Option(help: "TSO's wall mode for the floor in view to start with: cutaway (the default), down, or up.")
     var walls: WallMode = .cutaway
 
+    @Option(help: "Run hidden, save a frame of the loading screen here as its second line slides in, and quit.")
+    var loadingScreenshot: String?
+
+    /// How long the loading screen stays once everything has loaded and its last line has
+    /// settled, in seconds: time for the engine to settle before the lot appears.
+    static let loadingBuffer = 0.5
+
     /// A game day at TSO's 150 ticks a game minute, the default length of a headless run.
     static let defaultHeadlessTicks = 216_000
     /// A game week: the longest run, so a mistyped count can't run for hours.
@@ -73,9 +81,12 @@ struct Simburbia: ParsableCommand {
             if let first = others.first { throw ValidationError("--rewrite-blueprint doesn't run the lot, so it can't take \(first)") }
         }
         // A headless run must never open a window, so the options that need one are refused.
+        if screenshot != nil, loadingScreenshot != nil {
+            throw ValidationError("--screenshot and --loading-screenshot each take the one frame; pick one")
+        }
         if headless {
-            let windowOnly = [("--screenshot", screenshot != nil), ("--zoom", zoom != nil), ("--focus", focus != nil),
-                              ("--rotation", rotation != 0)].filter(\.1).map(\.0)
+            let windowOnly = [("--screenshot", screenshot != nil), ("--loading-screenshot", loadingScreenshot != nil),
+                              ("--zoom", zoom != nil), ("--focus", focus != nil), ("--rotation", rotation != 0)].filter(\.1).map(\.0)
             if let first = windowOnly.first { throw ValidationError("\(first) needs a window, so it can't run with --headless") }
         }
         guard let ticks else { return }
@@ -103,31 +114,82 @@ struct Simburbia: ParsableCommand {
             }
             return
         }
-        // A ClientError says what to fix; ArgumentParser prints it and exits with a failure.
-        let session = try LotSession(options)
         let logs = headless || verbose
-        if logs {
-            RunLog.bootstrap()
-        } else {
-            for missing in session.leftOut {
-                let guid = String(missing.object.guid, radix: 16)
-                FileHandle.standardError.write(Data("simburbia: left out object 0x\(guid): \(missing.reason)\n".utf8))
-            }
-        }
+        if logs { RunLog.bootstrap() }
         if headless {
+            // A ClientError says what to fix; ArgumentParser prints it and exits with a failure.
+            let session = try LotSession(options)
             HeadlessRun.run(session, ticks: ticks ?? Self.defaultHeadlessTicks, install: Self.describe(options.gameDirectory))
             return
         }
 
-        // The interface's documents, read before the window opens, so a missing or broken one
-        // says so instead of leaving the window blank.
+        // The interface's documents and the loading screen's text, read before the window opens,
+        // so a missing or broken one says so instead of leaving the window blank.
         let (interface, warnings) = try Interface.load(from: Self.simburbiaFolder)
-        for warning in warnings {
+        let (text, textWarnings) = LoadingText.load(gameDirectory: options.gameDirectory, simburbiaFolder: Self.simburbiaFolder)
+        for warning in warnings + textWarnings {
             FileHandle.standardError.write(Data("simburbia: \(warning)\n".utf8))
         }
-        let log = logs ? RunLog(session: session, install: Self.describe(options.gameDirectory)) : nil
-        let app = ClientApp(session: session, interface: interface, hidden: screenshot != nil, zoomStep: zoom.map { $0 - 1 },
-                            focus: focus.flatMap(focusTile), rotation: rotation, walls: walls, log: log)
+        let hidden = screenshot != nil || loadingScreenshot != nil
+        ClientWindow.open(hidden: hidden)
+        let loading = LoadingScreen(text: text, logo: Self.simburbiaFolder.appendingPathComponent("Interface/logo.png"))
+        let loader = SessionLoader(options)
+        var loaded: ClientApp?
+        var settledAt: Double?
+        while true {
+            if WindowShouldClose() {
+                loading.unload()
+                CloseWindow()
+                return
+            }
+            if loaded == nil, let result = loader.take() {
+                let session: LotSession
+                switch result {
+                case .success(let made):
+                    session = made
+                case .failure(let error):
+                    loading.unload()
+                    CloseWindow()
+                    throw error
+                }
+                if !logs {
+                    for missing in session.leftOut {
+                        let guid = String(missing.object.guid, radix: 16)
+                        FileHandle.standardError.write(Data("simburbia: left out object 0x\(guid): \(missing.reason)\n".utf8))
+                    }
+                }
+                let log = logs ? RunLog(session: session, install: Self.describe(options.gameDirectory)) : nil
+                let app = ClientApp(session: session, interface: interface, hidden: hidden, zoomStep: zoom.map { $0 - 1 },
+                                    focus: focus.flatMap(focusTile), rotation: rotation, walls: walls, log: log)
+                app.warmUp()
+                loaded = app
+            }
+            // The textures are the last quarter; the loading thread reports the rest.
+            let progress = loaded == nil ? min(loader.progress, 0.75) : 1
+            // A loading screenshot steps evenly, so its frame is the same each time; a lot's
+            // screenshot doesn't wait for the slides.
+            let seconds = loadingScreenshot != nil ? 1.0 / 60 : screenshot != nil ? SlidingLines.slideSeconds : Double(GetFrameTime())
+            loading.advance(seconds: seconds, progress: progress)
+            loading.draw()
+            if let loadingScreenshot {
+                let lines = loading.lines
+                guard (lines.current >= 1 && lines.slid >= 0.5) || lines.isFinished(progress: progress) else { continue }
+                let image = LoadImageFromScreen()
+                let saved = ExportImage(image, loadingScreenshot)
+                UnloadImage(image)
+                loading.unload()
+                CloseWindow()
+                guard saved else { throw Failure(description: "couldn't save the screenshot to \(loadingScreenshot)") }
+                // The loading thread may still be running; the process ends with it.
+                return
+            }
+            guard loading.lines.isFinished(progress: progress) else { continue }
+            let settled = settledAt ?? GetTime()
+            settledAt = settled
+            if screenshot != nil || GetTime() - settled >= Self.loadingBuffer { break }
+        }
+        loading.unload()
+        guard let app = loaded else { return }
         if let screenshot {
             guard app.saveScreenshot(to: screenshot, after: ticks ?? 300) else {
                 throw Failure(description: "couldn't save the screenshot to \(screenshot)")

@@ -128,7 +128,12 @@ public final class LotSession {
     private var owedTicks = 0.0
 
     /// Loads the install and the lot, and runs one tick so the lot's rooms exist.
-    public init(_ options: ClientOptions) throws(ClientError) {
+    ///
+    /// - Parameter progress: Told how far loading has got, as a fraction: a quarter when the
+    ///   install's content is ready, a half when its floors and walls are, and three quarters when
+    ///   the lot has loaded and run its first tick. The rest is left to the client, which has
+    ///   textures to make. It's called on the thread loading runs on.
+    public init(_ options: ClientOptions, progress: (Double) -> Void = { _ in }) throws(ClientError) {
         let content: GameContent
         do {
             // The client draws objects, so it loads their sprite files too.
@@ -137,6 +142,7 @@ public final class LotSession {
         } catch {
             throw .content("\(options.gameDirectory.path): \(error)")
         }
+        progress(0.25)
         var problems = SystemMessages.contentProblems(of: content)
         do {
             let provider = try FloorProvider(files: content.files)
@@ -155,6 +161,7 @@ public final class LotSession {
             walls = nil
         }
         contentProblems = problems
+        progress(0.5)
         let xml: Data
         do {
             xml = try Data(contentsOf: options.lot)
@@ -176,6 +183,7 @@ public final class LotSession {
         }
         lotName = options.lot.deletingPathExtension().lastPathComponent
         vm.tick()
+        progress(0.75)
     }
 
     /// The current speed as a multiple of real time.

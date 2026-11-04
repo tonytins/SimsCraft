@@ -1,0 +1,8 @@
+// Simburbia's loading screen, shown when there's no install text to use (TSO's tables 154 and
+// 155). Each entry is a key, then its text between carets. The lines slide in one after another
+// as the lot loads: four of them, as TSO has.
+Caption ^Simburbia is getting ready^
+1 ^Unpacking the neighborhood^
+2 ^Arranging the furniture^
+3 ^Winding the clocks^
+4 ^Reticulating splines^
