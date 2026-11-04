@@ -326,19 +326,16 @@ enum VMMemory {
     // MARK: Helpers
 
     /// A scope only Sims have. FreeSO casts the entity to a Sim first, which fails for an
-    /// object, then evaluates the index, then calls into the Sim, which fails for none.
-    /// No Sims are ported yet, so this always fails.
+    /// object, then calls into the Sim (``Entity/setPersonDatum(_:to:)``, ``Entity/setMotive(_:to:)``).
     private static func setSim(_ entity: Entity?, index: Int16, value: Int16, personData: Bool) throws(SimAnticsError) {
         guard let entity else {
             throw .nullReference("no entity")
         }
         guard entity.isAvatar else { throw .invalidCast("the entity isn't a Sim") }
         if personData {
-            guard index >= 0, Int(index) < entity.personData.count else { throw .indexOutOfRange("person data \(index)") }
-            entity.personData[Int(index)] = value
+            try entity.setPersonDatum(Int(index), to: value)
         } else {
-            guard index >= 0, Int(index) < entity.motiveData.count else { throw .indexOutOfRange("motive \(index)") }
-            entity.motiveData[Int(index)] = value
+            try entity.setMotive(Int(index), to: value)
         }
     }
 
@@ -349,13 +346,7 @@ enum VMMemory {
         }
         guard entity.isAvatar else { throw .invalidCast("the entity isn't a Sim") }
         let i = try index()
-        if personData {
-            guard i >= 0, Int(i) < entity.personData.count else { throw .indexOutOfRange("person data \(i)") }
-            return entity.personData[Int(i)]
-        } else {
-            guard i >= 0, Int(i) < entity.motiveData.count else { throw .indexOutOfRange("motive \(i)") }
-            return entity.motiveData[Int(i)]
-        }
+        return personData ? try entity.personDatum(Int(i)) : try entity.motive(Int(i))
     }
 
     private static func caller(of frame: StackFrame) throws(SimAnticsError) -> Entity {

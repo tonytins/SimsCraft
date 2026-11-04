@@ -1,4 +1,8 @@
 extension VM {
+    /// What a Sim's tick doesn't do yet, reported as unsupported on its first tick
+    /// (``Entity/tickSim()``): FreeSO's motive decay and motive changes.
+    public static let motiveDecayGap = "a Sim's motive decay (FreeSO's VMAvatarMotiveDecay)"
+
     /// The person template every player's Sim is made from (`VMAvatar.TEMPLATE_PERSON`).
     public static let templatePerson: UInt32 = 0x7FD9_6B54
 
@@ -12,23 +16,24 @@ extension VM {
 
     /// A Sim arrives on the lot as a player joins one (`VMNetSimJoinCmd` outside TS1 mode): the
     /// template is created out of the world, then placed by the first mailbox part in object ID
-    /// order (``findLocation(for:near:flags:)``), or without one on ``arrivalFallback``.
+    /// order (``findLocation(for:near:flags:)``), or without one on ``arrivalFallback``; then the
+    /// player's saved state is applied (``SimIdentity``), and the Sim takes its persist ID.
     ///
     /// Kept from FreeSO: if the fallback tile is taken, nothing else is tried, and the Sim stays
-    /// out of the world. FreeSO then applies the player's saved state (name, outfits, motives,
-    /// permissions); that's part of the Sim setup Simburbia doesn't run yet, which ``createObject(guid:at:facing:mainStackObjectID:mainParameter:)``
-    /// reports as unsupported.
+    /// out of the world. FreeSO's roommate bookkeeping for players with more than a visitor's
+    /// permissions, and the chat event, aren't ported.
     ///
     /// - Returns: the Sim, or `nil` if the content has no such object.
-    /// - Throws: Any error an entry point throws.
+    /// - Throws: Any error an entry point throws, or the identity's values throw.
     @discardableResult
-    public func joinSim(template: UInt32 = VM.templatePerson) throws(SimAnticsError) -> Entity? {
+    public func joinSim(template: UInt32 = VM.templatePerson, identity: SimIdentity) throws(SimAnticsError) -> Entity? {
         guard let group = try createObject(guid: template), let sim = group.objects.first else { return nil }
         if let mailbox = entities.first(where: { Self.mailboxGUIDs.contains($0.object.guid) }) {
             _ = try findLocation(for: sim, near: mailbox, flags: [])
         } else {
             try place(group, at: Self.arrivalFallback, facing: .north)
         }
+        try sim.apply(identity)
         return sim
     }
 }

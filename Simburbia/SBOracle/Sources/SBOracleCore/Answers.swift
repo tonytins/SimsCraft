@@ -77,6 +77,16 @@ public struct Answers {
             self.count = count
             self.template = template
         }
+
+        /// Sim `n`'s made-up identity, as `fso-oracle`'s `SimJoin` makes it: "Oracle Sim n", persist
+        /// ID `0x0AC1E000 + n`, a visitor, male, skin tone 0, in FreeSO's default daywear, with
+        /// every motive and persisted value at 0.
+        public static func identity(_ n: Int) -> SimIdentity {
+            var identity = SimIdentity(name: "Oracle Sim \(n)", persistID: 0x0AC1_E000 &+ UInt32(truncatingIfNeeded: n),
+                                       bodyOutfit: 0x24C_0000_000D)
+            identity.headOutfit = 0
+            return identity
+        }
     }
 
     /// A VM with a lot loaded as `fso-oracle` loads one: the blueprint, then the tick the load
@@ -89,7 +99,7 @@ public struct Answers {
         vm.tick()
         vm.random = VMRandom(seed: seed)
         if let sims, sims.count > 0 {
-            for _ in 0..<sims.count { try vm.joinSim(template: sims.template) }
+            for n in 1...sims.count { try vm.joinSim(template: sims.template, identity: Sims.identity(n)) }
             vm.tick()
             vm.random = VMRandom(seed: seed)
         }
@@ -148,6 +158,18 @@ public struct Answers {
 
     // MARK: run-lot
 
+    /// What's unsupported first among reported errors, by the object that reached it
+    /// (`" by 0x1A2B3C4D: reason"`, or `": reason"` for an object gone since), so a study can set
+    /// that object aside; the comparisons read only what follows the first colon. `nil` if none is.
+    public static func firstGap(in reported: [(objectID: Int16, error: SimAnticsError)], guid: (Int16) -> UInt32?) -> String? {
+        for report in reported {
+            guard case .unsupported(let reason) = report.error else { continue }
+            let by = guid(report.objectID).map { String(format: " by 0x%08X", $0) } ?? ""
+            return "\(by): \(reason)"
+        }
+        return nil
+    }
+
     /// A lot loaded with its objects, then ticked, as `fso-oracle run-lot` does: `tick N seed S
     /// entities E digest D` after loading, every `every` ticks, and at the end. Once a thread
     /// reaches something not ported, the state can't match FreeSO's any more, so the run stops
@@ -167,15 +189,8 @@ public struct Answers {
         } catch {
             return ["error \(error)"]
         }
-        // What's unsupported, by the object that reached it ("by 0x1A2B3C4D"), so a study can set
-        // that object aside; the comparisons read only what follows the first colon.
         func gap() -> String? {
-            for report in vm.reportedErrors {
-                guard case .unsupported(let reason) = report.error else { continue }
-                let guid = vm.entity(id: report.objectID).map { String(format: " by 0x%08X", $0.object.guid) } ?? ""
-                return "\(guid): \(reason)"
-            }
-            return nil
+            Self.firstGap(in: vm.reportedErrors.map { ($0.objectID, $0.error) }) { vm.entity(id: $0)?.object.guid }
         }
         if let gap = gap() { return ["unsupported at tick 0\(gap)"] }
         var lines = Self.digestLines(of: vm, tick: 0, dump: dump)

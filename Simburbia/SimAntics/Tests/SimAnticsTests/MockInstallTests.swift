@@ -25,16 +25,17 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
         #expect(entity.objectData[42] == 3 && entity.objectData[4] == 1)
     }
 
-    /// FreeSO's Sim setup isn't ported, so creating a Sim says so: comparisons then count it as
-    /// not measured. Other objects report nothing.
-    @Test func creatingASimReportsItsSetupAsNotPorted() throws {
+    /// Creating the mock Sim sets it up from its body strings, as FreeSO's `VMAvatar` does, with
+    /// nothing to report; other objects aren't Sims.
+    @Test func creatingTheMockSimSetsItUp() throws {
         let vm = try vm()
         let chair = try #require(try vm.createObject(guid: mockChairGUID)?.objects.first)
-        #expect(vm.reportedErrors.isEmpty && !chair.isAvatar)
+        #expect(!chair.isAvatar)
         let sim = try #require(try vm.createObject(guid: mockSimGUID)?.objects.first)
-        #expect(sim.isAvatar)
-        #expect(vm.reportedErrors == [VM.ReportedError(objectID: sim.objectID, tick: vm.scheduler.currentTick,
-                                                       error: .unsupported(VM.simSetupGap))])
+        #expect(sim.isAvatar && sim.sim.name == "Mock Sim" && sim.sim.kind == .adult && sim.sim.skinTone == .light)
+        #expect(sim.personData[PersonData.gender] == 1 && sim.personData[PersonData.personsAge] == 27)
+        #expect(sim.sim.walkAnimations[0] != nil && sim.sim.swimAnimations[0] != nil)
+        #expect(vm.reportedErrors.isEmpty)
     }
 
     @Test func createsTheTableAsAGroupOfItsParts() throws {
@@ -190,16 +191,17 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
     }
 
     /// `mock-lot-sim.xml` is the same lot with tile 3,3 free, for a Sim to join as a player does: with
-    /// no mailbox, it arrives on 3,3. Its setup is reported as not ported, so comparisons count the
-    /// lot as not measured until Sims are.
+    /// no mailbox, it arrives on 3,3, set up from its body strings and then the player's state.
     @Test func aSimJoinsTheSimLotOnTheFallbackTile() throws {
         let vm = try VM(content: try GameContent(.init(gameDirectory: mockInstall)), seed: 1)
         let file = mockInstall.deletingLastPathComponent().appendingPathComponent("Lots/mock-lot-sim.xml")
         try vm.load(try Blueprint(xml: try Data(contentsOf: file)))
-        let sim = try #require(try vm.joinSim(template: mockSimGUID))
-        #expect(sim.object.guid == mockSimGUID && sim.isAvatar)
+        let sim = try #require(try vm.joinSim(template: mockSimGUID, identity: SimIdentity(name: "Joiner", persistID: 9, bodyOutfit: 0)))
+        #expect(sim.object.guid == mockSimGUID && sim.isAvatar && sim.persistID == 9)
         #expect(sim.position == VM.arrivalFallback && sim.direction == .north)
-        #expect(vm.reportedErrors.contains { $0.objectID == sim.objectID && $0.error == .unsupported(VM.simSetupGap) })
+        // The mock Sim's body strings, then the joining player's state over them.
+        #expect(sim.sim.name == "Joiner" && sim.personData[PersonData.personsAge] == 27 && sim.personData[PersonData.gender] == 0)
+        #expect(vm.reportedErrors.isEmpty)
     }
 
     /// FreeSO's join tries nowhere else when the fallback tile is taken: on `mock-lot.xml` the
@@ -207,9 +209,10 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
     @Test func aSimWithNowhereToArriveStaysOutOfTheWorld() throws {
         let vm = try VM(content: try GameContent(.init(gameDirectory: mockInstall)), seed: 1)
         try vm.load(try Blueprint(xml: try Data(contentsOf: lotFile)))
-        let sim = try #require(try vm.joinSim(template: mockSimGUID))
+        let identity = SimIdentity(name: "Joiner", persistID: 9, bodyOutfit: 0)
+        let sim = try #require(try vm.joinSim(template: mockSimGUID, identity: identity))
         #expect(sim.position.isOutOfWorld)
-        #expect(try vm.joinSim(template: 0x4D4F_43FF) == nil)  // no such object
+        #expect(try vm.joinSim(template: 0x4D4F_43FF, identity: identity) == nil)  // no such object
     }
 
     /// The chair (tile 3, 3) and the lamp (tile 4, 2) are a tile apart diagonally: one tile away,

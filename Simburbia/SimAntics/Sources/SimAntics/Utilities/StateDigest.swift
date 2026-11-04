@@ -8,7 +8,8 @@
 /// instruction pointer (16).
 ///
 /// Version 1 adds, after a Sim's stack only (``Entity/isAvatar``), so lots without Sims keep
-/// version 0's digests: the person data count (32) and values (16 each); the motive count (32)
+/// version 0's digests: the person data count (32) and values (16 each, as read through
+/// ``Entity/personDatum(_:)``, as FreeSO's digest reads them through `GetPersonData`); the motive count (32)
 /// and values (16 each); the animation count (32) and each animation, then whether there's a
 /// carry animation (8) and it if so; and the action queue's length (32) and each action. An
 /// animation is its name's UTF-8 length (32) and bytes, its current frame and speed as 32-bit
@@ -36,10 +37,16 @@ public enum StateDigest {
                 + "\(entity.position.level) \(entity.direction.rawValue) data=\(entity.objectData.map(String.init).joined(separator: ",")) "
                 + "stack=\(entity.thread.stack.map { "\($0.routine.id):\($0.instructionPointer)" }.joined(separator: ","))"
                 + (entity.isAvatar
-                    ? " person=\(entity.personData.map(String.init).joined(separator: ",")) "
+                    ? " person=\(readPersonData(of: entity).map(String.init).joined(separator: ",")) "
                         + "motives=\(entity.motiveData.map(String.init).joined(separator: ",")) animations= carry=- queue="
                     : "")
         }
+    }
+
+    /// A Sim's person data as `fso-oracle` reads it, through ``Entity/personDatum(_:)``, so values
+    /// FreeSO works out (such as the online job's) are digested as it gives them.
+    static func readPersonData(of entity: Entity) -> [Int16] {
+        (0...PersonData.last).map { (try? entity.personDatum($0)) ?? 0 }
     }
 
     static func bytes(of vm: VM) -> [UInt8] {
@@ -64,8 +71,9 @@ public enum StateDigest {
                 append(frame.instructionPointer)
             }
             if entity.isAvatar {
-                append(Int32(entity.personData.count))
-                for value in entity.personData { append(value) }
+                let personData = readPersonData(of: entity)
+                append(Int32(personData.count))
+                for value in personData { append(value) }
                 append(Int32(entity.motiveData.count))
                 for value in entity.motiveData { append(value) }
                 append(Int32(0))  // animations

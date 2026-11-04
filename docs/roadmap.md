@@ -122,15 +122,29 @@ In order:
        FreeSO's fallback, kept free on `mock-lot-sim.xml`, whose Sim now joins rather than being
        in the blueprint. The review scripts take each lot's Sims from one table (`lot_sims`).
    - [ ] B. The Sim entity: avatars from the person template, person data, motives and their decay,
-     running every tick; Set Motive Deltas, Test Sim Interacting With, and Look Towards.
+     running every tick, and Set Motive Deltas. Its gate is the mock Sim; on the real installs the
+     template's own code reaches phase C's primitives, so their Sims stay inconclusive until then.
+     - [x] B1. Sim setup: a Sim set up as `VMAvatar.Init` does (body strings, outfits, name,
+       gender, age, skin tone, walk and swim tables, starting motives), with the same random draws;
+       FreeSO's person data and motive accessors; the join's identity. The mock Sim matches FreeSO at
+       tick 0 but for Room (B2); 1.1097.1.0's template person matches at creation. (`tuning.dat`
+       moved to B3, which uses it.)
+     - [ ] B2. Room score, only as far as Mood and the digest need it: low priority, since it moves
+       with object decay (TSO's is richer than TS1's), which isn't ported, so its values aren't
+       meaningful yet. Room maps record it on both oracles.
+     - [ ] B3. A Sim's tick: `tuning.dat` in TSOContent, motive decay, motive changes, and Set
+       Motive Deltas. The mock Sim matches FreeSO over a game day; until then a Sim's first tick
+       reports motive decay as unsupported, so its lot counts as not measured.
+     - [ ] B4. Primitive cases that name the mock Sim (Set Motive Deltas, person data and motives).
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
      speed, and events; FreeSO's animation state; Animate Sim, Reach, Grab, Drop, and Change Suit
      Or Accessory (as state). Made-up animations in the mock. One idle Sim runs in step.
    - [ ] D. The interaction queue: interaction tables (`TTAB`), queued actions and priorities,
      action and check trees; Push Interaction, Run Functional Tree, Find Best Object For Function,
-     and Change Action String. A made-up interaction table in the mock.
+     Change Action String, and Test Sim Interacting With (moved from B: it reads the queue). A made-up interaction table in the mock.
    - [ ] E. Routing (Shannopolis): the routing frame, rectangle router, obstacles, and portals, with
-     FreeSO's floating point matched; Go To Routing Slot, Go To Relative Position, and Snap.
+     FreeSO's floating point matched; Go To Routing Slot, Go To Relative Position, Snap, and Look
+     Towards (moved from B: it turns the Sim with a routing frame).
    - [ ] F. Relationships and services: Relationship, Old Relationship, the dialogs (headless), the
      Generic Sims Online Call, and the Online Jobs Call, against stand-in services.
    - [ ] G. A lot with Sims (the house) runs a full in-game day in step.
@@ -267,6 +281,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | minor | Fourth pass, step B1: Sims are set up. `Entity.setUpSim` ports `VMAvatar`'s constructor and `Init` (body strings with FreeSO's random picks, which draw `NextRandom(count − 1)` for outfits and `NextRandom(count)` for names; walk and swim tables; starting motives; Neat 1000), person data and motives go through FreeSO's accessors and their special cases, and `VM.joinSim` applies a joining player's state. The mock Sim matches FreeSO at tick 0 in everything but the Room motive (room score, B2), and 1.1097.1.0's template person matches FreeSO's digest at creation, seed included, before its own code reaches Push Interaction (phase D). Where FreeSO crashes on bad body strings, Simburbia reports and carries on (DIFF-32). A Sim's first tick reports motive decay as unsupported until B3. |
 | 2026-11-04 | minor | Fourth pass, step A3, which finishes phase A: Sims join on both oracles (`run-lot` and `run-primitive --sims`), Simburbia's side through SimAntics' new `VM.joinSim` (by the mailbox, else tile 3,3, with FreeSO's quirk that a taken 3,3 leaves the Sim out of the world). `mock-lot-sim.xml` keeps 3,3 free and its Sim joins; `mock-lot.xml` keeps the blocked case. The owner recalls TSO putting players on 3,3 after some jobs; FreeSO uses 3,3 only for this fallback, so that stays unverified. Primitive cases naming Sims will be generated in phase B, when a Sim's state can be compared. |
 | 2026-11-04 | patch | Fourth pass, step A2: the state digest's version 1 on both oracles, adding Sims' person data, motives, animations (frames and speeds as float bits), and action queue after a Sim's stack, and nothing for other entities. Simburbia's Sims write no animations or queue until phases C and D. |
 | 2026-11-04 | patch | Queen Margaret's fourth pass, phase A: the login window uses Hudini's new close-button option, selectable lists, and secure fields, dropping C3's workarounds; and step A1, Sims joining the oracle's lots through FreeSO's own join command, shown repeatable on 1.1097.1.0 and MockInstall. Phase A is split into A1 to A3. |

@@ -401,11 +401,23 @@ extension ComparisonTests {
         #expect(objects.skipped == ["unsupported: primitive 1 (generic_sims_online_call)": 1])
     }
 
-    @Test func aLotRunNamesTheObjectThatReachedSomethingUnsupported() throws {
+    /// A lot run names the object that reached something unsupported first; other errors don't count.
+    @Test func aLotRunNamesTheObjectThatReachedSomethingUnsupported() {
+        let reported: [(objectID: Int16, error: SimAnticsError)] = [
+            (3, .indexOutOfRange("motive 16")), (7, .unsupported("primitive 13 (push_interaction)")), (8, .unsupported("later")),
+        ]
+        #expect(Answers.firstGap(in: reported) { $0 == 7 ? 0x7FD9_6B54 : nil } == " by 0x7FD96B54: primitive 13 (push_interaction)")
+        #expect(Answers.firstGap(in: reported) { _ in nil } == ": primitive 13 (push_interaction)")
+        #expect(Answers.firstGap(in: [(1, .infiniteLoop)]) { _ in 1 } == nil)
+    }
+
+    /// The mock Sim joins its lot and is set up as FreeSO sets it up; its first tick reports motive
+    /// decay, not ported yet, so the run names it and stops there.
+    @Test func theMockSimsLotStopsAtMotiveDecay() throws {
         let mock = repository.appendingPathComponent("Simburbia/MockInstall")
         let content = try GameContent(.init(gameDirectory: mock.appendingPathComponent("TSOClient")))
         let lot = try Blueprint(xml: try Data(contentsOf: mock.appendingPathComponent("Lots/mock-lot-sim.xml")))
         let lines = Answers(content: content).lotRun(lot, ticks: 30, every: 10, sims: Answers.Sims(count: 1, template: 0x4D4F_4307))
-        #expect(lines.last?.hasPrefix("unsupported at tick 0 by 0x4D4F4307: Sim setup") == true, "\(lines.suffix(2))")
+        #expect(lines.last == "unsupported at tick 0 by 0x4D4F4307: \(VM.motiveDecayGap)", "\(lines.suffix(2))")
     }
 }

@@ -20,6 +20,8 @@ public final class Entity {
     public var personData = [Int16](repeating: 0, count: 101)
     /// Motive data values (FreeSO's `MotiveData`, 16 entries).
     public var motiveData = [Int16](repeating: 0, count: 16)
+    /// The rest of a Sim's state (``SimState``); for anything else, untouched defaults.
+    public var sim = SimState()
     /// Attributes, grown with zeros whenever an index past the end is read or written, as in FreeSO.
     public private(set) var attributes: [Int16] = []
     /// The entity's list (`MyList`), front first.
@@ -251,6 +253,8 @@ public final class Entity {
             mainStackObjectID = 0
         }
         try executeEntryPoint(.main, runImmediately: false, stackObject: stackObject, arguments: arguments)
+        // `VMAvatar.Init`, after `VMEntity.Init`.
+        if isAvatar { setUpSim() }
         let categories = (masterDefinition ?? object.definition).lotCategories
         if categories > 0 && Int(categories) & (1 << (Int(vm.propertyCategory) & 31)) == 0 {
             disabledFlags |= Self.lotCategoryWrong
@@ -289,6 +293,7 @@ public final class Entity {
         thread.instructionsThisTick = 0
         thread.tick()
         if thread.scheduledTick == 0 { vm.scheduler.scheduleTick(for: self, in: 1) }
+        if isAvatar { tickSim() }
         // The headline counts down after the thread runs (`VMHeadlineRenderer.Update`); a negative
         // duration lasts until something replaces it.
         if var shown = headline, shown.duration >= 0 {
