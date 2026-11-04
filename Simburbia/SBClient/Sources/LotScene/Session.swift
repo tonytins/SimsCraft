@@ -62,6 +62,23 @@ extension ClientOptions {
     }
 }
 
+extension ClientOptions {
+    /// Where the client finds Simburbia's own files, MockInstall and Lots: beside the executable,
+    /// as the Linux and Windows packages lay them out (`Simburbia/packaging`), or in the app's
+    /// `Resources`, as macOS's does; else the source folder, for a build run from the repository.
+    public static func simburbiaFolder(executableFolder: URL?, sourceFolder: URL) -> URL {
+        guard let executableFolder else { return sourceFolder }
+        let candidates = [executableFolder, executableFolder.deletingLastPathComponent().appendingPathComponent("Resources")]
+        return candidates.first { folder in
+            ["Lots", "MockInstall"].allSatisfy { name in
+                var isFolder: ObjCBool = false
+                return FileManager.default.fileExists(atPath: folder.appendingPathComponent(name).path, isDirectory: &isFolder)
+                    && isFolder.boolValue
+            }
+        } ?? sourceFolder
+    }
+}
+
 /// Why the client couldn't start.
 public enum ClientError: Error, Equatable, CustomStringConvertible {
     /// The install couldn't be read.

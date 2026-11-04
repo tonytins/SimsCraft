@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>Simburbia</string>
+    <key>CFBundleDisplayName</key>
+    <string>Simburbia</string>
+    <key>CFBundleIdentifier</key>
+    <string>io.github.tonytins.simburbia</string>
+    <key>CFBundleExecutable</key>
+    <string>simburbia</string>
+    <key>CFBundleIconFile</key>
+    <string>Simburbia</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>@VERSION@</string>
+    <key>CFBundleVersion</key>
+    <string>@VERSION@</string>
+    <key>SimburbiaCommit</key>
+    <string>@BUILD_SHA@</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.simulation-games</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>

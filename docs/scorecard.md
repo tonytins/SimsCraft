@@ -30,7 +30,7 @@ Status values: `done` (works and is tested), `partial` (works with gaps, named i
 | [Determinism](#determinism) | 1 | 2 | 2 | the random seed matches FreeSO tick for tick |
 | [Reliability](#reliability) | 4 | 1 | 2 | 0 force unwraps, 0 `try!`, 0 `fatalError` in sources |
 | [Tests and tooling](#tests-and-tooling) | 5 | 2 | 0 | |
-| [Platforms](#platforms) | 3 | 0 | 1 | |
+| [Platforms](#platforms) | 4 | 0 | 3 | |
 | [Scripting](#scripting) | 3 | 1 | 3 | proof of concept: all 15,723 routines round-trip through assembly; compiled scripts run on the VM |
 | [Known differences from FreeSO](#known-differences-from-freeso) | | | | 27 deliberate, 1 withdrawn |
 | [Open bugs](#open-bugs) | 0 | 0 | 0 | none filed |
@@ -178,6 +178,9 @@ No `platforms:` are declared (owner decision); this tracks where the packages ar
 | PLAT-2 | Linux ARM64 | done | CI job `Linux (aarch64)`, `swift:6.3` container |
 | PLAT-3 | macOS | done | CI job `macOS` on `macos-latest`. With no `platforms:` declared, builds target macOS 10.13, so APIs newer than that can't be used (the first run failed on `FileHandle.read(upToCount:)`) |
 | PLAT-4 | Windows | missing | Untested; Foundation on Windows is the least tested |
+| PLAT-5 | Linux packages: an AppImage and a `.tar.gz` of the client | done | `Simburbia/packaging/linux/package.sh` (2026-11-03): the client with the Swift runtime built in and its libxml2 carried in `lib/`, its lots and the mock install, stripped; each run checks the staged client runs a game hour of the mock lot with no install. The AppImage (24 MB, 0.1.1001) ran the mock lot from inside itself, with the bundled libxml2. Built on the owner's atomic distro; untested on other distributions |
+| PLAT-6 | Windows package: the client zipped in a folder | missing | `Simburbia/packaging/windows/package.sh` is written but has never run: raylib-swift hasn't been built on Windows (PLAT-4) |
+| PLAT-7 | macOS package: `Simburbia.app`, for Apple silicon and Intel | missing | `Simburbia/packaging/macos/package.sh` is written but has never run on a Mac; the client's raylib build there is untested |
 
 ## Scripting
 

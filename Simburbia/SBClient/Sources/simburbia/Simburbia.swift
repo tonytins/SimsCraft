@@ -140,9 +140,12 @@ struct Simburbia: ParsableCommand {
         return SIMD2(parts[0], parts[1])
     }
 
-    /// The Simburbia folder, which holds MockInstall and Lots.
-    static let simburbiaFolder = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    /// The folder that holds MockInstall and Lots: beside the executable in a package, else the
+    /// Simburbia folder this was built from.
+    static let simburbiaFolder = ClientOptions.simburbiaFolder(
+        executableFolder: Bundle.main.executableURL?.deletingLastPathComponent(),
+        sourceFolder: URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent())
 }
 
 /// A failure to report, which exits with a nonzero status.

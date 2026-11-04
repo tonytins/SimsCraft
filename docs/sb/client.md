@@ -113,6 +113,14 @@ as the client builds: the base in [`Simburbia/GitVersion.txt`](../../Simburbia/G
 when the working tree has staged changes. A build needs the whole history: a shallow clone fails
 on purpose, since its count would be wrong.
 
+## Packages
+
+`Simburbia/packaging/` builds the client into packages players download, so it runs without
+`swift run`: an AppImage and a `.tar.gz` on Linux, and, once they've been tried on those systems,
+a zip on Windows and an app on macOS ([its README](../../Simburbia/packaging/README.md)). A
+packaged client finds its lots and the mock install beside itself (in `Contents/Resources` in the
+Mac app), and a build run from the repository finds them in `Simburbia/`.
+
 ## How it's built
 
 The client is two targets:

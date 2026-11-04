@@ -1,0 +1,5 @@
+#!/bin/sh
+# Starts the client from inside the AppImage. It finds its lots and the mock install beside
+# itself, in usr/bin; the player's own files stay where they are.
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "$HERE/usr/bin/simburbia" "$@"

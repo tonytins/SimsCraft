@@ -312,3 +312,23 @@ private func simdLength(_ vector: SIMD3<Float>) -> Float {
     #expect(rewritten.objects.last?.name == nil)   // the GUID MockInstall doesn't have
     #expect(rewritten.floors == original.floors && rewritten.walls == original.walls)
 }
+
+@Test func aPackagedClientFindsItsFilesBesideItself() throws {
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("packaged-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: folder) }
+    let source = URL(fileURLWithPath: "/repository/Simburbia")
+    try FileManager.default.createDirectory(at: folder.appendingPathComponent("Lots"), withIntermediateDirectories: true)
+    // Lots alone isn't a package: the source folder is used.
+    #expect(ClientOptions.simburbiaFolder(executableFolder: folder, sourceFolder: source) == source)
+    try FileManager.default.createDirectory(at: folder.appendingPathComponent("MockInstall"), withIntermediateDirectories: true)
+    #expect(ClientOptions.simburbiaFolder(executableFolder: folder, sourceFolder: source) == folder)
+    #expect(ClientOptions.simburbiaFolder(executableFolder: nil, sourceFolder: source) == source)
+
+    // A macOS app keeps them in Contents/Resources, beside Contents/MacOS.
+    let app = folder.appendingPathComponent("Simburbia.app/Contents")
+    for name in ["MacOS", "Resources/Lots", "Resources/MockInstall"] {
+        try FileManager.default.createDirectory(at: app.appendingPathComponent(name), withIntermediateDirectories: true)
+    }
+    #expect(ClientOptions.simburbiaFolder(executableFolder: app.appendingPathComponent("MacOS"), sourceFolder: source)
+            == app.appendingPathComponent("Resources"))
+}

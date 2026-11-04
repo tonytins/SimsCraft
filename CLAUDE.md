@@ -20,6 +20,7 @@ Key entrypoints:
   - ``FSO.Oracle/``, ``SBOracle/``, ``ScriptOracle/`` - the oracles (see [The oracles](#the-oracles))
   - ``MockInstall/`` - a tiny made-up TSO install for tests and CI
   - ``Lots/`` - the owner's lots as blueprint XML
+  - ``packaging/`` - the scripts that build the client into packages players download
 - ``TSOClient/`` - FreeSO's source, frozen at a snapshot (read-only)
 - ``docs/`` - the documentation and development progress:
   - ``roadmap.md`` - milestones, the alpha gate, owner decisions
@@ -68,6 +69,7 @@ done
 grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' Simburbia/*/Sources  # must print nothing
 swift run --package-path Simburbia/TSOFilesCheck -c release tsofiles-check            # scans every TSO_*_DIR install that's set
 swift run --package-path Simburbia/SBClient -c release simburbia --headless --ticks 9000    # run a lot a game hour with no window; read the log
+Simburbia/packaging/linux/package.sh                                                   # the client as an AppImage and a .tar.gz, in dist/release
 Simburbia/scripts/oracle-fixtures.sh /tmp/oracle                                       # FreeSO's side; needs TSO_GAME_DIR
 TSO_ORACLE_DIR=/tmp/oracle swift test --package-path Simburbia/SBOracle               # Simburbia's side, compared
 Simburbia/scripts/oracle-review.sh --mock /tmp/review                                  # both oracles on MockInstall
