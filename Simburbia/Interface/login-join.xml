@@ -19,7 +19,7 @@
   <Text name="nameLabel" x="176" y="62" width="94" height="14" style="label" text="Name:"/>
   <TextField name="name" x="176" y="80" width="94" height="26"/>
   <Text name="passwordLabel" x="280" y="62" width="92" height="14" style="label" text="Password:"/>
-  <TextField name="password" x="280" y="80" width="92" height="26"/>
+  <TextField name="password" x="280" y="80" width="92" height="26" secure="true"/>
   <Button name="delete" x="216" y="142" width="66" height="22" text="Delete"/>
   <Button name="new" x="296" y="142" width="66" height="22" text="New"/>
 </UIScript>

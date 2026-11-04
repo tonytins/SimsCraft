@@ -61,9 +61,9 @@ as TSO's and FreeSO's login dialog opens over theirs, with Simburbia's version a
 - **Join** has the address, port (54926), name, and password of a game to join, shown disabled
   until Simburbia has networking.
 
-Hudini's window frame always draws a close button, which does nothing here, and its lists can't be
-picked from, so the client draws the lots itself in the document's `lots` region.
-`--login-screenshot FILE` saves a frame of the window once the install has loaded.
+The window has no close button, its lot list is one of Hudini's selectable lists, and the
+password field hides what's typed. `--login-screenshot FILE` saves a frame of the window once the
+install has loaded.
 
 ## The window
 
