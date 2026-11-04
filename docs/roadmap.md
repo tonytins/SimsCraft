@@ -84,7 +84,7 @@ In order:
      - [x] B2. Floors as textured tiles in each zoom and rotation, with pools and water.
      - [x] B3. Standing walls: patterns masked by styles, both edges, diagonals, fences, with depth.
      - [x] B4. Cutaways and joins: TSO's cutaway mode, end caps, junctions, and doors' and windows' own wall styles.
-   - [ ] C. Loading and login, the start of the flow TSO's client takes and Simburbia will: loading
+   - [x] C. Loading and login, the start of the flow TSO's client takes and Simburbia will: loading
      and login, then selecting or creating a Sim, entering a city, entering a lot, and playing. The
      Sim and the city wait for the fourth pass and a server; until then, login leads to a lot:
      - [x] C1. Screens and loading: the window opens on a loading screen, as TSO's, while the
@@ -92,7 +92,7 @@ In order:
        install's text (read with Hudini), or Simburbia's; textures are made before the lot appears.
      - [x] C2. TSO's art: UI graphics by file ID and BMP and TGA (Hyde Park F), for TSO's `setup`
        background, with Simburbia's logo as the fallback.
-     - [ ] C3. The Start/Join window of the owner's mockup, over the loading background: lots from
+     - [x] C3. The Start/Join window of the owner's mockup, over the loading background: lots from
        `Simburbia/Lots` and the player's folder, Play through the loading screen, and Join shown
        but disabled until networking.
 3. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
@@ -256,6 +256,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | minor | The client's step C3, which finishes C: the login window. Without `--lot`, the loading screen loads the install (`LoadedInstall`, split from `LotSession` so lots load onto it), then the login window of the owner's mockup opens over TSO's art, with Simburbia's version at the bottom right: Start lists Simburbia's lots, the mock ones on MockInstall, and the player's (`Lots` in the user folder), and Play loads the picked one through the loading screen; Join is shown, disabled until networking; Delete and New wait. The window is two UIScript documents (`login-start`, `login-join`) in Hudini's window frame with its tabs. Three gaps in Hudini turned up (no way to hide the close button, no selectable lists, no password fields); the client works around the first two. `--lot`, screenshots, and headless runs skip login, so nothing waits for a click; `--login-screenshot` shows it. Checked by driving the whole flow on a virtual display: login, Play, loading, the lot running. |
 | 2026-11-04 | minor | The client's step C2: TSO's art. TSOContent's `UIGraphicsProvider` reads the interface's graphics by ID from `uigraphics`, as FreeSO's does, and TSOFiles decodes BMP (8-bit plain and RLE8, 24-bit) and Targa (plain and run-length), the formats every interface graphic but one PNG uses on all three installs; bitmaps lose their near-magenta as in FreeSO. The loading screen shows the install's own `setup` background, New & Improved's or the 2002 copies', scaled to the window's height, and Simburbia's logo without one. Hyde Park F is half done (BMP and TGA; `BMP_`, `THMB`, and PNG wait). FreeSO's decoders for these aren't in the snapshot, so pixel parity is unverified. |
 | 2026-11-04 | minor | The client's step C added ahead of the fourth pass (loading and login, then the lot, the first part of TSO's flow), and C1 done: the window opens on a loading screen at once, TSO's dark blue with Simburbia's logo until C2 reads TSO's art, while the install and the lot load on another thread and hand the session over once. Lines slide in under the caption as FreeSO's `LoadingScreen` slides them, a second each and only as loading reaches them: TSO's own (tables 154 and 155, read with Hudini's `CSTCatalog`), or Simburbia's (`Interface/uitext`). The lot's textures are made off screen before it appears, then a half-second buffer. `--loading-screenshot` saves a frame of it. The black flash before the lot is gone. |
 | 2026-11-04 | minor | The client's 2B, step B4, which finishes 2B: TSO's three wall modes (cutaway, the new default, then down and up, stepped through with W or picked with `--walls`). Cutaway ports FreeSO's `GenerateRoomCut` and `ApplyCutRectangle`: walls come down in front of the last three indoor rooms the pointer was over and around the pointer, with the slanted cutaway styles where a cut ends. Full-height walls get their end caps and the junction pieces where they meet (`GenerateWallData`, `RotateJunction`). Doors and windows now cut their own openings: the client gives each kind with a style from 22 to 255 a style made of its own sprites, numbered from 256 as `VMGameObject.PositionChange` does, while the VM keeps the definition's number (DIFF-20); SimAntics' new `Entity.architecturalWallSides` says which walls an object styles. A screenshot's cutaway follows the middle of the screen. Checked on the owner's house in all three modes, windows included, and on the mock lot. |

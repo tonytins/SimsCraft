@@ -1,6 +1,7 @@
 import ArgumentParser
 import Configuration
 import Foundation
+import Hudini
 import LotScene
 import Raylib
 import SimAntics
@@ -63,6 +64,9 @@ struct Simburbia: ParsableCommand {
     @Option(help: "Run hidden, save a frame of the loading screen here as its second line slides in, and quit.")
     var loadingScreenshot: String?
 
+    @Option(help: "Run hidden, save a frame of the login window here once the install has loaded, and quit.")
+    var loginScreenshot: String?
+
     /// How long the loading screen stays once everything has loaded and its last line has
     /// settled, in seconds: time for the engine to settle before the lot appears.
     static let loadingBuffer = 0.5
@@ -81,11 +85,15 @@ struct Simburbia: ParsableCommand {
             if let first = others.first { throw ValidationError("--rewrite-blueprint doesn't run the lot, so it can't take \(first)") }
         }
         // A headless run must never open a window, so the options that need one are refused.
-        if screenshot != nil, loadingScreenshot != nil {
-            throw ValidationError("--screenshot and --loading-screenshot each take the one frame; pick one")
+        if [screenshot, loadingScreenshot, loginScreenshot].compactMap({ $0 }).count > 1 {
+            throw ValidationError("--screenshot, --loading-screenshot, and --login-screenshot each take the one frame; pick one")
+        }
+        if loginScreenshot != nil, lot != nil {
+            throw ValidationError("--login-screenshot shows the login window, which --lot skips")
         }
         if headless {
             let windowOnly = [("--screenshot", screenshot != nil), ("--loading-screenshot", loadingScreenshot != nil),
+                              ("--login-screenshot", loginScreenshot != nil),
                               ("--zoom", zoom != nil), ("--focus", focus != nil), ("--rotation", rotation != 0)].filter(\.1).map(\.0)
             if let first = windowOnly.first { throw ValidationError("\(first) needs a window, so it can't run with --headless") }
         }
@@ -131,42 +139,86 @@ struct Simburbia: ParsableCommand {
         for warning in warnings + textWarnings + (artWarning.map { [$0] } ?? []) {
             FileHandle.standardError.write(Data("simburbia: \(warning)\n".utf8))
         }
-        let hidden = screenshot != nil || loadingScreenshot != nil
+        let hidden = screenshot != nil || loadingScreenshot != nil || loginScreenshot != nil
         ClientWindow.open(hidden: hidden)
         let loading = LoadingScreen(text: text, art: art, logo: Self.simburbiaFolder.appendingPathComponent("Interface/logo.png"))
-        let loader = SessionLoader(options)
-        var loaded: ClientApp?
+        // Run the lot asked for, or for a screenshot of the lot or of loading, the default one;
+        // otherwise load the install, then let the player pick a lot in the login window.
+        let goesStraightToLot = options.lotWasChosen || screenshot != nil || loadingScreenshot != nil
+        var lot = options.lot
+        var install: LoadedInstall?
+        if !goesStraightToLot {
+            let installLoad = BackgroundLoad { progress throws(ClientError) in try LoadedInstall(options, progress: progress) }
+            guard let loaded = try showLoading(loading, installLoad, threadShare: 1) else { return }
+            install = loaded
+            let userFolder = try? UserFolderLocator(config: ConfigReader(provider: EnvironmentVariablesProvider())).locate()
+            let lots = LotChoices.lots(simburbiaFolder: Self.simburbiaFolder, includesMockLots: options.usesMockInstall, userFolder: userFolder)
+            let login = LoginWindow(start: interface.loginStart, join: interface.loginJoin, lots: lots)
+            guard let chosen = try showLogin(loading, login) else { return }
+            lot = chosen.url
+            loading.restart()
+        }
+        let lotLoad: BackgroundLoad<LotSession>
+        if let install {
+            let chosenLot = lot
+            lotLoad = BackgroundLoad { _ throws(ClientError) in try LotSession(install: install, lot: chosenLot) }
+        } else {
+            lotLoad = BackgroundLoad { progress throws(ClientError) in try LotSession(options, progress: progress) }
+        }
+        var app: ClientApp?
+        let loadedSession = try showLoading(loading, lotLoad, threadShare: 0.75) { session in
+            if !logs {
+                for missing in session.leftOut {
+                    let guid = String(missing.object.guid, radix: 16)
+                    FileHandle.standardError.write(Data("simburbia: left out object 0x\(guid): \(missing.reason)\n".utf8))
+                }
+            }
+            let log = logs ? RunLog(session: session, install: Self.describe(options.gameDirectory)) : nil
+            let made = ClientApp(session: session, interface: interface, hidden: hidden, zoomStep: zoom.map { $0 - 1 },
+                                 focus: focus.flatMap(focusTile), rotation: rotation, walls: walls, log: log)
+            made.warmUp()
+            app = made
+        }
+        loading.unload()
+        guard loadedSession != nil, let app else { return }
+        if let screenshot {
+            guard app.saveScreenshot(to: screenshot, after: ticks ?? 300) else {
+                throw Failure(description: "couldn't save the screenshot to \(screenshot)")
+            }
+        } else {
+            app.run()
+        }
+    }
+
+    /// Shows the loading screen while `load` runs, until it has finished and the lines have each
+    /// had their turn, then a little longer (``loadingBuffer``), and returns what it made. `ready`
+    /// runs once on the frame loop when it arrives, for work that needs the window, such as
+    /// making textures; until then `load` counts for `threadShare` of the progress.
+    ///
+    /// Returns `nil` if the window was closed or a loading screenshot was taken, having closed the
+    /// window; a failure to load closes it and throws.
+    private func showLoading<Value>(_ loading: LoadingScreen, _ load: BackgroundLoad<Value>, threadShare: Double,
+                                    ready: (Value) -> Void = { _ in }) throws -> Value? {
+        var value: Value?
         var settledAt: Double?
         while true {
             if WindowShouldClose() {
                 loading.unload()
                 CloseWindow()
-                return
+                return nil
             }
-            if loaded == nil, let result = loader.take() {
-                let session: LotSession
+            if value == nil, let result = load.take() {
                 switch result {
                 case .success(let made):
-                    session = made
+                    ready(made)
+                    value = made
                 case .failure(let error):
                     loading.unload()
                     CloseWindow()
                     throw error
                 }
-                if !logs {
-                    for missing in session.leftOut {
-                        let guid = String(missing.object.guid, radix: 16)
-                        FileHandle.standardError.write(Data("simburbia: left out object 0x\(guid): \(missing.reason)\n".utf8))
-                    }
-                }
-                let log = logs ? RunLog(session: session, install: Self.describe(options.gameDirectory)) : nil
-                let app = ClientApp(session: session, interface: interface, hidden: hidden, zoomStep: zoom.map { $0 - 1 },
-                                    focus: focus.flatMap(focusTile), rotation: rotation, walls: walls, log: log)
-                app.warmUp()
-                loaded = app
             }
-            // The textures are the last quarter; the loading thread reports the rest.
-            let progress = loaded == nil ? min(loader.progress, 0.75) : 1
+            let progress = value == nil ? min(load.progress, threadShare) : 1
             // A loading screenshot steps evenly, so its frame is the same each time; a lot's
             // screenshot doesn't wait for the slides.
             let seconds = loadingScreenshot != nil ? 1.0 / 60 : screenshot != nil ? SlidingLines.slideSeconds : Double(GetFrameTime())
@@ -175,29 +227,54 @@ struct Simburbia: ParsableCommand {
             if let loadingScreenshot {
                 let lines = loading.lines
                 guard (lines.current >= 1 && lines.slid >= 0.5) || lines.isFinished(progress: progress) else { continue }
-                let image = LoadImageFromScreen()
-                let saved = ExportImage(image, loadingScreenshot)
-                UnloadImage(image)
+                try Self.capture(to: loadingScreenshot)
                 loading.unload()
                 CloseWindow()
-                guard saved else { throw Failure(description: "couldn't save the screenshot to \(loadingScreenshot)") }
-                // The loading thread may still be running; the process ends with it.
-                return
+                // A loading thread may still be running; the process ends with it.
+                return nil
             }
-            guard loading.lines.isFinished(progress: progress) else { continue }
+            guard loading.lines.isFinished(progress: progress), let made = value else { continue }
             let settled = settledAt ?? GetTime()
             settledAt = settled
-            if screenshot != nil || GetTime() - settled >= Self.loadingBuffer { break }
+            if screenshot != nil || GetTime() - settled >= Self.loadingBuffer { return made }
         }
-        loading.unload()
-        guard let app = loaded else { return }
-        if let screenshot {
-            guard app.saveScreenshot(to: screenshot, after: ticks ?? 300) else {
-                throw Failure(description: "couldn't save the screenshot to \(screenshot)")
+    }
+
+    /// Shows the login window over the loading screen's art, with Simburbia's version at the
+    /// bottom right (as TSO's login screen shows its own at the bottom left, and FreeSO's after it),
+    /// until a lot is picked to play. Returns `nil` if the window was closed or a login screenshot
+    /// was taken, having closed the window.
+    private func showLogin(_ loading: LoadingScreen, _ login: LoginWindow) throws -> LotChoice? {
+        let version = "Version \(GitVersion.version)"
+        while true {
+            if WindowShouldClose() {
+                loading.unload()
+                CloseWindow()
+                return nil
             }
-        } else {
-            app.run()
+            let chosen = login.update()
+            loading.draw(showsLines: false) {
+                login.draw()
+                let size: Int32 = 16
+                let width = MeasureText(version, size)
+                DrawText(version, GetScreenWidth() - width - 20, GetScreenHeight() - size - 16, size, InterfaceTheme.simburbia.text)
+            }
+            if let loginScreenshot {
+                try Self.capture(to: loginScreenshot)
+                loading.unload()
+                CloseWindow()
+                return nil
+            }
+            if let chosen { return chosen }
         }
+    }
+
+    /// Saves what was last drawn.
+    private static func capture(to path: String) throws {
+        let image = LoadImageFromScreen()
+        let saved = ExportImage(image, path)
+        UnloadImage(image)
+        guard saved else { throw Failure(description: "couldn't save the screenshot to \(path)") }
     }
 
     /// An install as the log names it: its folder and the version its `version` file records.

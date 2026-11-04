@@ -58,3 +58,40 @@ private final class Reports: @unchecked Sendable {
     private(set) var values: [Double] = []
     func add(_ value: Double) { values.append(value) }
 }
+
+@Test func theLoginWindowListsSimburbiasLotsThenTheMockOnesThenThePlayers() throws {
+    let user = FileManager.default.temporaryDirectory.appendingPathComponent("lots-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: user.appendingPathComponent("Lots"), withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: user) }
+    for name in ["Zebra.xml", "apple.xml", "notes.txt"] {
+        try Data().write(to: user.appendingPathComponent("Lots/\(name)"))
+    }
+    let all = LotChoices.lots(simburbiaFolder: simburbiaFolder, includesMockLots: true, userFolder: user)
+    #expect(all.map(\.name) == ["tonys-house", "mock-lot", "mock-lot-sim", "apple", "Zebra"])
+    #expect(all.map(\.isPlayers) == [false, false, false, true, true])
+    // Without the mock install or a user folder, Simburbia's own only.
+    #expect(LotChoices.lots(simburbiaFolder: simburbiaFolder, includesMockLots: false, userFolder: nil).map(\.name) == ["tonys-house"])
+    // A user folder without lots adds none.
+    #expect(LotChoices.lots(simburbiaFolder: simburbiaFolder, includesMockLots: false, userFolder: user.appendingPathComponent("none")).count == 1)
+}
+
+@Test func optionsKnowTheMockInstallWhetherNamedOrFallenBackTo() {
+    let fallback = ClientOptions(installs: [], simburbiaFolder: simburbiaFolder)
+    #expect(fallback.usesMockInstall && !fallback.lotWasChosen)
+    let named = ClientOptions(game: simburbiaFolder.appendingPathComponent("MockInstall/TSOClient").path, lot: "/lots/a.xml",
+                              installs: [], simburbiaFolder: simburbiaFolder)
+    #expect(named.usesMockInstall && named.lotWasChosen)
+    #expect(!ClientOptions(game: "/games/tso", installs: [], simburbiaFolder: simburbiaFolder).usesMockInstall)
+}
+
+@Test func lotsLoadOntoAnInstallLoadedOnce() throws {
+    let options = ClientOptions(installs: [], simburbiaFolder: simburbiaFolder)
+    let reports = Reports()
+    let install = try LoadedInstall(options) { reports.add($0) }
+    #expect(reports.values == [0.5, 1])
+    let first = try LotSession(install: install, lot: simburbiaFolder.appendingPathComponent("MockInstall/Lots/mock-lot.xml"))
+    let second = try LotSession(install: install, lot: simburbiaFolder.appendingPathComponent("MockInstall/Lots/mock-lot-sim.xml"))
+    #expect(first.install === second.install && first.lotName == "mock-lot" && second.lotName == "mock-lot-sim")
+    #expect(first.vm !== second.vm)
+    #expect(throws: ClientError.self) { try LotSession(install: install, lot: URL(fileURLWithPath: "/no/such/lot.xml")) }
+}

@@ -71,8 +71,11 @@ stage() {
         cp "$ROOT/$file" "$dest/${file#Simburbia/}"
     done < <(git -C "$ROOT" ls-files Simburbia/Interface Simburbia/Lots Simburbia/MockInstall)
     # The smoke test runs headless, which never reads the interface, so its documents are checked here.
-    for file in topbar help momi inspector; do
+    for file in topbar help momi inspector login-start login-join; do
         [[ -f "$dest/Interface/$file.xml" ]] || fail "the package has no Interface/$file.xml."
+    done
+    for file in logo.png uitext/_1_loading.cst; do
+        [[ -f "$dest/Interface/$file" ]] || fail "the package has no Interface/$file."
     done
     cp "$ROOT/README.md" "$dest/README.md"
     cp "$ROOT/Simburbia/LICENSE" "$dest/LICENSE"

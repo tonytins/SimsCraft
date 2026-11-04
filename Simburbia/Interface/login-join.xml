@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The login window's Join tab, after the owner's mockup (docs/design/login-screen.png): join a game
+  someone else is running, by address and port, with a name and password. The client shows it
+  disabled until Simburbia has networking. "servers" is kept for the games saved to join again,
+  which "delete" and "new" will manage. 54926 is Simburbia's port.
+-->
+<UIScript version="1">
+  <Window width="380" height="200"/>
+
+  <Style name="label" textColor="#E4E8EE" fontSize="14"/>
+  <Style name="servers" backgroundColor="#222222" borderColor="#222222"/>
+
+  <Region name="servers" x="10" y="26" width="154" height="108" style="servers"/>
+  <Text name="addressLabel" x="176" y="8" width="130" height="14" style="label" text="Address:"/>
+  <TextField name="address" x="176" y="26" width="132" height="26"/>
+  <Text name="portLabel" x="316" y="8" width="56" height="14" style="label" text="Port:"/>
+  <TextField name="port" x="316" y="26" width="56" height="26" text="54926" maximumLength="5"/>
+  <Text name="nameLabel" x="176" y="62" width="94" height="14" style="label" text="Name:"/>
+  <TextField name="name" x="176" y="80" width="94" height="26"/>
+  <Text name="passwordLabel" x="280" y="62" width="92" height="14" style="label" text="Password:"/>
+  <TextField name="password" x="280" y="80" width="92" height="26"/>
+  <Button name="delete" x="216" y="142" width="66" height="22" text="Delete"/>
+  <Button name="new" x="296" y="142" width="66" height="22" text="New"/>
+</UIScript>

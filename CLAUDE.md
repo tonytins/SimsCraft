@@ -151,7 +151,7 @@ These apply to the Simburbia libraries. Tools (``tsofiles-check``, the oracles) 
 ### The client
 
 - **TSO's interface**. These windows and controls are the base for Simburbia's take on TSO's ``.uis`` screens.
-- **Seeing it**. ``simburbia --screenshot <file.png>`` draws a few frames in a hidden window and saves the last, for checking a change without anyone at the screen; ``--loading-screenshot <file.png>`` saves the loading screen instead. The windows and controls come from [Hudini](https://github.com/tonytins/Hudini), the owner's interface library; its ``hudini-demo`` shows them on their own.
+- **Seeing it**. ``simburbia --screenshot <file.png>`` draws a few frames in a hidden window and saves the last, for checking a change without anyone at the screen; ``--loading-screenshot <file.png>`` and ``--login-screenshot <file.png>`` save the loading screen or the login window instead. Without ``--lot`` the client opens on the login window; ``--lot`` goes straight to a lot. The windows and controls come from [Hudini](https://github.com/tonytins/Hudini), the owner's interface library; its ``hudini-demo`` shows them on their own.
 - **Building on Linux** needs the X11 and GL headers (``libx11-dev`` and friends, as in CI). 
 - **Use the ``raylib-swift`` skill** in ``.agents/skills/raylib-swift/`` for any work that imports Raylib: it covers the API's Swift shapes, the lifecycle, the frame, textures, render textures, input, the examples to read, and how to check a visual change on a private display. These rules win where the two disagree.
 - **The libraries never import raylib**. Rendering reads simulation state and never writes it. If something can't be tested without a window, it belongs in the client.

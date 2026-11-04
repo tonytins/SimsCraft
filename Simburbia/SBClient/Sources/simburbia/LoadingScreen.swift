@@ -39,21 +39,29 @@ struct LoadingText {
     }
 }
 
-/// Builds a lot's session on another thread, so the window keeps drawing while it loads.
+/// Loads something on another thread, so the window keeps drawing while it loads: the install,
+/// or a lot.
 ///
-/// The session isn't shared: it's built on the loading thread, then handed to the frame loop
+/// What it makes isn't shared: it's built on the loading thread, then handed to the frame loop
 /// once, under the lock, and only the frame loop uses it after that. Progress crosses the same way.
-final class SessionLoader: @unchecked Sendable {
+final class BackgroundLoad<Value>: @unchecked Sendable {
     private let lock = NSLock()
     private var _progress = 0.0
-    private var _result: Result<LotSession, ClientError>?
+    private var _result: Result<Value, ClientError>?
 
-    /// Starts loading.
-    init(_ options: ClientOptions) {
+    /// Hands the work to the loading thread. It runs there once, and what it captures (such as
+    /// an install a lot loads onto) isn't used by the frame loop until the result is taken.
+    private struct Handoff: @unchecked Sendable {
+        let work: (_ progress: @escaping (Double) -> Void) throws(ClientError) -> Value
+    }
+
+    /// Starts loading; `work` is told how far it has got, 0 to 1.
+    init(_ work: @escaping (_ progress: @escaping (Double) -> Void) throws(ClientError) -> Value) {
+        let handoff = Handoff(work: work)
         let thread = Thread { [self] in
-            let result: Result<LotSession, ClientError>
+            let result: Result<Value, ClientError>
             do throws(ClientError) {
-                result = .success(try LotSession(options) { fraction in self.set(progress: fraction) })
+                result = .success(try handoff.work { fraction in self.set(progress: fraction) })
             } catch {
                 result = .failure(error)
             }
@@ -79,8 +87,8 @@ final class SessionLoader: @unchecked Sendable {
         return _progress
     }
 
-    /// The session or why it failed, once loading has finished; taken once.
-    func take() -> Result<LotSession, ClientError>? {
+    /// What was made or why it failed, once loading has finished; taken once.
+    func take() -> Result<Value, ClientError>? {
         lock.lock()
         defer { lock.unlock() }
         let result = _result
@@ -142,12 +150,19 @@ final class LoadingScreen {
         lines.advance(seconds: seconds, progress: progress)
     }
 
+    /// Starts the lines again from the first, for the next load.
+    func restart() {
+        lines = SlidingLines(lines: text.lines)
+    }
+
     /// Draws a frame. FreeSO lays the screen out at 800 by 600, the caption at 508 and the lines
-    /// at 550; here the same places are scaled to the window's height.
-    func draw() {
+    /// at 550; here the same places are scaled to the window's height. Without `showsLines`, it's
+    /// only the art, as the login screen shows it, and `overlay` draws over it.
+    func draw(showsLines: Bool = true, overlay: () -> Void = {}) {
         let width = Float(GetScreenWidth()), height = Float(GetScreenHeight())
         let scale = height / 600
         BeginDrawing()
+        defer { EndDrawing() }
         ClearBackground(Self.background)
         if let art {
             // Scaled to the screen's height and centred, as `UISetupBackground` scales it to 600.
@@ -161,12 +176,13 @@ final class LoadingScreen {
             DrawTexturePro(logo, Rectangle(x: 0, y: 0, width: Float(logo.width), height: Float(logo.height)),
                            destination, .zero, 0, .white)
         }
+        overlay()
+        guard showsLines else { return }
         let size = Int32(max(12, (20 * scale).rounded()))
         centered(text.caption, y: 508 * scale + 18 * scale, size: size, offset: 0, width: width)
         let (outgoing, incoming) = lines.offsets
         if let line = lines.outgoing { centered(line, y: 550 * scale + 18 * scale, size: size, offset: Float(outgoing) * width, width: width) }
         if let line = lines.incoming { centered(line, y: 550 * scale + 18 * scale, size: size, offset: Float(incoming) * width, width: width) }
-        EndDrawing()
     }
 
     private func centered(_ line: String, y: Float, size: Int32, offset: Float, width: Float) {

@@ -9,6 +9,8 @@ struct Interface {
     let help: UIScript
     let momi: UIScript
     let inspector: UIScript
+    let loginStart: UIScript
+    let loginJoin: UIScript
 
     /// Reads every document from a Simburbia folder, and checks each has the controls the client
     /// uses. Attributes a document has that Hudini ignored, such as a misspelled one, are
@@ -34,10 +36,12 @@ struct Interface {
             scripts[document] = script
         }
         guard let topBar = scripts["topbar"], let help = scripts["help"], let momi = scripts["momi"],
-              let inspector = scripts["inspector"] else {
+              let inspector = scripts["inspector"], let loginStart = scripts["login-start"],
+              let loginJoin = scripts["login-join"] else {
             throw Failure(description: "the interface documents are incomplete")
         }
-        return (Interface(topBar: topBar, help: help, momi: momi, inspector: inspector), warnings)
+        return (Interface(topBar: topBar, help: help, momi: momi, inspector: inspector,
+                          loginStart: loginStart, loginJoin: loginJoin), warnings)
     }
 }
 

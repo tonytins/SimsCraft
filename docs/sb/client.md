@@ -16,9 +16,12 @@ from on the owner's machine.
 
 Without `--game`, the install is `TSO_GAME_DIR`, then `TSO_CLASSIC_DIR`, then `TSO_BETA_DIR`
 (TSOContent's `InstallKind` lists them), then [MockInstall](../../Simburbia/MockInstall/README.md),
-so it runs anywhere. Without `--lot`, the lot is the owner's house
-([`Simburbia/Lots`](../../Simburbia/Lots/)) on a real install and the mock lot on MockInstall. Objects
-the install doesn't have, or can't load, are left out and reported, as `fso-oracle` leaves them out.
+so it runs anywhere. With `--lot`, the client goes straight to that lot. Without it, the client
+opens the login window (below), the start of the flow TSO's client takes: loading and login, then
+(when Sims and cities come) picking a Sim and entering a city, then entering a lot. Screenshots and
+headless runs without `--lot` use the owner's house ([`Simburbia/Lots`](../../Simburbia/Lots/)) on a
+real install and the mock lot on MockInstall, so they never wait for a click. Objects the install
+doesn't have, or can't load, are left out and reported, as `fso-oracle` leaves them out.
 
 It also loads FreeSO's content folder and Simburbia's mods (`FSO_CONTENT_DIR` and `SB_USER_DIR`; see
 [content.md](content.md#content-folders-and-mods)). A custom object or patch that can't be read,
@@ -42,6 +45,25 @@ Loading reports its progress: the install's content, its floors and walls, the l
 tick, then the textures of what's in view, which the client makes by drawing a frame off screen
 so the lot doesn't stutter as it appears. Half a second after the last line settles, the lot
 appears. `--loading-screenshot FILE` saves a frame of the screen as its second line slides in.
+
+## Login
+
+Without `--lot`, the loading screen loads the install, then the login window opens over its art,
+as TSO's and FreeSO's login dialog opens over theirs, with Simburbia's version at the bottom right
+(TSO showed its own at the bottom left). The window follows the owner's mockup
+([`docs/design/login-screen.png`](../design/login-screen.png)), from the UIScript documents
+`Interface/login-start.xml` and `Interface/login-join.xml`: a movable window with two tabs.
+
+- **Start** lists the lots to play: Simburbia's (`Lots`), the mock lots on MockInstall, then the
+  player's own (`Lots` in the user folder, marked "yours"). Pick one and press Play (or Enter),
+  and the loading screen comes back while the lot loads onto the install already loaded. Delete
+  and New are shown but wait for their own step.
+- **Join** has the address, port (54926), name, and password of a game to join, shown disabled
+  until Simburbia has networking.
+
+Hudini's window frame always draws a close button, which does nothing here, and its lists can't be
+picked from, so the client draws the lots itself in the document's `lots` region.
+`--login-screenshot FILE` saves a frame of the window once the install has loaded.
 
 ## The window
 

@@ -12,6 +12,11 @@ public struct ClientOptions: Sendable, Equatable {
     public var freeSOContent: URL?
     /// Simburbia's mods folder, with a player's objects and patches; `nil` for none.
     public var modsDirectory: URL?
+    /// Whether the lot was asked for, as `--lot` asks; without one, the client offers its lots in
+    /// the login window, and ``lot`` is only the default for running without a window.
+    public var lotWasChosen: Bool
+    /// Whether the install is Simburbia's MockInstall, named or fallen back to.
+    public var usesMockInstall: Bool
 
     /// Chooses the install and the lot. Without `game`, the install is the first of `installs`
     /// (``InstallKind`` order: `TSO_GAME_DIR`, `TSO_CLASSIC_DIR`, `TSO_BETA_DIR`), then
@@ -32,7 +37,10 @@ public struct ClientOptions: Sendable, Equatable {
         let mockInstall = simburbiaFolder.appendingPathComponent("MockInstall/TSOClient", isDirectory: true)
         let chosen = game.map { URL(fileURLWithPath: $0, isDirectory: true) } ?? installs.first?.directory
         let usesMock = chosen == nil
+        lotWasChosen = lot != nil
         gameDirectory = chosen ?? mockInstall
+        // Named outright (as CI names it) or fallen back to, it's the mock install either way.
+        usesMockInstall = gameDirectory.standardizedFileURL.path == mockInstall.standardizedFileURL.path
         self.lot = lot.map { URL(fileURLWithPath: $0) }
             ?? simburbiaFolder.appendingPathComponent(usesMock ? "MockInstall/Lots/mock-lot.xml" : "Lots/tonys-house.xml")
         // FreeSO's patches target real installs; MockInstall is made up and has none.
@@ -94,25 +102,13 @@ public enum ClientError: Error, Equatable, CustomStringConvertible {
     }
 }
 
-/// A lot running in the VM, advanced in real time at TSO's 30 ticks a second.
-public final class LotSession {
-    /// TSO's tick rate: 150 ticks a game minute, a game minute every five seconds.
-    public static let ticksPerSecond = 30.0
-    /// The speeds the player can pick, as multiples of real time.
-    public static let speeds = [1, 3, 10]
-    /// The most ticks one frame runs, so a slow frame can't snowball into slower ones.
-    public static let mostTicksPerFrame = 30
-
-    /// The running lot.
-    public let vm: VM
-    /// The lot's file name, for display.
-    public let lotName: String
-    /// Objects the lot names that the install doesn't have, left out of it.
-    public let leftOut: [VM.LeftOut]
-    /// The objects the blueprint marks `hidden="1"`, by object ID, each with its GUID so an ID a
-    /// later object reuses isn't hidden too. TSO's job lots mark their portals this way; it's the
-    /// lot format's, not SimAntics', so the client applies it, and the VM never sees it.
-    public let hiddenByBlueprint: [Int16: UInt32]
+/// An install, loaded once and shared by every lot the client loads from it: its content, and the
+/// floors and walls drawing needs, with any problems reading them.
+///
+/// It's made on the loading thread and handed to the frame loop once; the floors' and walls'
+/// image caches are only used from the frame loop after that.
+public final class LoadedInstall {
+    public let content: GameContent
     /// Problems loading the content, such as a broken mod; see ``SystemMessages/contentProblems(of:)``.
     public let contentProblems: [String]
     /// The install's floors, for drawing them; `nil` if they couldn't be read, and the client
@@ -121,20 +117,12 @@ public final class LotSession {
     /// The install's walls, for drawing them; `nil` if they couldn't be read, and the client draws
     /// walls as boxes instead, with why in ``contentProblems``.
     public let walls: WallImages?
-    /// Whether time is stopped.
-    public var isPaused = false
-    /// The index into ``speeds``.
-    public private(set) var speedIndex = 0
-    private var owedTicks = 0.0
 
-    /// Loads the install and the lot, and runs one tick so the lot's rooms exist.
+    /// Loads the install's content, then its floors and walls.
     ///
-    /// - Parameter progress: Told how far loading has got, as a fraction: a quarter when the
-    ///   install's content is ready, a half when its floors and walls are, and three quarters when
-    ///   the lot has loaded and run its first tick. The rest is left to the client, which has
-    ///   textures to make. It's called on the thread loading runs on.
+    /// - Parameter progress: Told how far loading has got: a half when the content is ready, and
+    ///   all of it when the floors and walls are. It's called on the thread loading runs on.
     public init(_ options: ClientOptions, progress: (Double) -> Void = { _ in }) throws(ClientError) {
-        let content: GameContent
         do {
             // The client draws objects, so it loads their sprite files too.
             content = try GameContent(.init(gameDirectory: options.gameDirectory, freeSOContentDirectory: options.freeSOContent,
@@ -142,7 +130,7 @@ public final class LotSession {
         } catch {
             throw .content("\(options.gameDirectory.path): \(error)")
         }
-        progress(0.25)
+        progress(0.5)
         var problems = SystemMessages.contentProblems(of: content)
         do {
             let provider = try FloorProvider(files: content.files)
@@ -161,16 +149,68 @@ public final class LotSession {
             walls = nil
         }
         contentProblems = problems
-        progress(0.5)
+        progress(1)
+    }
+}
+
+/// A lot running in the VM, advanced in real time at TSO's 30 ticks a second.
+public final class LotSession {
+    /// TSO's tick rate: 150 ticks a game minute, a game minute every five seconds.
+    public static let ticksPerSecond = 30.0
+    /// The speeds the player can pick, as multiples of real time.
+    public static let speeds = [1, 3, 10]
+    /// The most ticks one frame runs, so a slow frame can't snowball into slower ones.
+    public static let mostTicksPerFrame = 30
+
+    /// The install the lot runs on.
+    public let install: LoadedInstall
+    /// The running lot.
+    public let vm: VM
+    /// The lot's file name, for display.
+    public let lotName: String
+    /// Objects the lot names that the install doesn't have, left out of it.
+    public let leftOut: [VM.LeftOut]
+    /// The objects the blueprint marks `hidden="1"`, by object ID, each with its GUID so an ID a
+    /// later object reuses isn't hidden too. TSO's job lots mark their portals this way; it's the
+    /// lot format's, not SimAntics', so the client applies it, and the VM never sees it.
+    public let hiddenByBlueprint: [Int16: UInt32]
+    /// Whether time is stopped.
+    public var isPaused = false
+    /// The index into ``speeds``.
+    public private(set) var speedIndex = 0
+    private var owedTicks = 0.0
+
+    /// Problems loading the content (``LoadedInstall/contentProblems``).
+    public var contentProblems: [String] { install.contentProblems }
+    /// The install's floors (``LoadedInstall/floors``).
+    public var floors: FloorImages? { install.floors }
+    /// The install's walls (``LoadedInstall/walls``).
+    public var walls: WallImages? { install.walls }
+
+    /// Loads the install and the lot, and runs one tick so the lot's rooms exist.
+    ///
+    /// - Parameter progress: Told how far loading has got, as a fraction: a quarter when the
+    ///   install's content is ready, a half when its floors and walls are, and three quarters when
+    ///   the lot has loaded and run its first tick. The rest is left to the client, which has
+    ///   textures to make. It's called on the thread loading runs on.
+    public convenience init(_ options: ClientOptions, progress: (Double) -> Void = { _ in }) throws(ClientError) {
+        let install = try LoadedInstall(options) { progress($0 / 2) }
+        try self.init(install: install, lot: options.lot)
+        progress(0.75)
+    }
+
+    /// Loads a lot on an install that's already loaded, and runs one tick so its rooms exist.
+    public init(install: LoadedInstall, lot: URL) throws(ClientError) {
+        self.install = install
         let xml: Data
         do {
-            xml = try Data(contentsOf: options.lot)
+            xml = try Data(contentsOf: lot)
         } catch {
-            throw .lot("\(options.lot.path) can't be read: \(error.localizedDescription)")
+            throw .lot("\(lot.path) can't be read: \(error.localizedDescription)")
         }
         do {
             let blueprint = try Blueprint(xml: xml)
-            vm = try VM(content: content, seed: 1)
+            vm = try VM(content: install.content, seed: 1)
             let loaded = try vm.loadLot(blueprint)
             leftOut = loaded.leftOut
             var hidden: [Int16: UInt32] = [:]
@@ -179,11 +219,10 @@ public final class LotSession {
             }
             hiddenByBlueprint = hidden
         } catch {
-            throw .lot("\(options.lot.path): \(error)")
+            throw .lot("\(lot.path): \(error)")
         }
-        lotName = options.lot.deletingPathExtension().lastPathComponent
+        lotName = lot.deletingPathExtension().lastPathComponent
         vm.tick()
-        progress(0.75)
     }
 
     /// The current speed as a multiple of real time.

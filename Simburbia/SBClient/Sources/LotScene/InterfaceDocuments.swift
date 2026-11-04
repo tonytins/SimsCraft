@@ -15,6 +15,8 @@ public enum InterfaceDocuments {
         ("help", []),
         ("momi", ["log", "empty", "input"]),
         ("inspector", ["lines"]),
+        ("login-start", ["preview", "selectLot", "lots", "delete", "new", "play"]),
+        ("login-join", ["servers", "address", "port", "name", "password", "delete", "new"]),
     ]
 
     /// Where a document is, in a Simburbia folder.
