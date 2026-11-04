@@ -189,15 +189,27 @@ let mockRegisterGUID: UInt32 = 0x4D4F_4306, mockSimGUID: UInt32 = 0x4D4F_4307
         #expect(loaded.leftOut.map(\.object.guid) == [0x4D4F_43FF])
     }
 
-    /// `mock-lot-sim.xml` is the same lot with the Sim, which loads but reports its setup as not
-    /// ported, so comparisons count the lot as not measured until Sims are.
-    @Test func theLotWithTheSimReportsItsSetup() throws {
+    /// `mock-lot-sim.xml` is the same lot with tile 3,3 free, for a Sim to join as a player does: with
+    /// no mailbox, it arrives on 3,3. Its setup is reported as not ported, so comparisons count the
+    /// lot as not measured until Sims are.
+    @Test func aSimJoinsTheSimLotOnTheFallbackTile() throws {
         let vm = try VM(content: try GameContent(.init(gameDirectory: mockInstall)), seed: 1)
         let file = mockInstall.deletingLastPathComponent().appendingPathComponent("Lots/mock-lot-sim.xml")
         try vm.load(try Blueprint(xml: try Data(contentsOf: file)))
-        let sim = try #require(vm.entities.last)
+        let sim = try #require(try vm.joinSim(template: mockSimGUID))
         #expect(sim.object.guid == mockSimGUID && sim.isAvatar)
+        #expect(sim.position == VM.arrivalFallback && sim.direction == .north)
         #expect(vm.reportedErrors.contains { $0.objectID == sim.objectID && $0.error == .unsupported(VM.simSetupGap) })
+    }
+
+    /// FreeSO's join tries nowhere else when the fallback tile is taken: on `mock-lot.xml` the
+    /// chair stands on 3,3, and the Sim stays out of the world.
+    @Test func aSimWithNowhereToArriveStaysOutOfTheWorld() throws {
+        let vm = try VM(content: try GameContent(.init(gameDirectory: mockInstall)), seed: 1)
+        try vm.load(try Blueprint(xml: try Data(contentsOf: lotFile)))
+        let sim = try #require(try vm.joinSim(template: mockSimGUID))
+        #expect(sim.position.isOutOfWorld)
+        #expect(try vm.joinSim(template: 0x4D4F_43FF) == nil)  // no such object
     }
 
     /// The chair (tile 3, 3) and the lamp (tile 4, 2) are a tile apart diagonally: one tile away,

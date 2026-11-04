@@ -66,6 +66,25 @@ struct LotOptions: ParsableArguments {
             help: "An object GUID (hex) to leave out of the lot, such as one fso-oracle left out. Repeatable.")
     var leaveOut: [String] = []
 
+    @Option(help: "Sims to join the lot after it loads, as a player joins one.")
+    var sims = 0
+
+    @Option(name: .customLong("sim-template"), help: "The person object (hex GUID) the Sims are made from (default: the template person, 7FD96B54).")
+    var simTemplate: String?
+
+    func simsToJoin() throws -> Answers.Sims? {
+        guard sims > 0 else { return nil }
+        guard let simTemplate else { return Answers.Sims(count: sims) }
+        let digits = simTemplate.lowercased().hasPrefix("0x") ? String(simTemplate.dropFirst(2)) : simTemplate
+        guard let guid = UInt32(digits, radix: 16) else { throw ValidationError("--sim-template \(simTemplate) isn't a hex GUID") }
+        return Answers.Sims(count: sims, template: guid)
+    }
+
+    func validate() throws {
+        guard sims >= 0 else { throw ValidationError("--sims takes 0 or more") }
+        _ = try simsToJoin()
+    }
+
     func lot(in install: InstallOptions) throws -> Blueprint {
         let file = blueprint.map { URL(fileURLWithPath: $0) }
             ?? install.contentDirectory.appendingPathComponent("Blueprints/empty_lot_fso.xml")
@@ -136,7 +155,8 @@ extension SBOracle {
 
         func run() async throws {
             let answers = Answers(content: try await install.load())
-            let lines = answers.lotRun(try lotOptions.lot(in: install), ticks: ticks, every: every, dump: dump) { leftOut in
+            let lines = answers.lotRun(try lotOptions.lot(in: install), ticks: ticks, every: every, dump: dump,
+                                       sims: try lotOptions.simsToJoin()) { leftOut in
                 FileHandle.standardError.write(Data("sb-oracle: object \(String(format: "0x%08X", leftOut.object.guid)) left out of the lot: \(leftOut.reason)\n".utf8))
             }
             for line in lines { print(line) }
@@ -151,7 +171,8 @@ extension SBOracle {
         @OptionGroup var lotOptions: LotOptions
 
         func run() async throws {
-            let runner = PrimitiveRunner(answers: Answers(content: try await install.load()), lot: try lotOptions.lot(in: install))
+            let runner = PrimitiveRunner(answers: Answers(content: try await install.load()), lot: try lotOptions.lot(in: install),
+                                         sims: try lotOptions.simsToJoin())
             while let line = readLine() {
                 if let response = runner.answerLine(line) { print(response) }
             }

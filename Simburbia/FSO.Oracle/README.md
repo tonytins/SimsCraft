@@ -102,7 +102,9 @@ architecture` prints the same from TSOContent's providers, and `compare` reads b
 
 ## Sims on a lot: `run-lot --sims`
 
-`run-lot --sims N` brings N made-up Sims onto the lot after it loads, the way a player joins one:
+`run-lot --sims N` (and `run-primitive --sims N`, before each request's fresh lot, so requests can
+name the Sims as the caller or stack object) brings N made-up Sims onto the lot after it loads, the
+way a player joins one:
 FreeSO's `VMNetSimJoinCmd`, as the lot server runs it when an avatar arrives (`SimJoin.cs`). They
 join inside a tick, and then the VM is seeded again, so the first digest starts from the seed.
 
@@ -116,6 +118,12 @@ change: a static FreeSO left open, not a file under `TSOClient`.
 The join places a Sim by the lot's mailbox (`VMFindLocationFor`), or without one at tile 3,3. If
 that tile is taken, FreeSO tries nowhere else, and the Sim stays out of the world, as on
 `mock-lot.xml`, whose chair stands at 3,3.
+
+The review scripts join Sims to the lots `lot_sims` (in `Simburbia/scripts/oracle-lots.sh`)
+names, recorded in `lots.run`'s second and third columns: MockInstall's `mock-lot-sim.xml` gets its
+Mock Sim. `sb-oracle` takes the same options and joins the same way (SimAntics' `VM.joinSim`).
+TSO's own placing of players on 3,3 after a job is a memory of the game, **Unverified**: FreeSO uses
+3,3 only for this fallback, and every job lot in 1.1097.1.0 has a mailbox.
 
 **Repeatable:** checked 2026-11-04. FreeSO's Sim setup takes randomness only from the seeded
 context (the only other unseeded `Random`s are in EOD plugins an idle Sim doesn't reach), and two

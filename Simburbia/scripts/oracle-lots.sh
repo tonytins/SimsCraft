@@ -16,3 +16,22 @@ resolve_lots() {
         -e "s|^freeso/|$repository/TSOClient/tso.content/Content/|" \
         -e "s|^repository/|$repository/|"
 }
+
+# lot_sims FILE: the Sims run-lot joins to a lot after loading it, as "COUNT<tab>TEMPLATE" (a hex
+# GUID, or - for FreeSO's template person). Most lots have none. MockInstall's Sim lot joins its
+# made-up Sim, which arrives on tile 3,3, the join's fallback without a mailbox.
+lot_sims() {
+    case "$(basename "$1")" in
+        mock-lot-sim.xml) printf '1\t4D4F4307\n' ;;
+        *) printf '0\t-\n' ;;
+    esac
+}
+
+# sims_options COUNT TEMPLATE: the run-lot options for them, both oracles taking the same.
+sims_options() {
+    local count="$1" template="$2"
+    if (( count > 0 )); then
+        printf '%s\n' --sims "$count"
+        if [[ "$template" != - ]]; then printf '%s\n' --sim-template "$template"; fi
+    fi
+}

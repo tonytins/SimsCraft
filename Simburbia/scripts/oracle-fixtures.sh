@@ -10,7 +10,8 @@
 # Simburbia/MockInstall/Lots). Needs the .NET SDK and python3. Set ORACLE_BUILT=1 to skip
 # building fso-oracle. Writes:
 #   objects.tsv                   list-objects: what loads for every object
-#   lots.run, lots.digests        the lots with objects, and run-lot on each (lines prefixed with
+#   lots.run, lots.digests        the lots with objects and the Sims joining each (tab-separated;
+#                                 see lot_sims), and run-lot on each (lines prefixed with
 #                                 its file name); lots.run, primitives.lot, and rooms.lots name
 #                                 lots relative to where they come from (oracle-lots.sh)
 #   lots.leftout                  the objects fso-oracle left out of each (file name, tab, GUID)
@@ -87,12 +88,14 @@ echo "Listing objects..."
 timed list-objects oracle list-objects >"$output/objects.tsv" 2>"$output/objects.log"
 
 echo "Running each lot..."
-printf '%s\n' "$empty_lot" "${lots[@]}" >"$output/lots.run"
+# Each lot with the Sims that join it (lot_sims), tab-separated.
+for lot in "$empty_lot" "${lots[@]}"; do printf '%s\t%s\n' "$lot" "$(lot_sims "$lot")"; done >"$output/lots.run"
 run_lots() {
-    local lot file
-    while read -r lot; do
+    local lot file sims template
+    while IFS=$'\t' read -r lot sims template; do
         file="$(basename "$lot")"
-        oracle run-lot --blueprint "$lot" --ticks "$lot_ticks" --every "$lot_every" 2>"$output/lot.log" | sed "s|^|$file |"
+        mapfile -t joining < <(sims_options "${sims:-0}" "${template:--}")
+        oracle run-lot --blueprint "$lot" --ticks "$lot_ticks" --every "$lot_every" "${joining[@]}" 2>"$output/lot.log" | sed "s|^|$file |"
         cat "$output/lot.log" >>"$output/lots.log"
         left_out "$output/lot.log" | sed "s|^|$file\t|" >>"$output/lots.leftout"
     done < <(resolve_lots "$output" "$game" "$repository" <"$output/lots.run")

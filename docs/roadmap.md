@@ -100,7 +100,7 @@ In order:
    On the real installs, Sims come from the game's person template with a made-up identity defined
    in the oracle (no player or released city data); the mock install gains a made-up Sim, grown
    phase by phase, so every Sim experiment also runs on CI.
-   - [ ] A. Sims in the experiments: `fso-oracle` puts Sims on a lot through FreeSO's sandbox join,
+   - [x] A. Sims in the experiments: `fso-oracle` puts Sims on a lot through FreeSO's sandbox join,
      the digest's version 1 adds Sims' state (person data, motives, animation, the queue),
      `run-primitive` requests can name Sims, FreeSO with an idle Sim is shown repeatable, and the
      mock install gets a made-up person object and appearance. Started 2026-10-29: the mock Sim has
@@ -117,7 +117,10 @@ In order:
      - [x] A2. The digest's version 1: Sims' state (person data, motives, animations as float bits,
        the queue), added for Sims only, so lots without them keep their digests (checked: the mock
        lot's digests still match Simburbia's over 1,800 ticks). Both oracles write it.
-     - [ ] A3. Primitive cases that name Sims, and the mock lots' Sims joining as on a real install.
+     - [x] A3. Sims join on both oracles' `run-lot` and `run-primitive` (`--sims`), so primitive
+       cases can name them; SimAntics' `VM.joinSim` places a Sim by the mailbox, else on tile 3,3,
+       FreeSO's fallback, kept free on `mock-lot-sim.xml`, whose Sim now joins rather than being
+       in the blueprint. The review scripts take each lot's Sims from one table (`lot_sims`).
    - [ ] B. The Sim entity: avatars from the person template, person data, motives and their decay,
      running every tick; Set Motive Deltas, Test Sim Interacting With, and Look Towards.
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
@@ -264,6 +267,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | minor | Fourth pass, step A3, which finishes phase A: Sims join on both oracles (`run-lot` and `run-primitive --sims`), Simburbia's side through SimAntics' new `VM.joinSim` (by the mailbox, else tile 3,3, with FreeSO's quirk that a taken 3,3 leaves the Sim out of the world). `mock-lot-sim.xml` keeps 3,3 free and its Sim joins; `mock-lot.xml` keeps the blocked case. The owner recalls TSO putting players on 3,3 after some jobs; FreeSO uses 3,3 only for this fallback, so that stays unverified. Primitive cases naming Sims will be generated in phase B, when a Sim's state can be compared. |
 | 2026-11-04 | patch | Fourth pass, step A2: the state digest's version 1 on both oracles, adding Sims' person data, motives, animations (frames and speeds as float bits), and action queue after a Sim's stack, and nothing for other entities. Simburbia's Sims write no animations or queue until phases C and D. |
 | 2026-11-04 | patch | Queen Margaret's fourth pass, phase A: the login window uses Hudini's new close-button option, selectable lists, and secure fields, dropping C3's workarounds; and step A1, Sims joining the oracle's lots through FreeSO's own join command, shown repeatable on 1.1097.1.0 and MockInstall. Phase A is split into A1 to A3. |
 | 2026-11-04 | minor | The client's step C3, which finishes C: the login window. Without `--lot`, the loading screen loads the install (`LoadedInstall`, split from `LotSession` so lots load onto it), then the login window of the owner's mockup opens over TSO's art, with Simburbia's version at the bottom right: Start lists Simburbia's lots, the mock ones on MockInstall, and the player's (`Lots` in the user folder), and Play loads the picked one through the loading screen; Join is shown, disabled until networking; Delete and New wait. The window is two UIScript documents (`login-start`, `login-join`) in Hudini's window frame with its tabs. Three gaps in Hudini turned up (no way to hide the close button, no selectable lists, no password fields); the client works around the first two. `--lot`, screenshots, and headless runs skip login, so nothing waits for a click; `--login-screenshot` shows it. Checked by driving the whole flow on a virtual display: login, Play, loading, the lot running. |

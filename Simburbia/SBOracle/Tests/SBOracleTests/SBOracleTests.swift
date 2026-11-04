@@ -61,6 +61,15 @@ struct FixtureComparisonTests {
     @Test func lotRunsMatchFreeSO() throws {
         let fso = try lines("lots.digests")
         let leftOut = (try? lines("lots.leftout")) ?? []
+        // The Sims joining each lot, from lots.run's second and third columns (none in older records).
+        var sims: [String: Answers.Sims] = [:]
+        for line in (try? lines("lots.run")) ?? [] {
+            let fields = line.split(separator: "\t").map(String.init)
+            guard fields.count == 3, let count = Int(fields[1]), count > 0 else { continue }
+            let file = (fields[0] as NSString).lastPathComponent
+            sims[file] = fields[2] == "-" ? Answers.Sims(count: count)
+                : UInt32(fields[2], radix: 16).map { Answers.Sims(count: count, template: $0) }
+        }
         let answers = try answers()
         var nso: [String] = []
         for file in Set(fso.compactMap { $0.split(separator: " ").first.map(String.init) }).sorted() {
@@ -71,7 +80,7 @@ struct FixtureComparisonTests {
                 return UInt32(fields[1].dropFirst(2), radix: 16)
             })
             lot.objects.removeAll { guids.contains($0.guid) }
-            nso += answers.lotRun(lot, ticks: 216_000, every: 9_000).map { "\(file) \($0)" }
+            nso += answers.lotRun(lot, ticks: 216_000, every: 9_000, sims: sims[file]).map { "\(file) \($0)" }
         }
         let comparison = Comparison.lotRuns(fso: fso, nso: nso)
         print(comparison.summary, comparison.skipsByCount.prefix(8))
@@ -396,7 +405,7 @@ extension ComparisonTests {
         let mock = repository.appendingPathComponent("Simburbia/MockInstall")
         let content = try GameContent(.init(gameDirectory: mock.appendingPathComponent("TSOClient")))
         let lot = try Blueprint(xml: try Data(contentsOf: mock.appendingPathComponent("Lots/mock-lot-sim.xml")))
-        let lines = Answers(content: content).lotRun(lot, ticks: 30, every: 10)
+        let lines = Answers(content: content).lotRun(lot, ticks: 30, every: 10, sims: Answers.Sims(count: 1, template: 0x4D4F_4307))
         #expect(lines.last?.hasPrefix("unsupported at tick 0 by 0x4D4F4307: Sim setup") == true, "\(lines.suffix(2))")
     }
 }

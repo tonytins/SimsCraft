@@ -69,10 +69,14 @@ oracles count it as not measured until Queen Margaret's fourth pass.
 `Lots/mock-lot.xml` is a made-up lot for it: a closed 3 by 3 room with floor, a chair out of
 the world, a chair in the room, two tables outside (one facing south, with a group ID), the lamp in the
 room, the register in the room, and one GUID the install doesn't have, which both oracles leave out.
-`Lots/mock-lot-sim.xml` is the same lot with the Sim in the room. It's kept apart so the Sim, which
-Simburbia can't set up yet, doesn't stop the primitive cases and the lot run on `mock-lot.xml` from
-being measured; FreeSO runs both, and Simburbia's side of the Sim's lot counts as not measured until
-Queen Margaret's fourth pass.
+`Lots/mock-lot-sim.xml` is the same lot for a Sim, which joins it as a player joins a lot (both
+oracles' `run-lot --sims 1 --sim-template 4D4F4307`) rather than being in the blueprint. The lot has
+no mailbox, so the Sim arrives on tile 3,3, the join's fallback; the chair that stands there on
+`mock-lot.xml` stands on 4,4 here instead. Keep 3,3 free on this lot. On `mock-lot.xml` the chair
+still takes 3,3, so a Sim joining there stays out of the world, as FreeSO's join leaves it. The lots
+are kept apart so the Sim, which Simburbia can't set up yet, doesn't stop the primitive cases and
+the lot run on `mock-lot.xml` from being measured; Simburbia's side of the Sim's lot counts as not
+measured until Queen Margaret's fourth pass sets Sims up (phase B).
 
 `fso-oracle` reads it too: its game overlay adds placeholders for what FreeSO loads and
 Simburbia doesn't (audio, tuning, the missing wall and floor archives, and so on). CI runs both oracles on

@@ -68,13 +68,31 @@ public struct Answers {
     /// The seed both oracles use unless told otherwise.
     public static let defaultSeed: UInt64 = 0x0F50_D0C5_EED0_0001
 
+    /// Sims to join a lot after it loads, as `fso-oracle --sims` joins them.
+    public struct Sims: Sendable, Equatable {
+        public var count: Int
+        public var template: UInt32
+
+        public init(count: Int, template: UInt32 = VM.templatePerson) {
+            self.count = count
+            self.template = template
+        }
+    }
+
     /// A VM with a lot loaded as `fso-oracle` loads one: the blueprint, then the tick the load
-    /// runs in, then the random seed set again, so the first digest starts from the seed.
-    func loadedLot(_ blueprint: Blueprint, seed: UInt64) throws(SimAnticsError) -> (VM, [VM.LeftOut]) {
+    /// runs in, then the random seed set again, so the first digest starts from the seed. With
+    /// `sims`, they join after the load (``SimAntics/VM/joinSim(template:)``), inside a tick of
+    /// their own, and the seed is set again after it, as `fso-oracle run-lot --sims` does.
+    func loadedLot(_ blueprint: Blueprint, seed: UInt64, sims: Sims? = nil) throws(SimAnticsError) -> (VM, [VM.LeftOut]) {
         let vm = try VM(content: content, seed: seed)
         let leftOut = try vm.load(blueprint)
         vm.tick()
         vm.random = VMRandom(seed: seed)
+        if let sims, sims.count > 0 {
+            for _ in 0..<sims.count { try vm.joinSim(template: sims.template) }
+            vm.tick()
+            vm.random = VMRandom(seed: seed)
+        }
         return (vm, leftOut)
     }
 
@@ -138,10 +156,10 @@ public struct Answers {
     /// through `leftOut`, as `fso-oracle` reports them on standard error. With `dump`, each digest
     /// is followed by every entity's digested fields, as `fso-oracle --dump` prints them.
     public func lotRun(_ lot: Blueprint, ticks: Int, every: Int, seed: UInt64 = Answers.defaultSeed, dump: Bool = false,
-                       leftOut: (VM.LeftOut) -> Void = { _ in }) -> [String] {
+                       sims: Sims? = nil, leftOut: (VM.LeftOut) -> Void = { _ in }) -> [String] {
         let vm: VM
         do {
-            let loaded = try loadedLot(lot, seed: seed)
+            let loaded = try loadedLot(lot, seed: seed, sims: sims)
             vm = loaded.0
             loaded.1.forEach(leftOut)
         } catch SimAnticsError.unsupported(let reason) {

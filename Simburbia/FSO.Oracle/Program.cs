@@ -74,7 +74,7 @@ options:
   --ticks N         run-lot and run-objects: ticks to run after loading (default: 1800, one minute of game time)
   --every N         run-lot and run-objects: also print a digest every N ticks (default: 0, only at the end)
   --dump            run-lot: after each digest, the digested fields of every entity, one line each
-  --sims N          run-lot: join N made-up Sims after loading, as a player joins a lot (see SimJoin.cs)
+  --sims N          run-lot and run-primitive: join N made-up Sims after loading, as a player joins a lot (see SimJoin.cs)
   --sim-template HEX  the person object they're made from (default: FreeSO's template person, 7FD96B54)";
 
         public static int Main(string[] args)
@@ -159,20 +159,11 @@ options:
             }
             if (args[0] == "run-lot")
             {
-                var vm = LoadLot(blueprint, options.Seed);
-                if (options.Sims > 0)
-                {
-                    // Sims join as the lot server joins them, inside a tick; then the VM is seeded
-                    // again, so the first digest starts from the seed whether or not Sims joined.
-                    SimJoin.Join(vm, options.Sims, options.SimTemplate);
-                    vm.Tick();
-                    vm.Context.RandomSeed = options.Seed;
-                }
-                RunLot(vm, options, results);
+                RunLot(LoadLotWithSims(blueprint, options), options, results);
             }
             else
             {
-                new PrimitiveRunner(() => LoadLot(blueprint, options.Seed), options.Seed).Run(Console.In, results);
+                new PrimitiveRunner(() => LoadLotWithSims(blueprint, options), options.Seed).Run(Console.In, results);
             }
             return 0;
         }
@@ -196,6 +187,21 @@ options:
             vm.Tick();
             // Seed it again once the lot is loaded, so the first digest starts from the seed.
             vm.Context.RandomSeed = seed;
+            return vm;
+        }
+
+        /// <summary>
+        /// The lot loaded, then <c>--sims</c> Sims joined as the lot server joins them, inside a tick;
+        /// then the VM is seeded again, so the first digest starts from the seed whether or not
+        /// Sims joined.
+        /// </summary>
+        private static VM LoadLotWithSims(byte[] blueprint, Options options)
+        {
+            var vm = LoadLot(blueprint, options.Seed);
+            if (options.Sims == 0) return vm;
+            SimJoin.Join(vm, options.Sims, options.SimTemplate);
+            vm.Tick();
+            vm.Context.RandomSeed = options.Seed;
             return vm;
         }
 

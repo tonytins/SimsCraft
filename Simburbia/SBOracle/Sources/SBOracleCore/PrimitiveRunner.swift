@@ -19,14 +19,18 @@ public struct PrimitiveRunner {
     let answers: Answers
     let lot: Blueprint
     let defaultSeed: UInt64
+    let sims: Answers.Sims?
 
     /// - Parameters:
     ///   - lot: the lot every request starts from, without the objects `fso-oracle` leaves out.
     ///   - defaultSeed: the random seed for loading, and for requests that don't give one.
-    public init(answers: Answers, lot: Blueprint, defaultSeed: UInt64 = Answers.defaultSeed) {
+    ///   - sims: Sims to join each fresh lot, as `fso-oracle run-primitive --sims` joins them, so
+    ///     requests can name them as the caller or stack object.
+    public init(answers: Answers, lot: Blueprint, defaultSeed: UInt64 = Answers.defaultSeed, sims: Answers.Sims? = nil) {
         self.answers = answers
         self.lot = lot
         self.defaultSeed = defaultSeed
+        self.sims = sims
     }
 
     /// The response to one request line, as one line of JSON. Blank lines and lines starting
@@ -59,7 +63,7 @@ public struct PrimitiveRunner {
 
         let vm: VM
         do {
-            (vm, _) = try answers.loadedLot(lot, seed: defaultSeed)
+            (vm, _) = try answers.loadedLot(lot, seed: defaultSeed, sims: sims)
         } catch .unsupported(let reason) {
             return Self.response(id, "unsupported", "loading the lot reached \(reason)")
         } catch {

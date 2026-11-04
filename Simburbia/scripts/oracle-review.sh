@@ -85,11 +85,12 @@ for install in "${installs[@]}"; do
     timed list-objects nso list-objects >"$folder/objects.tsv"
     # Each lot with the objects fso-oracle left out of it left out here too.
     run_lots() {
-        local lot file leave
-        while read -r lot; do
+        local lot file leave sims template
+        while IFS=$'\t' read -r lot sims template; do
             file="$(basename "$lot")"
             mapfile -t leave < <(awk -F'\t' -v f="$file" '$1 == f { print "--leave-out"; print $2 }' "$fso_folder/lots.leftout")
-            nso run-lot --blueprint "$lot" --ticks "$lot_ticks" --every "$lot_every" "${leave[@]}" | sed "s|^|$file |"
+            mapfile -t joining < <(sims_options "${sims:-0}" "${template:--}")
+            nso run-lot --blueprint "$lot" --ticks "$lot_ticks" --every "$lot_every" "${leave[@]}" "${joining[@]}" | sed "s|^|$file |"
         done < <(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/lots.run")
     }
     timed run-lot run_lots >"$folder/lots.digests"
