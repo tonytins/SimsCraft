@@ -29,7 +29,7 @@ It follows the layout of a real install, with only what the content system needs
 | `objectdata/globals/mockglobals.iff` | The objects' semi-global: one routine (8192) that returns true |
 | `objectdata/globals/build.iff` | The build catalog's strings: five wall styles (`STR#` 0x81), two floors (0x82), three wallpapers (0x83), and pool and water (0x85). There's one more wallpaper than floors, as in the real tables, since FreeSO counts the global floors from the wallpaper strings (DIFF-29) |
 | `objectdata/globals/walls.iff` | Wall styles 1 (wall), 2, 12, 13, and 14 (fences, banister), and 7 and 8 (the cutaway styles), with cut-down masks for 1, 7, and 8; patterns 1 to 3 (plaster, brick, blue paint), 248 to 251 (the fences' own), and 252 and 253 (the cutaway overlays); and the 46 junction pieces. Each sprite has the four sides FreeSO draws, at its sizes for each zoom |
-| `objectdata/globals/floors.iff` | Floors 1 (straw, standing in for grass) and 2 (planks), 16 pool tiles at each zoom with their corners, and 16 water tiles with a depth layer |
+| `objectdata/globals/floors.iff` | Floors 1 (straw, standing in for grass) and 2 (planks), 16 pool tiles at each zoom with their corners, and 16 water tiles with a depth layer FreeSO turns into alpha: 255 inside the diamond and 0 outside, written for every pixel, since a transparent run's depth of 255 would turn opaque black |
 | `housedata/walls/walls.far` | Two archive wall patterns, 256 (`mockstone.wll`) and 257 (`mockpanel.wll`) |
 | `housedata/floors/floors.far` | Two archive floors, 256 (`mocktile.flr`) and 257 (`mockcarpet.flr`). Like the base game, the mock has no `walls2` to `walls4` or `floors2` to `floors4` (DIFF-30) |
 
@@ -91,5 +91,6 @@ chunk type, a quirk to cover. Update the tables above when you do, and keep ever
 `generators/` keeps the scripts that made some of the files, to show how they were built:
 `mock_sim.py` gave the Sim its body strings, animation names, skeleton, and tuning, and
 `mock_build.py` wrote the walls and floors. Each ran once
-on the committed files and refuses to run again on files it has already patched. The script that
+on the committed files and refuses to run again on files it has already patched, except
+`mock_build.py`, which writes only the files that are missing, so deleting one remakes it. The script that
 made `objspf.far` wasn't kept.

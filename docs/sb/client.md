@@ -40,9 +40,17 @@ explains why a 3D camera rather than FreeSO's 2D batches.
   controllers hide themselves through object data 34, as FreeSO reads it, and TSO's job lots
   also mark theirs `hidden="1"` in the blueprint. That's the lot format's, not SimAntics': the
   client applies it, and the VM never sees it.
-- **Walls, floors, and the ground** are flat shapes for now, colored by kind. The walls of the floor
-  in view are cut down so the rooms show, as TSO does. Floors and the ground are drawn a little
-  back and down, as FreeSO draws its floors, so the feet of objects standing on them show.
+- **Floors** are textured tiles, as update-46's `_3DFloorGeometry` draws them. Each floor's sprite
+  is a texture that repeats across the lot: a tile's diamond takes its part of it, and the
+  sprite's corners, filled from half a frame away when it's decoded (FreeSO's `FloorCopy`),
+  carry the neighboring tiles' halves. Pools and water take one of 16 shapes from the tiles
+  beside them and stay upright on screen as the view turns. Floors are opaque, and texels
+  under half alpha aren't drawn. Pool corners aren't drawn, as update-46's 3D floors don't.
+- **Walls and the ground** are flat shapes for now, colored by kind; grass waits. The walls of the
+  floor in view are cut down so the rooms show, as TSO does. Floors and the ground are drawn a
+  little back and down, as FreeSO draws its floors, so the feet of objects standing on them show.
+  If the install's floors can't be read, they're drawn as plain tiles tinted by room, and MOMI
+  says why.
 - **An object without a sprite** for the view is drawn as a box.
 
 | Input | Does |

@@ -128,4 +128,30 @@ public struct FloorProvider: Sendable {
     public func globalSprite(id: UInt16) throws(ContentError) -> SPR2? {
         try buildSprite(SPR2.self, id: id, in: globals, path: Self.globalsPath)
     }
+
+    /// Whether FreeSO's `GetGlobalSPR` turns a global sprite's depth into alpha: the water tiles
+    /// 0x801 to 0x80F. Its test is `id > 0x800`, so 0x800, water with no pool tile beside it,
+    /// keeps its depth; kept, as that's how FreeSO draws it.
+    public static func globalSpriteTakesDepthAsAlpha(_ id: UInt16) -> Bool {
+        id > 0x800 && id < 0x810
+    }
+
+    /// A floor sprite's frame as the texture FreeSO draws: decoded with its palette from `file`
+    /// (none is transparent black, as in FreeSO), floor-copied so it repeats across tiles
+    /// (`SPR2.decode(frameAt:palette:floorCopy:depthAsAlpha:)`), and for water, with depth as alpha.
+    ///
+    /// - Throws: ``SpriteError/unreadableChunk(_:)`` if the palette doesn't parse, or the
+    ///   decode's errors.
+    public static func texture(of sprite: SPR2, frameAt index: Int, in file: IFFFile,
+                               depthAsAlpha: Bool = false) throws(SpriteError) -> SpriteImage {
+        guard sprite.frames.indices.contains(index) else { throw .noSuchFrame(index) }
+        let paletteID = sprite.frames[index].paletteID
+        let palette: PALT?
+        do {
+            palette = try file.chunk(PALT.self, id: paletteID)
+        } catch {
+            throw .unreadableChunk("PALT #\(paletteID): \(error)")
+        }
+        return try sprite.decode(frameAt: index, palette: palette, floorCopy: true, depthAsAlpha: depthAsAlpha)
+    }
 }

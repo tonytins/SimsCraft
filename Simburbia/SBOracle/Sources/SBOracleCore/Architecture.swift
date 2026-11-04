@@ -27,14 +27,18 @@ extension Answers {
         }
         for entry in floors.entries {
             line("floor\t\(entry.id)") {
-                guard let floor = try floors.floor(id: entry.id) else { return "\(entry.fileName)\t-\t-\t-" }
-                return [entry.fileName, sprite(floor.far), sprite(floor.medium), sprite(floor.near)].joined(separator: "\t")
+                guard let floor = try floors.floor(id: entry.id) else { return "\(entry.fileName)\t-\t-\t-\t-" }
+                return [entry.fileName, sprite(floor.far), sprite(floor.medium), sprite(floor.near),
+                        pixels([floor.far, floor.medium, floor.near], in: floor.file)].joined(separator: "\t")
             }
         }
         // Only the sprites there are, as FreeSO lists them.
         for id in Array(UInt16(0x400)..<0x440) + Array(UInt16(0x800)..<0x810) {
             do {
-                if let found = try floors.globalSprite(id: id) { lines.append("floor-sprite\t\(id)\t\(sprite(found))") }
+                if let found = try floors.globalSprite(id: id) {
+                    let alpha = FloorProvider.globalSpriteTakesDepthAsAlpha(id)
+                    lines.append("floor-sprite\t\(id)\t\(sprite(found))\t\(pixels([found], in: floors.globals, depthAsAlpha: alpha))")
+                }
             } catch {
                 lines.append("floor-sprite\t\(id)\terror\t\(String(describing: error).prefix { $0 != "(" })")
             }
@@ -58,6 +62,22 @@ extension Answers {
             return [sprite(junctions.far), sprite(junctions.medium), sprite(junctions.near)].joined(separator: "\t")
         }
         return lines
+    }
+
+    /// Each frame of the sprites as the client draws it (``FloorProvider/texture(of:frameAt:in:depthAsAlpha:)``):
+    /// its size and the hash of its RGBA, comma-separated, or `-` with no frames.
+    private static func pixels(_ sprites: [SPR2?], in file: IFFFile, depthAsAlpha: Bool = false) -> String {
+        let frames = sprites.compactMap { $0 }.flatMap { sprite in
+            sprite.frames.indices.map { index in
+                do {
+                    let image = try FloorProvider.texture(of: sprite, frameAt: index, in: file, depthAsAlpha: depthAsAlpha)
+                    return "\(image.width)x\(image.height):" + (image.rgba.map(hash) ?? "-")
+                } catch {
+                    return "error:\(String(describing: error).prefix { $0 != "(" })"
+                }
+            }
+        }
+        return frames.isEmpty ? "-" : frames.joined(separator: ",")
     }
 
     private static func sprite(_ sprite: SPR2?) -> String {

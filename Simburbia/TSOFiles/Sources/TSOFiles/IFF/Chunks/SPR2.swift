@@ -112,9 +112,29 @@ public struct SPR2: IFFChunk {
 
     /// Decodes a frame with its palette, which the caller finds by ``Frame/paletteID``; pass
     /// `nil` when the IFF has none, and every color is transparent black, as in FreeSO.
-    public func decode(frameAt index: Int, palette: PALT?) throws(SpriteError) -> SpriteImage {
+    ///
+    /// Floors and water ask for two more steps, FreeSO's `SPR2.ZAsAlpha` and `SPR2.FloorCopy`,
+    /// applied in FreeSO's order:
+    ///
+    /// - `floorCopy`: the frame decodes one pixel wider, as a floor tile becomes a texture that
+    ///   repeats (127 by 64 becomes 128 by 64). The extra column is transparent, except where a run
+    ///   of empty rows (`0x04`) fills it with the transparent color at depth 255, as FreeSO's does.
+    ///   Then each pixel that isn't opaque takes the pixel half the frame away, across and down,
+    ///   if that one is (alpha 254 or more), so a tile's corners hold its neighbors' halves. A frame
+    ///   still odd in width is widened once more first, as FreeSO's is. The result is a texture: it
+    ///   keeps its color only, and has no depth or palette indices.
+    /// - `depthAsAlpha`: each pixel's depth becomes its alpha (0 below 32), with its color scaled
+    ///   by it, as water's are. The frame must have color and depth, where FreeSO would crash.
+    ///
+    /// - Throws: ``SpriteError/missingLayer(_:)`` when `depthAsAlpha` meets a frame without
+    ///   color or depth; any error of the plain decode.
+    public func decode(frameAt index: Int, palette: PALT?, floorCopy: Bool = false,
+                       depthAsAlpha: Bool = false) throws(SpriteError) -> SpriteImage {
         guard frames.indices.contains(index) else { throw .noSuchFrame(index) }
-        return try SpriteDecoder.decodeSPR2(frames[index], palette: palette)
+        var image = try SpriteDecoder.decodeSPR2(frames[index], palette: palette, widened: floorCopy)
+        if depthAsAlpha { try SpriteDecoder.copyDepthToAlpha(&image) }
+        if floorCopy { SpriteDecoder.floorCopy(&image) }
+        return image
     }
 }
 
@@ -156,11 +176,15 @@ enum SpriteDecoder {
     /// unwritten end of a written row gets depth 255 and keeps its color; a run of transparent
     /// pixels takes the transparent color with alpha 0 and depth 255; 5-bit alpha is scaled by
     /// 8.2258… and truncated to a byte, wrapping past 31 as FreeSO's cast does (TSO's skill
-    /// objects store 200, which FreeSO draws at alpha 109); unknown commands do nothing. FreeSO's `FloorCopy` and
-    /// `ZAsAlpha`, which floors and walls ask for, aren't ported yet.
-    static func decodeSPR2(_ frame: SPR2.Frame, palette: PALT?) throws(SpriteError) -> SpriteImage {
-        let width = frame.width
-        let pixelCount = frame.width * frame.height
+    /// objects store 200, which FreeSO draws at alpha 109); unknown commands do nothing.
+    ///
+    /// `widened` decodes the frame one pixel wider, as FreeSO does when its sprite has `FloorCopy`
+    /// set: rows are laid out on the wider stride, the unwritten end of a row is filled only to
+    /// the frame's own width, and a run of empty rows fills the whole wider row.
+    static func decodeSPR2(_ frame: SPR2.Frame, palette: PALT?, widened: Bool = false) throws(SpriteError) -> SpriteImage {
+        let ownWidth = frame.width
+        let width = widened ? frame.width + 1 : frame.width
+        let pixelCount = width * frame.height
         let hasColor = frame.flags.contains(.color)
         let hasDepth = frame.flags.contains(.depth)
         let hasAlpha = frame.flags.contains(.alpha)
@@ -270,7 +294,7 @@ enum SpriteDecoder {
                 }
                 // The rest of the row is transparent: FreeSO sets its depth and leaves its color.
                 if hasDepth {
-                    while x < width {
+                    while x < ownWidth {
                         depth?[try offset(x, y)] = 255
                         x += 1
                     }
@@ -297,7 +321,56 @@ enum SpriteDecoder {
             }
             y += 1
         }
-        return SpriteImage(width: frame.width, height: frame.height, position: frame.position,
+        return SpriteImage(width: width, height: frame.height, position: frame.position,
                            rgba: rgba, depth: depth, paletteIndices: indices)
+    }
+
+    /// FreeSO's `SPR2Frame.CopyZToAlpha`: each pixel's alpha becomes its depth, or 0 where the
+    /// depth is under 32, and its color is scaled by that alpha, rounding down.
+    static func copyDepthToAlpha(_ image: inout SpriteImage) throws(SpriteError) {
+        guard var rgba = image.rgba else { throw .missingLayer("color") }
+        guard let depth = image.depth, depth.count * 4 == rgba.count else { throw .missingLayer("depth") }
+        for (pixel, z) in depth.enumerated() {
+            let alpha = z < 32 ? 0 : Int(z)
+            for channel in 0..<3 {
+                rgba[pixel * 4 + channel] = UInt8(Int(rgba[pixel * 4 + channel]) * alpha / 255)
+            }
+            rgba[pixel * 4 + 3] = UInt8(alpha)
+        }
+        image.rgba = rgba
+    }
+
+    /// FreeSO's `SPR2Frame.FloorCopy`, on a frame decoded widened: an odd width gains a transparent
+    /// column, then every pixel under alpha 254 takes the pixel half the frame away across and
+    /// down (wrapping) when that one is at least 254. Depth and palette indices are dropped, as
+    /// FreeSO's no longer line up with the pixels. A frame without color only loses those.
+    static func floorCopy(_ image: inout SpriteImage) {
+        image.depth = nil
+        image.paletteIndices = nil
+        guard var rgba = image.rgba, image.width > 0, image.height > 0 else { return }
+        var width = image.width
+        let height = image.height
+        if width % 2 != 0 {
+            var wider = [UInt8](repeating: 0, count: (width + 1) * height * 4)
+            for y in 0..<height {
+                wider.replaceSubrange((y * (width + 1)) * 4..<(y * (width + 1) + width) * 4,
+                                      with: rgba[(y * width) * 4..<(y * width + width) * 4])
+            }
+            rgba = wider
+            width += 1
+        }
+        var copied = rgba
+        let halfWidth = width / 2, halfHeight = height / 2
+        for y in 0..<height {
+            for x in 0..<width {
+                let from = ((y + halfHeight) % height * width + (x + halfWidth) % width) * 4
+                if rgba[from + 3] >= 254 {
+                    let to = (y * width + x) * 4
+                    copied.replaceSubrange(to..<to + 4, with: rgba[from..<from + 4])
+                }
+            }
+        }
+        image.rgba = copied
+        image.width = width
     }
 }

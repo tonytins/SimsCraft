@@ -115,6 +115,9 @@ public final class LotSession {
     public let hiddenByBlueprint: [Int16: UInt32]
     /// Problems loading the content, such as a broken mod; see ``SystemMessages/contentProblems(of:)``.
     public let contentProblems: [String]
+    /// The install's floors, for drawing them; `nil` if they couldn't be read, and the client
+    /// draws floors as plain tiles instead, with why in ``contentProblems``.
+    public let floors: FloorImages?
     /// Whether time is stopped.
     public var isPaused = false
     /// The index into ``speeds``.
@@ -128,10 +131,19 @@ public final class LotSession {
             // The client draws objects, so it loads their sprite files too.
             content = try GameContent(.init(gameDirectory: options.gameDirectory, freeSOContentDirectory: options.freeSOContent,
                                             modsDirectory: options.modsDirectory, loadsSprites: true))
-            contentProblems = SystemMessages.contentProblems(of: content)
         } catch {
             throw .content("\(options.gameDirectory.path): \(error)")
         }
+        var problems = SystemMessages.contentProblems(of: content)
+        do {
+            let provider = try FloorProvider(files: content.files)
+            problems += provider.failures.map { "Floor \($0.path) can't be read: \($0.reason)" }
+            floors = FloorImages(floors: provider)
+        } catch {
+            problems.append("The floors can't be read, so they're drawn plain: \(error)")
+            floors = nil
+        }
+        contentProblems = problems
         let xml: Data
         do {
             xml = try Data(contentsOf: options.lot)
@@ -188,9 +200,10 @@ public final class LotSession {
         return "\(level)\(suffix) Floor"
     }
 
-    /// Every system message so far: the content's problems, then each error the VM reported.
+    /// Every system message so far: the content's problems, floors that couldn't be decoded, then
+    /// each error the VM reported.
     public var systemMessages: [String] {
-        contentProblems + SystemMessages.messages(of: vm)
+        contentProblems + (floors?.failures ?? []) + SystemMessages.messages(of: vm)
     }
 
     /// The game time as `h:mm`.

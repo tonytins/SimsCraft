@@ -43,6 +43,9 @@ public struct LotScene: Sendable {
     public private(set) var architecture: [Box] = []
     /// Objects on the lot.
     public private(set) var objects: [Box] = []
+    /// The floor tiles to draw with textures, grouped by texture (``floorTiles(of:)``); the
+    /// ``architecture`` boxes of floors and water stand in for them when there are no textures.
+    public private(set) var floorGroups: [(texture: FloorTexture, tiles: [FloorTile])] = []
 
     public init() {}
 
@@ -54,6 +57,7 @@ public struct LotScene: Sendable {
         let architecture = vm.architecture
         lotWidth = architecture.width
         lotHeight = architecture.height
+        floorGroups = Self.floorTiles(of: architecture)
         self.architecture.removeAll(keepingCapacity: true)
         // The ground's top is a hair under the floors', so the two don't fight where they meet.
         self.architecture.append(Box(kind: .ground, level: 1, center: SIMD3(Float(lotWidth) / 2, -0.06, Float(lotHeight) / 2),

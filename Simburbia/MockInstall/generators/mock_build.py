@@ -14,7 +14,7 @@ Writes, under MockInstall/TSOClient:
 Every sprite is a flat shape in a few colors, sized as FreeSO's WallComponent and
 FloorComponent place them, so the client can draw the mock lot. None of it comes from,
 or stands for, EA's game data. Like the base game, the mock has only the first archive of
-each kind. Refuses to run if any of the files exists.
+each kind. Writes only the files that don't exist yet, so deleting one remakes it.
 """
 
 import os, struct, sys
@@ -267,13 +267,16 @@ def floors_iff():
             chunks.append(("SPR2", 0x430 + zoom * 4 + corner, "pool corner",
                            spr2([spr2_frame(max(width // 8, 2), max(height // 8, 2), lambda x, y: 12)])))
     # Water: 16 shapes at 0x800 up, each with three frames (near, medium, far) and a depth layer
-    # FreeSO copies to alpha.
+    # FreeSO turns into alpha. Every pixel is written, with depth 0 (no alpha) outside the
+    # diamond: a transparent run would get depth 255, which becomes opaque black. Inside it's
+    # 255: FreeSO's floor copy, which fills the next tile's half of the texture, copies only
+    # pixels at alpha 254 or more.
     for shape in range(16):
         frames = []
         for width, height in reversed(FLOOR_SIZES):
             inside = diamond(width, height)
-            frames.append(spr2_frame(width, height, lambda x, y, inside=inside: 11 if inside(x, y) else 0,
-                                     depth=lambda x, y: 160))
+            frames.append(spr2_frame(width, height, lambda x, y: 11,
+                                     depth=lambda x, y, inside=inside: 255 if inside(x, y) else 0))
         chunks.append(("SPR2", 0x800 + shape, "water", spr2(frames)))
     return iff(chunks)
 
@@ -301,10 +304,10 @@ def main():
         "housedata/floors/floors.far": far1([("mocktile.flr", archive_floor("Mock Tile", "5", 12, 9)),
                                              ("mockcarpet.flr", archive_floor("Mock Carpet", "8", 14, 13))]),
     }
-    existing = [path for path in files if os.path.exists(os.path.join(ROOT, path))]
-    if existing:
-        sys.exit("mock_build.py: already written: " + ", ".join(existing))
-    for path, data in files.items():
+    missing = {path: data for path, data in files.items() if not os.path.exists(os.path.join(ROOT, path))}
+    if not missing:
+        sys.exit("mock_build.py: every file is already written; delete one to remake it")
+    for path, data in missing.items():
         target = os.path.join(ROOT, path)
         os.makedirs(os.path.dirname(target), exist_ok=True)
         with open(target, "wb") as out:

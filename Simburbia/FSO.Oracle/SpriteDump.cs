@@ -184,7 +184,7 @@ namespace FSO.Oracle
         private static string Bits(float value) => BitConverter.SingleToInt32Bits(value).ToString("x8");
 
         /// <summary>FNV-1a, 64 bits, as 16 hex digits.</summary>
-        private static string Hash(byte[] bytes)
+        internal static string Hash(byte[] bytes)
         {
             ulong hash = 14695981039346656037;
             foreach (var b in bytes)

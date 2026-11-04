@@ -211,6 +211,48 @@ private func pixel(_ image: SpriteImage, _ x: Int, _ y: Int) -> [UInt8] {
     #expect(image.paletteIndices?[0...2] == [4, 5, 1])
 }
 
+@Test func floorCopyWidensAndFillsTheCornersFromHalfAFrameAway() throws {
+    var rows = SpriteRows()
+    rows.row([(6, 1, [4, 0])]) // row 0: one pixel, the rest never written
+    rows.row([(6, 3, [5, 6, 7, 0])]) // row 1: three pixels
+    rows.end()
+    let chunk = try SPR2(record: sprite(width: 3, height: 2, flags: 0x1, rows: rows))
+    let image = try chunk.decode(frameAt: 0, palette: try rampPalette(), floorCopy: true)
+    // Decoded 4 wide; each pixel takes the one two across and one down when that's opaque.
+    #expect(image.width == 4 && image.height == 2)
+    #expect((0..<4).map { pixel(image, $0, 0) } == [[7, 14, 21, 255], [0, 0, 0, 0], [5, 10, 15, 255], [6, 12, 18, 255]])
+    #expect((0..<4).map { pixel(image, $0, 1) } == [[5, 10, 15, 255], [6, 12, 18, 255], [4, 8, 12, 255], [0, 0, 0, 0]])
+    #expect(image.depth == nil && image.paletteIndices == nil)
+    // Without it, the frame is as stored.
+    #expect(try chunk.decode(frameAt: 0, palette: try rampPalette()).width == 3)
+}
+
+@Test func waterTakesItsDepthAsAlphaBeforeTheFloorCopy() throws {
+    var rows = SpriteRows()
+    rows.row([(1, 1, [200, 4])]) // depth 200, color 4
+    rows.transparentRows(1)
+    rows.end()
+    let chunk = try SPR2(record: sprite(width: 1, height: 2, flags: 0x3, transparent: 1, rows: rows))
+    let alphaOnly = try chunk.decode(frameAt: 0, palette: try rampPalette(), depthAsAlpha: true)
+    // Color scaled by the alpha its depth gives, rounding down; the empty row's depth 255 makes
+    // its transparent color opaque.
+    #expect(pixel(alphaOnly, 0, 0) == [3, 6, 9, 200])
+    #expect(pixel(alphaOnly, 0, 1) == [1, 2, 3, 255])
+    // Widened, the first row's extra column keeps depth 0 (alpha 0), while the empty-row run fills
+    // the whole wider row, as FreeSO's does; the copy then spreads that opaque row.
+    let water = try chunk.decode(frameAt: 0, palette: try rampPalette(), floorCopy: true, depthAsAlpha: true)
+    #expect(water.width == 2)
+    #expect([pixel(water, 0, 0), pixel(water, 1, 0), pixel(water, 0, 1), pixel(water, 1, 1)] == Array(repeating: [1, 2, 3, 255], count: 4))
+}
+
+@Test func depthAsAlphaNeedsDepth() throws {
+    var rows = SpriteRows()
+    rows.row([(6, 1, [4, 0])])
+    rows.end()
+    let chunk = try SPR2(record: sprite(width: 1, height: 1, flags: 0x1, rows: rows))
+    #expect(throws: SpriteError.missingLayer("depth")) { try chunk.decode(frameAt: 0, palette: try rampPalette(), depthAsAlpha: true) }
+}
+
 @Test func alphaRunsScaleFiveBitsAndPad() throws {
     var rows = SpriteRows()
     // One pixel with alpha: three bytes, then a padding byte.

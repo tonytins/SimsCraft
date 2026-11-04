@@ -92,8 +92,10 @@ final class LotView {
 
     /// The lot's floors and walls, and the boxes of objects without sprites. Floors and the ground
     /// are drawn a little back and down (``SpriteZoom/floorBias(scale:towardViewer:)``), as FreeSO
-    /// draws them, so the sprites standing on them aren't cut off.
-    func draw(_ scene: LotScene, camera: Camera3D, objectsWithSprites: Set<Int16>, selected: Int16?, hovered: Int16?) {
+    /// draws them, so the sprites standing on them aren't cut off. With `floors`, floors are drawn
+    /// with their textures; without, as plain tiles tinted by room.
+    func draw(_ scene: LotScene, camera: Camera3D, floors: FloorPass?, objectsWithSprites: Set<Int16>,
+              selected: Int16?, hovered: Int16?) {
         let eye = SIMD3(camera.position.x, camera.position.y, camera.position.z)
         let offset = eye - target
         let towardViewer = offset / (offset * offset).sum().squareRoot()
@@ -101,11 +103,16 @@ final class LotView {
         BeginMode3D(camera)
         for var box in scene.architecture where box.level <= level {
             switch box.kind {
-            case .ground, .floor, .water: box.center += bias
+            case .floor, .water:
+                // Drawn with their textures below, when there are any.
+                guard floors == nil else { continue }
+                box.center += bias
+            case .ground: box.center += bias
             case .wall, .fence, .object: break
             }
             draw(box, color: color(of: box), outline: false)
         }
+        floors?.draw(scene.floorGroups, level: level, zoom: spriteZoom, worldRotation: worldRotation, bias: bias)
         for box in scene.objects where box.level <= level {
             guard case .object(let id) = box.kind, !objectsWithSprites.contains(id) else { continue }
             let color = id == selected ? InterfaceTheme.simburbia.accent : id == hovered ? Color(r: 150, g: 200, b: 255, a: 255) : objectColor(id)
@@ -177,7 +184,7 @@ final class LotView {
 
     private func color(of box: LotScene.Box) -> Color {
         switch box.kind {
-        case .ground: Color(r: 74, g: 112, b: 62, a: 255)
+        case .ground: FloorPass.groundColor
         case .water: Color(r: 60, g: 130, b: 200, a: 255)
         case .wall: Color(r: 214, g: 206, b: 190, a: 255)
         case .fence: Color(r: 150, g: 120, b: 90, a: 255)

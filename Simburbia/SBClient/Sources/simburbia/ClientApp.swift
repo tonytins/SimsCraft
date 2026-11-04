@@ -14,6 +14,8 @@ final class ClientApp {
     private let momi: MomiWindow
     private let library = SpriteLibrary()
     private let textures: SpriteTextures
+    /// The floors' textures; `nil` when the install's floors couldn't be read.
+    private var floors: FloorPass?
     /// Sprite depth; `nil` if the shader didn't compile, and sprites draw back to front only.
     private var depth: SpriteDepth?
     // Kept between frames, so drawing doesn't allocate.
@@ -44,6 +46,7 @@ final class ClientApp {
         help = HelpWindow(script: interface.help)
         momi = MomiWindow(script: interface.momi)
         depth = SpriteDepth()
+        floors = session.floors.map(FloorPass.init)
 
         rebuildScene()
         view.center(on: scene.center)
@@ -62,6 +65,7 @@ final class ClientApp {
             draw()
         }
         textures.unloadAll()
+        floors?.unloadAll()
         depth?.unload()
         CloseWindow()
     }
@@ -76,6 +80,7 @@ final class ClientApp {
         let saved = ExportImage(image, path)
         UnloadImage(image)
         textures.unloadAll()
+        floors?.unloadAll()
         depth?.unload()
         CloseWindow()
         return saved
@@ -151,7 +156,7 @@ final class ClientApp {
         let camera = view.camera(screenHeight: Int(GetScreenHeight()))
         BeginDrawing()
         ClearBackground(Color(r: 34, g: 44, b: 58, a: 255))
-        view.draw(scene, camera: camera, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
+        view.draw(scene, camera: camera, floors: floors, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
         view.drawSprites(sprites, camera: camera, textures: textures, depth: depth, order: &drawOrder, selected: inspector.selected, hovered: hovered)
         let state = topBarState
         topBar.update(state)
