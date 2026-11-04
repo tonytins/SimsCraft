@@ -45,17 +45,19 @@ The goals:
 - **Reimplement the game in Swift**. This is a new implementation, not a line-by-line port, that is intended for a lot server of our own, LAN play, and the client.
 - **Go past that baseline:** SimAntics extensions, scripting, and older games' data such as The Sims 1.
 
-### Small and LAN first
+### Small and LAN First
 
-TSO was an massively multiplayer online game (MMO or MMOG). NSO doesn't assume someone is capable of hosting that much infrastructure. The project's goal is a handful of players on a self-hosted server or LAN, aiming for something similar to [Luanti](https://github.com/luanti-org) (formerly Minetest) or [Space Station 14](https://github.com/space-wizards). FSO's former lot server (repurposed for their IDE, Volcanic) shows that it's possible.
+NSO prioritizes small-scale, self-hosted deployments. The project aims for support local area network (LAN) and Internet multiplayer, co-operative and competitive, expecting roughly 1–50 players on average, with a maximum of 255, all while retaining TSO's core MMOG functionality. 
 
-NSO is targeting a player base of 1-50 with potential *endurance* for up to 500.
+The self-hosted infrastructure is designed to scale upward for massively multiplayer servers when needed, rather than requiring it from the start. Design references include [Luanti](https://github.com/luanti-org), [Space Station 14](https://github.com/space-wizards), and [OpenTTD](https://github.com/OpenTTD/OpenTTD).
 
-### Learn from Available Sources
+## Learn from Available Sources
 
-Because TSO's servers shutdown decades ago now, FSO's code provides the only source of truth on how the game works. Even though FSO took some creative liberties (as will NSO), the underlining game remains the same.
+Because TSO's servers shutdown decades ago now, FSO's code provides the only ground truth on how the game worked. Even though FSO took some creative liberties (as will NSO), the underlining game remains the same.
 
-Learn from everything available: FSO's code, the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game uses SimAntics), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), [The Modding Guide](https://cyndersanity.github.io/sims-legacy-mod-guide/index.html), and [TSO Mania](https://www.tsomania.net/) for intended behaviour. Treat them as leads to verify against the code or the oracles. SimCraft choose update-46 because FSO's later switch to full 3D is not how TSO was intended to be rendered.
+Learn from everything available: FSO's code, [FreeSims](https://github.com/francot514/FreeSims), the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game's AI extends SimAntics), [Don Hopkins](https://github.com/SimHacker), [SimObliterator Suite](https://github.com/DnfJeff/SimObliterator_Suite), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), and [The Modding Guide](https://cyndersanity.github.io/sims-legacy-mod-guide/index.html). Additionally, [TSO Mania](https://www.tsomania.net/) provides resources on how the game plays. 
+
+Treat them as leads to verify against the code or the oracles.
 
 ## Common Commands
 
@@ -79,7 +81,7 @@ git status --short -- TSOClient Charvatia FSOInstaller Other                    
 
 Treat them as two sides of an experiment, not an answer key and a student:
 
-- **A disagreement is a finding, not a failure**. Explain it before fixing it: it may be an NSOClient bug, a FreeSO bug NewSO fixes (record it, and make the comparison expect it), a quirk the game relies on, or another deliberate difference.
+- **A disagreement is some finding, not a failure**. Explain it before fixing it: it may be an NSOClient bug, a FreeSO bug NewSO fixes (record it, and make the comparison expect it), a quirk the game relies on, or another deliberate difference.
 - **Inconclusive isn't agreement**. A case one side couldn't measure is counted by reason, never as a pass.
 - **Keep the experiments repeatable**. Where FreeSO's own code isn't, change the oracle as little as possible and document it in its README.
 - **The checks are a gate, not the goal**. They stop on a new disagreement so someone looks at it.
@@ -146,17 +148,14 @@ These apply to the NSOClient libraries. Tools (``tsofiles-check``, the oracles) 
 
 ### The client
 
-
-
 - **TSO's interface**. These windows and controls are the base for NewSO's take on TSO's ``.uis`` screens.
 - **Seeing it**. ``swift run --package-path NSOClient/NSOInterface interface-demo`` opens a window with the controls; ``--screenshot <file.png>`` draws a few frames hidden and saves the last, for checking a change without anyone at the screen.
 - **Building on Linux** needs the X11 and GL headers (``libx11-dev`` and friends, as in CI). 
-	- On Atomic distros, they come from Homebrew. Check if ``CPATH`` or ``LIBRARY_PATH`` are already exported. If not, recommend it to the user and use ``export CPATH="$(brew --prefix)/include:$(brew --prefix xorgproto)/include" LIBRARY_PATH="$(brew --prefix)/lib"`` in the meantime.
 - **Use the ``raylib-swift`` skill** in ``.agents/skills/raylib-swift/`` for any work that imports Raylib: it covers the API's Swift shapes, the lifecycle, the frame, textures, render textures, input, the examples to read, and how to check a visual change on a private display. These rules win where the two disagree.
 - **The libraries never import raylib**. Rendering reads simulation state and never writes it. If something can't be tested without a window, it belongs in the client.
 - **raylib's examples are the reference**. Read the one closest to what you're writing. A frame is ``BeginDrawing``, the drawing, ``EndDrawing``; textures load after ``InitWindow`` and unload before ``CloseWindow``, never inside the frame loop.
 
-### Documenting the snapshot
+### Documenting the FreeSO snapshot
 
 - **The source is the ground truth**. Every claim about FreeSO's behavior comes from the code in this repo, not memory of FreeSO or TSO lore. If you can't confirm it, mark it **Unverified**.
 - **Cite where it lives,** with relative links to files and exact type and member names.
@@ -179,7 +178,11 @@ Sessions can end abruptly, so keep every package building and its tests green at
 
 ## Personal Configuration
 
-Create a `CLAUDE.local.md` file (git-ignored) for personal preferences such as:
-- Preferred coding patterns
-- Local environment specifics
-- Custom shortcuts or workflows
+Keep personal preferences and machine-specific guidance in git-ignored
+`*.local` files or directories, rather than in shared project instructions.
+Check for relevant local guidance before environment-specific work. You can
+create or update these files for details such as:
+
+- Coding preferences
+- Local build and development environment
+- Personal shortcuts or workflows

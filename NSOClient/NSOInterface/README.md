@@ -1,6 +1,6 @@
 # NSO Interface
 
-The NSO Interface is [raylib-swift](https://github.com/tonytins/raylib-swift) library ported from CityLimits that's meant to streamline UI design made. It was inspired by Apple's macOS [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/designing-for-macos) with my own editions.
+The NSO Interface is [raylib-swift](https://github.com/tonytins/raylib-swift) library ported from CityLimits that's meant to streamline UI design made. It was inspired by [Apple](https://developer.apple.com/design/human-interface-guidelines/designing-for-macos) and [Gnome](https://developer.gnome.org/hig/)'s Human Interface Guidelines with my own editions.
 
 ### Features
 

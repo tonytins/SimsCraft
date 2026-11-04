@@ -8,7 +8,7 @@
 <h1 align="center">SimsCraft</h1>
 
 <p align="center">
-  <b>an open-source Swift reimplementation of The Sims based on Swift and Raylib.</b><br>
+  <b>an open-source Swift reimplementation of The Sims Online based on Swift and Raylib.</b><br>
   Designed for LAN and small scale use<br>
   Support for Beta, Base Game, and New & Improved
 </p>
