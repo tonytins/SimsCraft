@@ -318,3 +318,70 @@ extension ComparisonTests {
         #expect(order == order.sorted())                                       // then classic, beta, mock, others by name
     }
 }
+
+@Suite struct StudyTests {
+    let candidates: [UInt32] = Array(1...100)
+
+    @Test func aSeedGivesTheSameSampleAndUntestedObjectsComeFirst() {
+        let first = Study.sample(candidates, count: 10, seed: 42, tested: [])
+        #expect(first == Study.sample(candidates.reversed(), count: 10, seed: 42, tested: []))   // order-free
+        #expect(first != Study.sample(candidates, count: 10, seed: 43, tested: []))
+        #expect(Set(first).count == 10)
+        // With 95 tested, the five untested come first.
+        let tested = Set(candidates.filter { $0 > 5 })
+        #expect(Set(Study.sample(candidates, count: 7, seed: 1, tested: tested).prefix(5)) == [1, 2, 3, 4, 5])
+        #expect(Study.sample([1, 2], count: 10, seed: 1, tested: []).count == 2)
+    }
+
+    @Test func theLotIsAGridWithSeededFacingsAndNoObjectsOfItsOwn() throws {
+        let base = try Blueprint(xml: Data(#"<house><size>20</size><objects><object guid="0x9"/></objects></house>"#.utf8))
+        let objects: [UInt32] = Array(1...12)
+        let lot = Study.lot(objects, on: base, seed: 7)
+        // A 20-tile lot holds a 3 by 3 grid, every 4 tiles from tile 4; the rest are left off.
+        #expect(lot.objects.map(\.guid) == Array(1...9))
+        #expect(lot.objects.map(\.x) == [4, 8, 12, 4, 8, 12, 4, 8, 12])
+        #expect(lot.objects.allSatisfy { $0.level == 1 && [0, 2, 4, 6].contains($0.dir) })
+        #expect(lot == Study.lot(objects, on: base, seed: 7))
+        #expect(lot.objects.map(\.dir) != Study.lot(objects, on: base, seed: 8).objects.map(\.dir))
+    }
+
+    @Test func shrinkingFindsTheObjectThatDisagrees() {
+        let objects: [UInt32] = Array(1...32)
+        let (culprit, runs) = Study.shrink(objects, maxRuns: 20) { $0.contains(23) }
+        #expect(culprit == [23] && runs <= 10)
+        // Two that disagree only together: halving stops at the smallest set holding both.
+        let pair = Study.shrink(objects, maxRuns: 20) { $0.contains(3) && $0.contains(30) }
+        #expect(pair.objects.contains(3) && pair.objects.contains(30))
+        // The run budget bounds it.
+        #expect(Study.shrink(objects, maxRuns: 1) { $0.contains(32) }.runs == 1)
+    }
+
+    @Test func theLedgerReadsBackWhatItWrites() {
+        var ledger = StudyLedger()
+        ledger.record(0x4D4F_4301, name: "Mock Chair", result: "agree", seed: 9)
+        ledger.record(0x4D4F_4301, name: "Mock Chair", result: "disagree: tick 9000", seed: 10)
+        ledger.record(0x2, name: "Tab\there", result: "unsupported: primitive 1", seed: 3)
+        let read = StudyLedger(tsv: ledger.tsv)
+        #expect(read.entries[0x4D4F_4301] == StudyLedger.Entry(name: "Mock Chair", lots: 2, result: "disagree: tick 9000", seed: 10))
+        #expect(read.entries[0x2]?.name == "Tab here")
+        #expect(read.tested == [0x4D4F_4301, 0x2])
+    }
+
+    @Test func theRecordsBecomeTheStudysComparisons() {
+        let records = ["lot\t1\t32\tagree", "lot\t2\t32\tinconclusive\tFreeSO failed", "lot\t3\t32\tdisagree\ttick 9000",
+                       "shrunk\t3\t0x00000017\ttick 9000 seed a digest b", "object\t0x00000001\tagree",
+                       "object\t0x00000017\tdisagree\tfrom tick 9000", "object\t0x00000005\tunsupported\tprimitive 1 (generic_sims_online_call)"]
+        let (lots, objects) = (Comparison.study(records)[0], Comparison.study(records)[1])
+        #expect(lots.matched == 1 && lots.mismatches.count == 1 && lots.skipped == ["FreeSO failed": 1])
+        #expect(objects.matched == 1 && objects.mismatches == ["0x00000017: from tick 9000"])
+        #expect(objects.skipped == ["unsupported: primitive 1 (generic_sims_online_call)": 1])
+    }
+
+    @Test func aLotRunNamesTheObjectThatReachedSomethingUnsupported() throws {
+        let mock = repository.appendingPathComponent("Simburbia/MockInstall")
+        let content = try GameContent(.init(gameDirectory: mock.appendingPathComponent("TSOClient")))
+        let lot = try Blueprint(xml: try Data(contentsOf: mock.appendingPathComponent("Lots/mock-lot-sim.xml")))
+        let lines = Answers(content: content).lotRun(lot, ticks: 30, every: 10)
+        #expect(lines.last?.hasPrefix("unsupported at tick 0 by 0x4D4F4307: Sim setup") == true, "\(lines.suffix(2))")
+    }
+}

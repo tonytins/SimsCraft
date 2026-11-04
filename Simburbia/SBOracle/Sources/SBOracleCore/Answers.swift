@@ -133,7 +133,7 @@ public struct Answers {
     /// A lot loaded with its objects, then ticked, as `fso-oracle run-lot` does: `tick N seed S
     /// entities E digest D` after loading, every `every` ticks, and at the end. Once a thread
     /// reaches something not ported, the state can't match FreeSO's any more, so the run stops
-    /// there with `unsupported at tick N:` and what wasn't ported, and no digest for that tick;
+    /// there with `unsupported at tick N by 0xGUID:` (the object that reached it) and what wasn't ported, and no digest for that tick;
     /// `N` is 0 if loading reached it. Other failures give `error`. Objects left out are reported
     /// through `leftOut`, as `fso-oracle` reports them on standard error. With `dump`, each digest
     /// is followed by every entity's digested fields, as `fso-oracle --dump` prints them.
@@ -149,17 +149,23 @@ public struct Answers {
         } catch {
             return ["error \(error)"]
         }
+        // What's unsupported, by the object that reached it ("by 0x1A2B3C4D"), so a study can set
+        // that object aside; the comparisons read only what follows the first colon.
         func gap() -> String? {
-            for report in vm.reportedErrors { if case .unsupported(let reason) = report.error { return reason } }
+            for report in vm.reportedErrors {
+                guard case .unsupported(let reason) = report.error else { continue }
+                let guid = vm.entity(id: report.objectID).map { String(format: " by 0x%08X", $0.object.guid) } ?? ""
+                return "\(guid): \(reason)"
+            }
             return nil
         }
-        if let reason = gap() { return ["unsupported at tick 0: \(reason)"] }
+        if let gap = gap() { return ["unsupported at tick 0\(gap)"] }
         var lines = Self.digestLines(of: vm, tick: 0, dump: dump)
         if ticks > 0 {
             for tick in 1...ticks {
                 vm.tick()
-                if let reason = gap() {
-                    lines.append("unsupported at tick \(tick): \(reason)")
+                if let gap = gap() {
+                    lines.append("unsupported at tick \(tick)\(gap)")
                     break
                 }
                 if (every > 0 && tick % every == 0) || tick == ticks { lines += Self.digestLines(of: vm, tick: tick, dump: dump) }
