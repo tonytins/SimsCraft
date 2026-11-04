@@ -214,6 +214,8 @@ public struct Comparison: Sendable, Equatable {
     }
 
     /// `room-maps`: each lot's size, room maps, and rooms, entry for entry.
+    /// `room-maps`: each lot's size, room maps, rooms, and, where both sides recorded them, room
+    /// scores (`scores`, low priority: they move with object decay, which isn't ported).
     public static func roomMaps(fso: [String], nso: [String]) -> Comparison {
         var result = Comparison(name: "Room maps")
         func objects(_ lines: [String]) -> [String: [String: Any]] {
@@ -236,7 +238,8 @@ public struct Comparison: Sendable, Equatable {
                 result.mismatches.append("\(file): Simburbia \(ours[file]?["error"] ?? "has no answer")")
                 continue
             }
-            let keys = ["size", "rooms", "maps"]
+            // Room scores are compared where both sides recorded them; older records have none.
+            let keys = ["size", "rooms", "maps"] + (theirs["scores"] != nil && mine["scores"] != nil ? ["scores"] : [])
             if let key = keys.first(where: { canonical(theirs[$0]) != canonical(mine[$0]) }) {
                 result.mismatches.append("\(file): \(key) differs")
             } else {

@@ -179,15 +179,24 @@ extension SBOracle {
         }
     }
 
-    struct RoomMaps: ParsableCommand {
+    struct RoomMaps: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
-            commandName: "room-maps", abstract: "For each blueprint path on standard input, print its room maps and rooms as JSON.")
+            commandName: "room-maps",
+            abstract: "For each blueprint path on standard input, print its room maps, rooms, and room scores as JSON.")
+        @OptionGroup var install: InstallOptions
 
-        func run() throws {
+        func run() async throws {
+            let answers = Answers(content: try await install.load())
             while let line = readLine() {
                 let path = line.trimmingCharacters(in: .whitespaces)
                 guard !path.isEmpty else { continue }
-                let data = try JSONSerialization.data(withJSONObject: Answers.roomMaps(of: URL(fileURLWithPath: path)))
+                let url = URL(fileURLWithPath: path)
+                var output = Answers.roomMaps(of: url)
+                if output["error"] == nil, let lot = try? Blueprint(xml: try Data(contentsOf: url)),
+                   let scores = answers.roomScores(of: lot) {
+                    output["scores"] = scores
+                }
+                let data = try JSONSerialization.data(withJSONObject: output)
                 print(String(decoding: data, as: UTF8.self))
             }
         }

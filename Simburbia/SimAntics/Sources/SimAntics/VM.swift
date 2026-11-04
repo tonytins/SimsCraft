@@ -51,6 +51,9 @@ public final class VM {
     /// Each room's entities, in object ID order (`VMRoomInfo.Entities`), for the rooms of
     /// `roomListsGeneration`.
     private var roomEntitiesStorage: [[Entity]] = []
+    /// Each room's score (`RoomLighting.RoomScore` of `VMRoomInfo.Light`), by room ID, kept with
+    /// the room lists (see ``roomScore(_:)``).
+    private var roomScoresStorage: [Int16] = []
     private var roomListsGeneration: Architecture.Generation?
     private var roomEntities: [[Entity]] {
         get {
@@ -586,6 +589,7 @@ public final class VM {
         let room = Int(architecture.room(at: entity.position))
         if room < roomEntities.count { VMScheduler.insertInObjectIDOrder(entity, into: &roomEntities[room]) }
         entity.setRoom(UInt16(room))
+        refreshRoomScore(after: entity, in: UInt16(room))
         var list = tileIndex[tileKey(entity.position)] ?? []
         if !list.contains(where: { $0 === entity }) { VMScheduler.insertInObjectIDOrder(entity, into: &list) }
         tileIndex[tileKey(entity.position)] = list
@@ -598,6 +602,7 @@ public final class VM {
             roomEntities[room].remove(at: index)
         }
         removeFromTileIndex(entity)
+        refreshRoomScore(after: entity, in: UInt16(room))
     }
 
     /// Puts every entity in the room at its position, in object ID order, and rebuilds each room's
@@ -607,8 +612,12 @@ public final class VM {
         for entity in entities { entity.setRoom(architecture.room(at: entity.position)) }
     }
 
-    /// Each room's list from the entities' positions. The lists are also rebuilt when the
-    /// architecture is replaced outright.
+    /// Each room's list from the entities' positions, then each room's score. The lists are also
+    /// rebuilt when the architecture is replaced outright.
+    ///
+    /// As `RegeneratePortalInfo` and its `RefreshLighting` loop: every room's score starts at 0,
+    /// then each room's light base room is worked out once (``computeRoomScore(base:)``). A room
+    /// that shares another's lighting keeps its own 0, as FreeSO's keeps its own lighting record.
     private func rebuildRoomLists() {
         var lists = [[Entity]](repeating: [], count: architecture.rooms.count)
         for entity in entities {
@@ -617,6 +626,69 @@ public final class VM {
         }
         roomEntitiesStorage = lists
         roomListsGeneration = architecture.generation
+        roomScoresStorage = [Int16](repeating: 0, count: architecture.rooms.count)
+        var visited = Set<UInt16>()
+        for room in architecture.rooms.indices.dropFirst() {
+            let base = architecture.rooms[room].lightBaseRoom
+            guard base != 0, Int(base) < architecture.rooms.count, visited.insert(base).inserted else { continue }
+            computeRoomScore(base: base)
+        }
+    }
+
+    // MARK: Room score
+
+    /// A room's score, −100 to 100, which a Sim's Room motive takes (`VMContext.GetRoomScore`); 0
+    /// for room 0, an unknown room, or a room whose lighting another room's stands for.
+    ///
+    /// It's low priority, and not to be read much into yet: it moves with how clean a room is,
+    /// which comes from object decay, not ported. Ported only as far as the digest needs it.
+    public func roomScore(_ room: UInt16) -> Int16 {
+        _ = roomEntities  // brings the lists and scores up to date with the architecture
+        return Int(room) < roomScoresStorage.count ? roomScoresStorage[Int(room)] : 0
+    }
+
+    /// Works a room's score out again (`RefreshRoomScore`): its light base room's, from the rooms
+    /// that support it. Does nothing for room 0 or an unknown room.
+    func refreshRoomScore(_ room: UInt16) {
+        _ = roomEntities
+        guard room != 0, Int(room) < architecture.rooms.count else { return }
+        let base = architecture.rooms[Int(room)].lightBaseRoom
+        guard Int(base) < roomScoresStorage.count else { return }
+        computeRoomScore(base: base)
+    }
+
+    /// FreeSO's score: the room impact (object data) of every entity in the base room's support
+    /// rooms, over their area in twelfths of a tile (at least 1), or over 30 outdoors, as a 32-bit
+    /// float truncated toward zero; less 10, or 15 outdoors; within −100 to 100. Kept from FreeSO:
+    /// "outdoors" is the last support room's, not the base room's.
+    private func computeRoomScore(base: UInt16) {
+        let rooms = architecture.rooms
+        var area = 0, impact = 0
+        var last = rooms[Int(base)]
+        for support in rooms[Int(base)].supportRooms where Int(support) < rooms.count {
+            last = rooms[Int(support)]
+            area += Int(last.area)
+            if Int(support) < roomEntitiesStorage.count {
+                for entity in roomEntitiesStorage[Int(support)] {
+                    impact += Int(entity.objectData[Int(ObjectVariable.roomImpact.rawValue)])
+                }
+            }
+        }
+        let scale: Float = last.isOutside ? 30 : max(1, Float(area) / 12)
+        // C#'s (short) of a float: truncated toward zero, then wrapped to 16 bits.
+        var score = Int(Int16(truncatingIfNeeded: Int((Float(impact) / scale).rounded(.towardZero))))
+        score -= last.isOutside ? 15 : 10
+        roomScoresStorage[Int(base)] = Int16(max(-100, min(100, score)))
+    }
+
+    /// FreeSO refreshes a room when an object joins or leaves it, but only for an object that
+    /// lights it or adds to its score: one whose room impact is negative changes nothing until
+    /// the next full refresh.
+    private func refreshRoomScore(after entity: Entity, in room: UInt16) {
+        if entity.objectData[Int(ObjectVariable.lightingContribution.rawValue)] > 0
+            || entity.objectData[Int(ObjectVariable.roomImpact.rawValue)] > 0 {
+            refreshRoomScore(room)
+        }
     }
 
     private func removeFromTileIndex(_ entity: Entity) {

@@ -111,10 +111,16 @@ struct FixtureComparisonTests {
 
     @Test func roomMapsMatchFreeSO() throws {
         let fso = try lines("rooms.jsonl")
+        let answers = try answers()
         let nso = try fso.map { line -> String in
             let object = try required((try JSONSerialization.jsonObject(with: Data(line.utf8))) as? [String: Any])
             let url = try blueprintFile(try required(object["file"] as? String))
-            return String(decoding: try JSONSerialization.data(withJSONObject: Answers.roomMaps(of: url)), as: UTF8.self)
+            var output = Answers.roomMaps(of: url)
+            // Room scores need the lot's objects, loaded on the install.
+            if output["error"] == nil, let scores = answers.roomScores(of: try Blueprint(xml: try Data(contentsOf: url))) {
+                output["scores"] = scores
+            }
+            return String(decoding: try JSONSerialization.data(withJSONObject: output), as: UTF8.self)
         }
         let comparison = Comparison.roomMaps(fso: fso, nso: nso)
         print(comparison.summary)

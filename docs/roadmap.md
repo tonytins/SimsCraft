@@ -129,9 +129,9 @@ In order:
        FreeSO's person data and motive accessors; the join's identity. The mock Sim matches FreeSO at
        tick 0 but for Room (B2); 1.1097.1.0's template person matches at creation. (`tuning.dat`
        moved to B3, which uses it.)
-     - [ ] B2. Room score, only as far as Mood and the digest need it: low priority, since it moves
+     - [x] B2. Room score, only as far as Mood and the digest need it: low priority, since it moves
        with object decay (TSO's is richer than TS1's), which isn't ported, so its values aren't
-       meaningful yet. Room maps record it on both oracles.
+       meaningful yet. Room maps record it on both oracles, and every score agrees on both installs.
      - [ ] B3. A Sim's tick: `tuning.dat` in TSOContent, motive decay, motive changes, and Set
        Motive Deltas. The mock Sim matches FreeSO over a game day; until then a Sim's first tick
        reports motive decay as unsupported, so its lot counts as not measured.
@@ -281,6 +281,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | patch | Fourth pass, step B2: room score, low priority. `VM.roomScore` ports `RefreshLighting`'s and `RefreshRoomScore`'s score (room impact over area in twelfths, or 30 outdoors, less 10 or 15, within ±100), refreshed as FreeSO refreshes it, with its quirks: objects with negative impact wait for the next full refresh, a room lit by another keeps 0, and "outdoors" is the last support room's. The Refresh primitive now refreshes it. Room maps record scores on both oracles; every one agrees on MockInstall and on 1.1097.1.0's 24 readable lots. A Sim's Room motive takes it in B3. |
 | 2026-11-04 | minor | Fourth pass, step B1: Sims are set up. `Entity.setUpSim` ports `VMAvatar`'s constructor and `Init` (body strings with FreeSO's random picks, which draw `NextRandom(count − 1)` for outfits and `NextRandom(count)` for names; walk and swim tables; starting motives; Neat 1000), person data and motives go through FreeSO's accessors and their special cases, and `VM.joinSim` applies a joining player's state. The mock Sim matches FreeSO at tick 0 in everything but the Room motive (room score, B2), and 1.1097.1.0's template person matches FreeSO's digest at creation, seed included, before its own code reaches Push Interaction (phase D). Where FreeSO crashes on bad body strings, Simburbia reports and carries on (DIFF-32). A Sim's first tick reports motive decay as unsupported until B3. |
 | 2026-11-04 | minor | Fourth pass, step A3, which finishes phase A: Sims join on both oracles (`run-lot` and `run-primitive --sims`), Simburbia's side through SimAntics' new `VM.joinSim` (by the mailbox, else tile 3,3, with FreeSO's quirk that a taken 3,3 leaves the Sim out of the world). `mock-lot-sim.xml` keeps 3,3 free and its Sim joins; `mock-lot.xml` keeps the blocked case. The owner recalls TSO putting players on 3,3 after some jobs; FreeSO uses 3,3 only for this fallback, so that stays unverified. Primitive cases naming Sims will be generated in phase B, when a Sim's state can be compared. |
 | 2026-11-04 | patch | Fourth pass, step A2: the state digest's version 1 on both oracles, adding Sims' person data, motives, animations (frames and speeds as float bits), and action queue after a Sim's stack, and nothing for other entities. Simburbia's Sims write no animations or queue until phases C and D. |

@@ -310,6 +310,10 @@ are read from the install (`housedata/blueprints`), never copied here. FreeSO's 
 writes synthetic ones (no game data) with walls, fences, diagonals, pools, and upper floors. The
 SBOracle's tests read each blueprint with the Swift `Blueprint` and compare every field.
 
+
+Each line also has `scores`: each room's score (`GetRoomScore`) by room ID from 0, with the lot's
+objects in it. `sb-oracle room-maps` writes the same when given an install, and `compare` checks
+scores only where both sides have them. Room score is low priority: it moves with object decay.
 ## Content: `list-objects`
 
 ```sh

@@ -275,7 +275,8 @@ options:
                 var output = new System.Text.Json.Nodes.JsonObject { ["file"] = Path.GetFileName(line) };
                 try
                 {
-                    var architecture = LoadLot(BlueprintForInstall(line), options.Seed).Context.Architecture;
+                    var context = LoadLot(BlueprintForInstall(line), options.Seed).Context;
+                    var architecture = context.Architecture;
                     output["size"] = new System.Text.Json.Nodes.JsonArray(architecture.Width, architecture.Height);
                     var maps = new System.Text.Json.Nodes.JsonArray();
                     foreach (var level in architecture.Rooms)
@@ -291,6 +292,9 @@ options:
                             Numbers(room.SupportRooms)));
                     }
                     output["rooms"] = rooms;
+                    // Each room's score (GetRoomScore), by room ID from 0, with the lot's objects in it.
+                    output["scores"] = new System.Text.Json.Nodes.JsonArray(context.RoomInfo
+                        .Select(info => (System.Text.Json.Nodes.JsonNode)(int)(info.Light?.RoomScore ?? 0)).ToArray());
                 }
                 catch (Exception error)
                 {

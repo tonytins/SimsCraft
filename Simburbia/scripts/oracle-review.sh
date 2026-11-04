@@ -101,7 +101,7 @@ for install in "${installs[@]}"; do
             --blueprint "$(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/primitives.lot")" "${leave[@]}" \
             <"$requests" >"$folder/$primitive.responses.jsonl"
     done
-    timed room-maps "$nso_binary" room-maps < <(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/rooms.lots") \
+    timed room-maps nso room-maps < <(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/rooms.lots") \
         >"$folder/rooms.jsonl"
     timed sprites nso sprites >"$folder/sprites.tsv"
     timed architecture nso architecture >"$folder/architecture.tsv"

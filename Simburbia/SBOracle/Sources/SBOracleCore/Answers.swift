@@ -228,6 +228,14 @@ public struct Answers {
         return output
     }
 
+    /// Each room's score (``SimAntics/VM/roomScore(_:)``), by room ID from 0, with the lot loaded
+    /// and its objects in their rooms, as `fso-oracle room-maps` records them under `scores`; `nil`
+    /// if the lot can't be loaded.
+    public func roomScores(of blueprint: Blueprint) -> [Int]? {
+        guard let (vm, _) = try? loadedLot(blueprint, seed: Self.defaultSeed) else { return nil }
+        return vm.architecture.rooms.indices.map { Int(vm.roomScore(UInt16($0))) }
+    }
+
     /// An error's case name, such as `missingFile`.
     static func kind(of error: any Error) -> String {
         let text = "\(error)"
