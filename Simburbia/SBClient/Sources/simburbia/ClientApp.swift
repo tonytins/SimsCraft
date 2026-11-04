@@ -19,6 +19,12 @@ final class ClientApp {
     /// The walls' sprites; `nil` without readable walls or the depth shader, and walls are boxes.
     private var walls: WallPass?
     private var wallSprites: [WallSprite] = []
+    /// In cutaway mode, the last three indoor rooms the pointer was over, oldest first, and the
+    /// tile it was last over the lot at (`UILotControl.CutRooms`, `MouseCutRect`).
+    private var cutRooms: [UInt16] = []
+    private var pointerTile: SIMD2<Float>?
+    /// Whether the pointer drives the cutaway; not in a hidden window, which has none.
+    private let followsPointer: Bool
     /// Sprite depth; `nil` if the shader didn't compile, and sprites draw back to front only.
     private var depth: SpriteDepth?
     // Kept between frames, so drawing doesn't allocate.
@@ -33,9 +39,10 @@ final class ClientApp {
     /// Opens the window, which is hidden when the client only takes a screenshot, at a zoom
     /// step and centered on a tile when they're given, with the interface its documents describe.
     init(session: LotSession, interface: Interface, hidden: Bool, zoomStep: Int? = nil, focus: SIMD2<Float>? = nil,
-         rotation: Int = 0, wallsDown: Bool = true, log: RunLog? = nil) {
+         rotation: Int = 0, walls wallMode: WallMode = .cutaway, log: RunLog? = nil) {
         self.session = session
         self.log = log
+        followsPointer = !hidden
         textures = SpriteTextures(library: library)
         lastMinute = session.vm.clock.minutes
         SetTraceLogLevel(.warning)
@@ -58,7 +65,7 @@ final class ClientApp {
         if let zoomStep { view.setZoomStep(zoomStep) }
         if let focus { view.center(on: SIMD3(focus.x + 0.5, 0, focus.y + 0.5)) }
         view.rotate(by: rotation)
-        view.wallsCut = wallsDown
+        view.wallMode = wallMode
         rebuildSprites()
     }
 
@@ -79,6 +86,8 @@ final class ClientApp {
     /// Runs the lot `ticks` ticks, draws a few frames, saves the last, and closes the window.
     func saveScreenshot(to path: String, after ticks: Int) -> Bool {
         for _ in 0..<ticks { session.vm.tick() }
+        // A screenshot has no pointer: the cutaway follows the middle of the screen, which --focus picks.
+        followPointer(Vector2(x: Float(GetScreenWidth()) / 2, y: Float(GetScreenHeight()) / 2), overInterface: false, always: true)
         rebuildScene()
         // The first frames of a new window can be blank; the third is settled.
         for _ in 0..<3 { draw() }
@@ -105,12 +114,50 @@ final class ClientApp {
         objectsWithSprites.removeAll(keepingCapacity: true)
         for sprite in sprites { objectsWithSprites.insert(sprite.objectID) }
         if walls != nil {
-            // With walls cut, the floor in view has its walls down, as TSO's walls-down mode does.
-            let tiles = session.vm.architecture.width * session.vm.architecture.height
-            wallSprites = LotScene.wallSprites(of: session.vm.architecture, level: view.level, zoom: view.spriteZoom,
-                                               worldRotation: view.worldRotation,
-                                               wallsDown: view.wallsCut ? Array(repeating: true, count: tiles) : nil)
+            let (architecture, objectStyles) = LotScene.drawnArchitecture(of: session.vm)
+            wallSprites = LotScene.wallSprites(of: architecture, level: view.level, zoom: view.spriteZoom,
+                                               worldRotation: view.worldRotation, wallsDown: wallsDown(of: architecture),
+                                               objectStyles: objectStyles)
         }
+    }
+
+    /// Which tiles of the floor in view have their walls down in TSO's wall mode: none with walls
+    /// up, all with walls down, and in cutaway, the rooms the pointer last visited and the tiles
+    /// around it (`UILotControl.UpdateCutaway`).
+    private func wallsDown(of architecture: Architecture) -> [Bool]? {
+        let tiles = architecture.width * architecture.height
+        switch view.wallMode {
+        case .up:
+            return nil
+        case .down:
+            return Array(repeating: true, count: tiles)
+        case .cutaway:
+            var cut = LotScene.roomCut(of: architecture, level: view.level, worldRotation: view.worldRotation, rooms: Set(cutRooms))
+            if let pointerTile {
+                let rect = LotScene.pointerCut(at: pointerTile, worldRotation: view.worldRotation)
+                LotScene.applyCut(&cut, of: architecture, level: view.level, x: rect.x, y: rect.y, width: rect.width, height: rect.height)
+            }
+            return cut
+        }
+    }
+
+    /// Follows the pointer for the cutaway: the tile it's over, and the indoor room there, kept
+    /// with the two before it. Stays put while the view is being dragged, as in FreeSO.
+    private func followPointer(_ mouse: Vector2, overInterface: Bool, always: Bool = false) {
+        guard always || (followsPointer && !overInterface && !IsMouseButtonDown(.right)) else { return }
+        let camera = view.camera(screenHeight: Int(GetScreenHeight()))
+        guard let tile = view.tile(at: mouse, camera: camera, level: view.level) else { return }
+        pointerTile = tile
+        let architecture = session.vm.architecture
+        let x = Int(tile.x.rounded(.down)), y = Int(tile.y.rounded(.down))
+        guard x >= 0, y >= 0, x < architecture.width, y < architecture.height,
+              architecture.roomMaps.indices.contains(view.level - 1) else { return }
+        let map = architecture.roomMaps[view.level - 1].map
+        guard map.indices.contains(y * architecture.width + x) else { return }
+        let room = UInt16(truncatingIfNeeded: map[y * architecture.width + x])
+        let outside = architecture.rooms.indices.contains(Int(room)) ? architecture.rooms[Int(room)].isOutside : true
+        if !outside, !cutRooms.contains(room) { cutRooms.append(room) }
+        if cutRooms.count > 3 { cutRooms.removeFirst(cutRooms.count - 3) }
     }
 
     // MARK: Frame
@@ -122,7 +169,7 @@ final class ClientApp {
         }
         if IsKeyPressed(.q) { view.rotate(by: -1) }
         if IsKeyPressed(.e) { view.rotate(by: 1) }
-        if IsKeyPressed(.w) { view.wallsCut.toggle() }
+        if IsKeyPressed(.w) { view.wallMode = view.wallMode.next }
         if IsKeyPressed(.pageUp) { view.level = min(view.level + 1, Architecture.stories) }
         if IsKeyPressed(.pageDown) { view.level = max(view.level - 1, 1) }
         if IsKeyPressed(.escape) {
@@ -133,6 +180,7 @@ final class ClientApp {
         let mouse = GetMousePosition()
         let overInterface = topBar.contains(mouse) || inspector.contains(mouse) || help.window.contains(mouse) || momi.window.contains(mouse)
         if !overInterface { view.zoom(by: GetMouseWheelMove()) }
+        followPointer(mouse, overInterface: overInterface)
         if IsMouseButtonDown(.right) { view.pan(by: GetMouseDelta()) }
         hovered = overInterface ? nil : view.object(at: mouse, in: scene, camera: view.camera(screenHeight: Int(GetScreenHeight())))
         // The windows take the click when they want it, then the bar; otherwise a click picks

@@ -49,12 +49,16 @@ explains why a 3D camera rather than FreeSO's 2D batches.
 - **Walls** are sprites, as update-46's `WallComponent` draws them: each side and diagonal takes
   its pattern, masked by its style (a full wall, a cut-down one, a fence), turned with the view,
   and placed from its tile's top corner on screen. Each pixel's depth comes from FreeSO's
-  generated gradients, so walls and objects hide each other where they should. W toggles TSO's
-  walls-down mode on the floor in view, which is on by default (`--walls up` starts with walls
-  standing); floors below keep their walls up, and a door's wall is left out where it's cut.
-  Diagonal tiles draw their two floor halves. Not yet: the cutaway mode, end caps where walls
-  stop, junction pieces where they meet, and the wall styles doors and windows make from their
-  own sprites, so a wall still shows behind a window's frame.
+  generated gradients, so walls and objects hide each other where they should. Full-height
+  walls are capped where they stop, and junction pieces cover where they meet. Doors and windows
+  cut their openings with wall styles made from their own sprites, as FreeSO's
+  `VMGameObject.PositionChange` makes them. Diagonal tiles draw their two floor halves.
+- **Wall modes** are TSO's, for the floor in view; floors below keep their walls up. Cutaway, the
+  default, cuts walls down in front of the last three indoor rooms the pointer was over and
+  around the pointer, slanting them where the cut ends (FreeSO's `GenerateRoomCut` and
+  `ApplyCutRectangle`); down cuts every wall down, leaving a door's wall out; up leaves them
+  standing. W steps through them, and `--walls cutaway|down|up` picks one to start with. A
+  screenshot has no pointer, so its cutaway follows the middle of the screen, which `--focus` sets.
 - **The ground** is a flat shape for now; grass waits. Floors and the ground are drawn a little
   back and down, as FreeSO draws its floors, so the feet of objects standing on them show. If
   the install's floors or walls can't be read, they're drawn as plain tiles and boxes, and MOMI
@@ -69,7 +73,7 @@ explains why a 3D camera rather than FreeSO's 2D batches.
 | Mouse wheel | Zoom |
 | Right-drag | Pan |
 | Page Up and Page Down | Change the floor in view |
-| W | Walls up, or down on the floor in view |
+| W | The next wall mode: cutaway, down, up |
 | Click an object | Inspect it |
 | Escape | Close the open window |
 

@@ -76,14 +76,14 @@ In order:
    running stack. Outside the alpha gate; the fourth pass resumes after it.
    - [x] A. The schematic lot view, the inspector, time controls (pause, three speeds), rotation,
      zoom, pan, and floors; `--screenshot` for checks. The owner's house loads and runs.
-   - [ ] B. Sprites in place of the boxes, as Hyde Park lands: objects draw with their sprites
+   - [x] B. Sprites in place of the boxes, as Hyde Park lands: objects draw with their sprites
      (Hyde Park E1), sorted per pixel by their depth (E2). Walls and floors in four steps, as
      update-46 draws them (floors as textured tiles, walls as masked sprites); grass waits:
      - [x] B1. Wall and floor content: TSOContent's `FloorProvider` and `WallProvider`, made-up
        walls and floors in MockInstall, and `architecture` on both oracles, agreeing on every ID.
      - [x] B2. Floors as textured tiles in each zoom and rotation, with pools and water.
      - [x] B3. Standing walls: patterns masked by styles, both edges, diagonals, fences, with depth.
-     - [ ] B4. Cutaways and joins: walls cut down, the cutaway styles beside doors, end caps, junctions.
+     - [x] B4. Cutaways and joins: TSO's cutaway mode, end caps, junctions, and doors' and windows' own wall styles.
 3. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
    with FreeSO (the alpha gate's lot job). Each phase ends with the oracles' experiments agreeing.
    On the real installs, Sims come from the game's person template with a made-up identity defined
@@ -123,7 +123,7 @@ In order:
    - [x] D. `fso-oracle sprites` and `sb-oracle sprites` compared frame for frame: every record
      agrees on both installs (93,265 production, 91,788 beta), and MockInstall has a made-up
      sprite archive for the comparison without game data.
-   - [ ] E. Objects in the client: an object's draw group for its graphic state, drawn by `simburbia` in
+   - [x] E. Objects in the client: an object's draw group for its graphic state, drawn by `simburbia` in
      place of the boxes, first as flat quads, then with decision 7's depth.
      - [x] E1. Flat: TSOContent finds an object's drawing group (`ObjectResource.drawGroup(id:)`),
        `LotScene.objectSprites` places each sprite as FreeSO's `DGRPRenderer` does, and `simburbia`
@@ -244,6 +244,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | minor | The client's 2B, step B4, which finishes 2B: TSO's three wall modes (cutaway, the new default, then down and up, stepped through with W or picked with `--walls`). Cutaway ports FreeSO's `GenerateRoomCut` and `ApplyCutRectangle`: walls come down in front of the last three indoor rooms the pointer was over and around the pointer, with the slanted cutaway styles where a cut ends. Full-height walls get their end caps and the junction pieces where they meet (`GenerateWallData`, `RotateJunction`). Doors and windows now cut their own openings: the client gives each kind with a style from 22 to 255 a style made of its own sprites, numbered from 256 as `VMGameObject.PositionChange` does, while the VM keeps the definition's number (DIFF-20); SimAntics' new `Entity.architecturalWallSides` says which walls an object styles. A screenshot's cutaway follows the middle of the screen. Checked on the owner's house in all three modes, windows included, and on the mock lot. |
 | 2026-11-04 | minor | The client's 2B, step B3: walls drawn as update-46's `WallComponent` draws them, as sprites with depth instead of boxes. Each side and diagonal takes its pattern, masked by its style (a full wall, a cut-down one, a fence), turned with the view (`RotateWall`), and placed from the tile's top corner on screen; each pixel's depth comes from FreeSO's generated gradients, through a wall variant of the sprite depth shader, so walls and objects hide each other where they should. FreeSO's cut logic (`GenerateWallData`, `RotateCuts`) is ported whole, so the client's walls-cut toggle is TSO's walls-down mode on the floor in view; doors leave their wall out when it's cut; diagonal tiles draw their two floor halves. Every wall pattern, style mask, and junction frame matches FreeSO's pixel for pixel on all three installs. `simburbia --walls up` starts with walls standing. Checked on the owner's house in all four rotations. Not yet: the cutaway mode, end caps, and junctions (B4), and the wall styles doors and windows make from their own sprites (`AddDynamicWallStyle`), so a wall shows behind a window's frame for now. |
 | 2026-11-04 | minor | The client's 2B, step B2: floors drawn as update-46 draws them, as textured tiles in the 3D pass instead of tinted boxes. Each floor's sprite is decoded as FreeSO's `FloorCopy` and `ZAsAlpha` make it (ported to `SPR2.decode`, quirks kept) and repeats across the lot by the terrain's texture coordinates, turned with the view; pools and water take their shape from the tiles beside them. Every floor, pool, and water texture matches FreeSO's pixel for pixel on all three installs and MockInstall (`architecture` now hashes them). Checked on the owner's house in all four rotations and on a scratch mock lot with pools and water, which showed the mock's water needed opaque centers; its generator now remakes a single file. Pool corners aren't drawn, as update-46's 3D floors don't draw them; grass still waits. |
 | 2026-11-04 | minor | The client's 2B, step B1: wall and floor content. TSOContent's `FloorProvider` and `WallProvider` port FreeSO's providers (global floors, styles, patterns, junctions, and the `housedata` archives numbered in FreeSO's order); `fso-oracle architecture` and `sb-oracle architecture` agree on every ID on all three installs and MockInstall. MockInstall gains made-up walls and floors (`generators/mock_build.py`) and the Kenney Sim (CC0) for the fourth pass. Two known differences: floors are named from the floor strings, where FreeSO reads the wallpaper ones (DIFF-29), and the base game's and beta's missing archives hold nothing, where FreeSO stops (DIFF-30). Hyde Park F (images) isn't needed for walls and floors. |

@@ -56,8 +56,8 @@ struct Simburbia: ParsableCommand {
     @Option(help: "Quarter turns of the view to start with, 0 to 3.")
     var rotation = 0
 
-    @Option(help: "Walls on the floor in view to start with: up, or down (the default), as TSO's wall modes.")
-    var walls: WallMode = .down
+    @Option(help: "TSO's wall mode for the floor in view to start with: cutaway (the default), down, or up.")
+    var walls: WallMode = .cutaway
 
     /// A game day at TSO's 150 ticks a game minute, the default length of a headless run.
     static let defaultHeadlessTicks = 216_000
@@ -127,7 +127,7 @@ struct Simburbia: ParsableCommand {
         }
         let log = logs ? RunLog(session: session, install: Self.describe(options.gameDirectory)) : nil
         let app = ClientApp(session: session, interface: interface, hidden: screenshot != nil, zoomStep: zoom.map { $0 - 1 },
-                            focus: focus.flatMap(focusTile), rotation: rotation, wallsDown: walls == .down, log: log)
+                            focus: focus.flatMap(focusTile), rotation: rotation, walls: walls, log: log)
         if let screenshot {
             guard app.saveScreenshot(to: screenshot, after: ticks ?? 300) else {
                 throw Failure(description: "couldn't save the screenshot to \(screenshot)")
@@ -162,7 +162,17 @@ struct Failure: Error, CustomStringConvertible {
     var description: String
 }
 
-/// TSO's wall modes the client has so far: walls standing, or cut down on the floor in view.
+/// TSO's wall modes for the floor in view: walls cut down around what the player's looking at,
+/// cut down everywhere, or standing.
 enum WallMode: String, ExpressibleByArgument, CaseIterable {
-    case up, down
+    case cutaway, down, up
+
+    /// The next mode, as W steps through them.
+    var next: WallMode {
+        switch self {
+        case .cutaway: .down
+        case .down: .up
+        case .up: .cutaway
+        }
+    }
 }

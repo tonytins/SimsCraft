@@ -149,7 +149,7 @@ public final class LotSession {
         do {
             let provider = try WallProvider(files: content.files)
             problems += provider.failures.map { "Wall \($0.path) can't be read: \($0.reason)" }
-            walls = WallImages(walls: provider, floors: floors)
+            walls = WallImages(walls: provider, floors: floors, objects: content.objects)
         } catch {
             problems.append("The walls can't be read, so they're drawn plain: \(error)")
             walls = nil

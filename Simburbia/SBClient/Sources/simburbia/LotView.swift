@@ -20,8 +20,10 @@ final class LotView {
     private(set) var zoomStep = 1
     /// The floor the player is looking at; floors above it are hidden.
     var level = 1
-    /// Whether walls are cut down so the rooms inside show.
-    var wallsCut = true
+    /// TSO's wall mode for the floor in view.
+    var wallMode: WallMode = .cutaway
+    /// Whether walls are cut at all; boxes, which can't be cut a tile at a time, are cut down whole.
+    var wallsCut: Bool { wallMode != .up }
     private var target = SIMD3<Float>(0, 0, 0)
 
     /// The sprite size drawn at.
@@ -216,6 +218,17 @@ final class LotView {
     }
 
     // MARK: Picking
+
+    /// The point on a level's floor under a point on the screen, in tiles, or `nil` if the ray
+    /// misses it (FreeSO's `EstTileAtPosWithScroll`).
+    func tile(at point: Vector2, camera: Camera3D, level: Int) -> SIMD2<Float>? {
+        let ray = GetScreenToWorldRay(point, camera)
+        let floor = Float(level - 1) * LotScene.levelHeight
+        guard abs(ray.direction.y) > 1e-6 else { return nil }
+        let distance = (floor - ray.position.y) / ray.direction.y
+        guard distance > 0 else { return nil }
+        return SIMD2(ray.position.x + ray.direction.x * distance, ray.position.z + ray.direction.z * distance)
+    }
 
     /// The object under a point on the screen, the nearest when boxes overlap.
     func object(at point: Vector2, in scene: LotScene, camera: Camera3D) -> Int16? {

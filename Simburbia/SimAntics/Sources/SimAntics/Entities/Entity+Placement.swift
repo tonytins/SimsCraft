@@ -180,13 +180,23 @@ extension Entity {
 
     /// Puts the definition's wall style (or 0) on each wall a door or window needs.
     func setArchitecturalWallStyles(to value: UInt16) throws(SimAnticsError) {
-        guard data(.flagField2) & (EntityFlag.architecturalWindow | EntityFlag.architecturalDoor) != 0 else { return }
+        for side in architecturalWallSides { try setWallStyle(side: side, to: value) }
+    }
+
+    /// The sides of its tile a door or window puts its wall style on, in the order FreeSO's
+    /// `VMGameObject.PositionChange` sets them: 0 is the tile's top-right edge and 3 its top-left
+    /// one; 1 and 2 name edges the neighbors own, which `SetWallStyle` leaves alone. Empty for an
+    /// object that's neither. The client reads it to draw a door's or window's own wall style.
+    public var architecturalWallSides: [Int] {
+        guard data(.flagField2) & (EntityFlag.architecturalWindow | EntityFlag.architecturalDoor) != 0 else { return [] }
         let flags = WallPlacementFlags(rawValue: data(.wallPlacementFlags))
         let side = direction.wallOffset
-        if flags.contains(.wallRequiredInFront) { try setWallStyle(side: side % 4, to: value) }
-        if flags.contains(.wallRequiredOnRight) { try setWallStyle(side: (side + 1) % 4, to: value) }
-        if flags.contains(.wallRequiredBehind) { try setWallStyle(side: (side + 2) % 4, to: value) }
-        if flags.contains(.wallRequiredOnLeft) { try setWallStyle(side: (side + 3) % 4, to: value) }
+        var sides: [Int] = []
+        if flags.contains(.wallRequiredInFront) { sides.append(side % 4) }
+        if flags.contains(.wallRequiredOnRight) { sides.append((side + 1) % 4) }
+        if flags.contains(.wallRequiredBehind) { sides.append((side + 2) % 4) }
+        if flags.contains(.wallRequiredOnLeft) { sides.append((side + 3) % 4) }
+        return sides
     }
 
     /// `UpdateDynamicMultitile`: joins objects of the same kind within a tile into this one's group,
