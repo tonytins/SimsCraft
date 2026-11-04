@@ -18,7 +18,8 @@ struct SBOracle: AsyncParsableCommand {
             commands of the same names (see Simburbia/FSO.Oracle/README.md). compare reads both sides' \
             records and reports whether they agree, and with --review writes docs/results/sb-review.md.
             """,
-        subcommands: [ListObjects.self, RunObjects.self, RunLot.self, RunPrimitive.self, RoomMaps.self, Sprites.self, Operands.self, Compare.self])
+        subcommands: [ListObjects.self, RunObjects.self, RunLot.self, RunPrimitive.self, RoomMaps.self, Sprites.self, Operands.self,
+                      StudyCommand.self, Compare.self])
 }
 
 /// The folder of FreeSO's content in the snapshot (update-46), which `fso-oracle` uses too.
@@ -33,6 +34,11 @@ struct InstallOptions: ParsableArguments {
     var content: String?
 
     func load() async throws -> GameContent {
+        try GameContent(.init(gameDirectory: try await gameDirectory(), freeSOContentDirectory: contentDirectory))
+    }
+
+    /// The install: `--game`, else `TSO_GAME_DIR`, from the environment or `oracle.toml`.
+    func gameDirectory() async throws -> URL {
         var providers: [any ConfigProvider] = [EnvironmentVariablesProvider()]
         if let tp = try? await TOMLProvider(filePath: "oracle.toml") {
             providers.append(tp)
@@ -43,8 +49,7 @@ struct InstallOptions: ParsableArguments {
         guard let directory, game?.isEmpty != true else {
             throw ValidationError("No --game given and TSO_GAME_DIR is not set.")
         }
-        return try GameContent(.init(gameDirectory: directory,
-                                     freeSOContentDirectory: contentDirectory))
+        return directory
     }
 
     var contentDirectory: URL {
@@ -211,6 +216,7 @@ extension SBOracle {
         @Option(help: "Write this install's section of the review to this file (such as docs/results/sb-review.md).")
         var review: String?
         @Option(help: "The commit the records came from, for the review.") var commit = "unknown"
+        @Option(help: "The study's records (study.tsv, from sb-oracle study), if it ran.") var study: String?
         @Flag(help: "Exit with an error on any disagreement, so a person looks at it first (as CI runs it).") var strict = false
 
         func run() throws {
@@ -243,6 +249,9 @@ extension SBOracle {
             }
             if let theirs = lines(fso, "operands.tsv"), let ours = lines(nso, "operands.tsv") {
                 comparisons.append(.operands(fso: theirs, nso: ours))
+            }
+            if let study, let records = (try? String(contentsOfFile: study, encoding: .utf8))?.split(separator: "\n").map(String.init) {
+                comparisons += Comparison.study(records)
             }
             for comparison in comparisons { print(comparison.summary) }
             if strict {

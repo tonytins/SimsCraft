@@ -10,7 +10,6 @@
 # Simburbia/MockInstall/Lots). Needs the .NET SDK and python3. Set ORACLE_BUILT=1 to skip
 # building fso-oracle. Writes:
 #   objects.tsv                   list-objects: what loads for every object
-#   objects.digests               run-objects: each object alone for 30 ticks
 #   lots.run, lots.digests        the lots with objects, and run-lot on each (lines prefixed with
 #                                 its file name); lots.run, primitives.lot, and rooms.lots name
 #                                 lots relative to where they come from (oracle-lots.sh)
@@ -78,10 +77,6 @@ fi
 
 echo "Listing objects..."
 timed list-objects oracle list-objects >"$output/objects.tsv" 2>"$output/objects.log"
-
-echo "Running each object alone (a few minutes)..."
-cut -f1 "$output/objects.tsv" >"$output/guids.txt"
-timed run-objects oracle run-objects --ticks 30 --every 10 <"$output/guids.txt" >"$output/objects.digests" 2>"$output/objects.digests.log"
 
 echo "Running each lot..."
 printf '%s\n' "$empty_lot" "${lots[@]}" >"$output/lots.run"

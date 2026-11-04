@@ -12,6 +12,7 @@ They hold counts, object IDs (GUIDs), file and chunk names, and values, never th
 | File | What it shows | Written by | When |
 | --- | --- | --- | --- |
 | [sb-review.md](sb-review.md) | Whether Simburbia and FreeSO behave the same, experiment by experiment: where they agree, every disagreement, and what's inconclusive | `Simburbia/scripts/oracle-review.sh --review` | After each phase of work |
+| `sb-study-<install>.tsv` | Each object the randomized study has sampled on that copy, and its latest result: agree, disagree, or what Simburbia doesn't support yet | `oracle-review.sh --review` (`sb-oracle study`) | With each review |
 | [install-differences.md](install-differences.md) | How the copies of the game used here differ, file by file, from the oldest to the newest | `tsofiles-check` | Once, again when a copy is added |
 | [install-notes.md](install-notes.md) | What those differences mean for Simburbia, and content that relies on something unusual | By hand | As findings come in |
 

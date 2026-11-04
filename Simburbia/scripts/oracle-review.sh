@@ -83,7 +83,6 @@ for install in "${installs[@]}"; do
 
     echo "[$name] Simburbia's side..."
     timed list-objects nso list-objects >"$folder/objects.tsv"
-    timed run-objects nso run-objects --ticks 30 --every 10 <"$fso_folder/guids.txt" >"$folder/objects.digests"
     # Each lot with the objects fso-oracle left out of it left out here too.
     run_lots() {
         local lot file leave
@@ -106,7 +105,22 @@ for install in "${installs[@]}"; do
     timed sprites nso sprites >"$folder/sprites.tsv"
     timed operands nso operands >"$folder/operands.tsv"
 
-    arguments=(compare --fso "$fso_folder" --nso "$folder" --install "$name")
+    # The randomized study: sampled objects on lots, a game day on both sides, for a time budget
+    # (ORACLE_STUDY_MINUTES, 5 by default). With --review, each install's ledger in docs/results
+    # carries over, so a run samples what earlier ones haven't; the mock install, as CI runs it,
+    # takes a fixed seed for a minute.
+    study=(study --game "$game" --fso-objects "$fso_folder/objects.tsv" --out "$folder/study"
+           --fso-oracle "$repository/Simburbia/FSO.Oracle/bin/Release/net10.0/fso-oracle")
+    if [[ "$name" == mock ]]; then
+        study+=(--seed 1 --minutes 1 --ledger "$folder/ledger.tsv")
+    elif $review; then
+        study+=(--minutes "${ORACLE_STUDY_MINUTES:-5}" --ledger "$repository/docs/results/sb-study-$name.tsv")
+    else
+        study+=(--minutes "${ORACLE_STUDY_MINUTES:-5}" --ledger "$folder/ledger.tsv")
+    fi
+    timed study "$nso_binary" "${study[@]}" >"$folder/study.log"
+
+    arguments=(compare --fso "$fso_folder" --nso "$folder" --install "$name" --study "$folder/study/study.tsv")
     if $mock; then arguments+=(--strict); fi
     if $review; then
         arguments+=(--review "$repository/docs/results/sb-review.md"

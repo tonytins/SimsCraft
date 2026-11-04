@@ -50,8 +50,15 @@ public enum Review {
           values it has.
         - **Entry points:** for each object, which routine runs on each event, such as being created,
           each tick of the simulation, or being used.
-        - **Objects run alone:** each object placed by itself on an empty lot and simulated for 30 ticks.
-          The whole simulation's state is recorded, as a checksum, every 10 ticks.
+        - **Study:** a randomized study of the game's objects over game time. Each run samples lots
+          for five minutes: about thirty objects, picked at random but repeatably from a recorded
+          seed, laid out on a grid of an empty lot with random facings, and simulated for a full
+          in-game day on both programs, recorded every game hour. Objects the earlier runs haven't
+          sampled are picked first, so coverage grows run to run; a ledger beside this page,
+          `sb-study-<copy>.tsv`, keeps each object's latest result. An object that reaches something
+          Simburbia doesn't support yet is set aside and counted, and the lot runs without it. When a
+          lot disagrees, it's halved, and halved again, to the fewest objects that still disagree,
+          which are listed. Sims aren't sampled yet.
         - **Lots run:** each lot loaded with all its objects, as the game's lot server loads it, and
           simulated for a full in-game day (216,000 ticks), recorded every game hour (9,000). The lots are FreeSO's empty lot (which holds a
           mailbox and other fixtures) and a house built in-game. Where Simburbia reaches something it

@@ -55,21 +55,6 @@ struct FixtureComparisonTests {
         }
     }
 
-    @Test func objectsRunAloneMatchFreeSO() throws {
-        let fso = try lines("objects.digests")
-        let answers = try answers()
-        let lot = try Blueprint(xml: try Data(contentsOf: freeSOContent.appendingPathComponent("Blueprints/empty_lot_fso.xml")))
-        var nso: [String] = []
-        for guid in Set(fso.compactMap { $0.split(separator: " ").first }).sorted() {
-            let value = try required(UInt32(guid, radix: 16))
-            nso += answers.objectRun(guid: value, on: lot, ticks: 30, every: 10).map { "\(guid) \($0)" }
-        }
-        let comparison = Comparison.objectRuns(fso: fso, nso: nso)
-        print(comparison.summary, comparison.skipsByCount.prefix(8))
-        #expect(comparison.matched >= leastObjects)
-        #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
-    }
-
     /// Each lot `oracle-review.sh` ran, with the objects `fso-oracle` left out left out here too, for
     /// the ticks the script runs (a full in-game day, 216,000, with a digest every game hour, 9,000).
     @Test func lotRunsMatchFreeSO() throws {

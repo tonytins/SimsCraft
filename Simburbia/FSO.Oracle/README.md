@@ -252,7 +252,7 @@ SBOracle's tests compare each line with what Simburbia's content system loads.
 
 `Simburbia/scripts/oracle-fixtures.sh` builds the oracle and runs every experiment on FreeSO,
 writing its records into one folder (by default `$TMPDIR/fso-oracle-fixtures`): `objects.tsv` from
-`list-objects`, `objects.digests` from `run-objects`, `lots.digests` from `run-lot` on each lot
+`list-objects`, `lots.digests` from `run-lot` on each lot
 with objects (and `lots.leftout`, the objects it left out), for each ported primitive its cases
 from `Simburbia/SimAntics/OracleCases/make_cases.py` with their `run-primitive` responses, and
 `rooms.jsonl` from `room-maps` on the synthetic blueprints in `blueprints/` and the repository's

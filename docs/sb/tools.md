@@ -81,16 +81,42 @@ disagreement is a finding to explain, and a case one side couldn't measure is in
 | `run-lot` | One lot (`--blueprint`) loaded with its objects and run, with a state digest after loading and as it ticks; `--leave-out GUID` leaves out an object `fso-oracle` left out, and `--dump` adds every entity's digested fields |
 | `run-primitive` | `fso-oracle`'s JSON requests on standard input, each on a freshly loaded lot (`--blueprint`, `--leave-out`), answered in its format: the lot as loaded, the exit code, registers, and every effect; `unsupported` where a primitive isn't ported |
 | `room-maps` | Each blueprint path on standard input: its room maps and rooms |
+| `study` | The randomized study (below): sampled objects on lots, a game day on both VMs, for a time budget |
 | `compare` | Whether both sides' records agree, experiment by experiment, and with `--review FILE`, that install's section of the report written; `--strict` exits with an error on any disagreement |
 
 Where Simburbia can't take a measurement yet, `run-objects` adds an `unsupported` line naming what
 isn't ported; comparisons count those as inconclusive, ranked, so they show what to port next.
 `run-lot` stops at the first tick that reaches something not ported, with `unsupported at tick
-N:` and what.
+N by 0xGUID:`, naming the object that reached it, and what.
+
+### The randomized study
+
+`sb-oracle study` asks how objects behave over game time, without running every object of an
+install. Until its time budget runs out (`--minutes`, five in a review), it builds lots: about
+thirty objects both sides load (`--fso-objects`, from `fso-oracle list-objects`), picked by a seed
+with those its ledger hasn't seen first, on a grid of FreeSO's emptied `empty_lot_fso.xml`, each
+facing a direction the seed picks. Each lot runs a game day, with a digest every game hour:
+
+1. On Simburbia first, since it's quick. An object that reaches something Simburbia doesn't
+   support yet is recorded as such and set aside, and the lot runs again without it. If the
+   object isn't one the lot names, it's mapped to the multi-tile object it belongs to, or found
+   by halving the lot on Simburbia alone.
+2. Then on FreeSO, through `fso-oracle run-lot`, and the digests are compared.
+3. A lot that disagrees is halved, keeping every object's tile and facing, to the fewest objects
+   that still disagree.
+
+Every lot is kept as a blueprint in `--out/lots`, so it can be run again, and the records go to
+`--out/study.tsv`, which `compare --study` reads. The ledger (`--ledger`; in a review,
+`docs/results/sb-study-<install>.tsv`) keeps each object's latest result, so each run samples what
+the last ones didn't. The seed defaults to the time, and is printed.
 
 ```sh
-cut -f1 objects.tsv | swift run --package-path Simburbia/SBOracle sb-oracle run-objects --ticks 30 --every 10
+sb-oracle study --game "$TSO_GAME_DIR" --fso-objects /tmp/oracle/fso/objects.tsv --out /tmp/study --minutes 5
 ```
+
+The study replaced running every object alone (`run-objects`, still here for one-off
+questions), which took hours on a real install.
+
 
 `Simburbia/scripts/oracle-review.sh [--review | --mock]` runs both oracles on every install it's
 given (`TSO_GAME_DIR` as "production", `TSO_CLASSIC_DIR` as "classic", `TSO_BETA_DIR` as "beta") and compares them; `--mock` uses
