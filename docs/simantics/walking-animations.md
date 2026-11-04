@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Walking Animations](https://simantics.wikidot.com/wiki:walking-animations)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 Routing in the sims is not controlled by SimAntics, instead it is controlled by an external "Walking Engine" which takes over from the avatar's SimAntics thread when one of the routing primitives (Goto Routing Slot, Goto Relative Position) is called. As such, a few animation pointers are hard-coded into the game to use for certain types of sim (male, female, cat, dog).
 

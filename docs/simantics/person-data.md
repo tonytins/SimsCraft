@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Person Data](https://simantics.wikidot.com/wiki:person-data)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 **Person Data** refers to a person's built in fields such as their age, skill points, personality, if they are a ghost etc. There are 100 in total, and each can be accessed by SimAntics via a [Scope](scopes.md). These variables should be stored with the sim in the database and applied when recreating the sim in a lot they're visiting. (eg. these should follow them around)
 
@@ -110,6 +110,6 @@
 | 99 | NumOutgoingFriends |  |
 | 100 | BadgeLevel |  |
 
-## Notes for NSOClient
+## Notes for Simburbia
 
 FreeSO's `VMAvatar` stores 101 values (0 to 100), matching the table above.

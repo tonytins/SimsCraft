@@ -79,13 +79,13 @@ don't regain value through upgrades. Volcanic gained a PIFF viewer and editor (w
 summaries) and better tuning views in preparation. `feature/lotview-refactor` continues this work
 (upgrade groups and a re-init flag).
 
-## Relevance to NSOClient
+## Relevance to Simburbia
 
 - **Bug fixes as evidence.** Fixes such as "Fix double scheduling bug", "Fix Semiglobal
   TreeByName", "Fix portals not updating target room when moved", and the interaction queue
-  changes point at places where the snapshot behaves oddly. NSOClient matches the snapshot by default;
+  changes point at places where the snapshot behaves oddly. Simburbia matches the snapshot by default;
   where it chooses to fix one of the snapshot's bugs, these show what FreeSO later did.
 - **Extensions.** The AOT compiler, the new TSO calls, tuning presets, and upgrades are prior art
-  for NSOClient's own extensions.
+  for Simburbia's own extensions.
 - **The patches.** Many new PIFF patches and "TSOPorts" target TSO's New & Improved files, as the
   snapshot's do. They'd need the same "apply only if it fits" handling on the 2002 installs.

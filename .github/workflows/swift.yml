@@ -1,21 +1,21 @@
 name: Swift
 
-# Builds and tests the NSOClient packages. Each package is independent, so
+# Builds and tests the Simburbia packages. Each package is independent, so
 # each one builds and tests on its own, as AGENTS.md's "Before you finish" asks.
 # Real-install tests skip themselves here: CI has no TSO_GAME_DIR, and no
-# game data may be stored in the repository. oracle.yml compares NSOClient
-# with FreeSO on NSOClient/MockInstall, a made-up install, instead.
+# game data may be stored in the repository. oracle.yml compares Simburbia
+# with FreeSO on Simburbia/MockInstall, a made-up install, instead.
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - "NSOClient/**"
+      - "Simburbia/**"
       - ".github/workflows/swift.yml"
   pull_request:
     branches: [ "main" ]
     paths:
-      - "NSOClient/**"
+      - "Simburbia/**"
       - ".github/workflows/swift.yml"
 
 permissions:
@@ -47,10 +47,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle ScriptOracle NSOInterface Client; do
+          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript SBOracle ScriptOracle NSOInterface SBClient; do
             echo "::group::$package"
-            swift build --package-path "NSOClient/$package"
-            swift test --package-path "NSOClient/$package"
+            swift build --package-path "Simburbia/$package"
+            swift test --package-path "Simburbia/$package"
             echo "::endgroup::"
           done
 
@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           # AGENTS.md "Never crash": no try!, as!, fatalError, or precondition in Sources.
-          if grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' NSOClient/*/Sources; then
+          if grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' Simburbia/*/Sources; then
             echo "::error::Trap patterns found in library sources"
             exit 1
           fi
@@ -76,9 +76,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript NSOOracle ScriptOracle NSOInterface Client; do
+          for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript SBOracle ScriptOracle NSOInterface SBClient; do
             echo "::group::$package"
-            swift build --package-path "NSOClient/$package"
-            swift test --package-path "NSOClient/$package"
+            swift build --package-path "Simburbia/$package"
+            swift test --package-path "Simburbia/$package"
             echo "::endgroup::"
           done

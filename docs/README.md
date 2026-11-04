@@ -6,9 +6,9 @@ of that work:
 - **FreeSO**, the open-source C# reimplementation of the game that SimsCraft learns from, as its
   source stood at its beta/update-46 build (August 2017). That copy of the code is in
   [`TSOClient/`](../TSOClient/), and [fso/releases.md](fso/releases.md) places it among FreeSO's updates.
-- **NSOClient**, the new Swift code of NewSO, in [`NSOClient/`](../NSOClient/). Its libraries cover
+- **Simburbia**, the game SimsCraft is making, written in Swift, in [`Simburbia/`](../Simburbia/). Its libraries cover
   the parts of FreeSO that don't depend on a game engine: reading the game's files, loading its
-  content, and running its object behavior. Its client, `newso`, shows a lot running on them, or
+  content, and running its object behavior. Its client, `simburbia`, shows a lot running on them, or
   runs one with no window and logs what happens.
 
 It also holds a copy of the community SimAntics reference, which explains the scripting language
@@ -21,33 +21,33 @@ are in [`AGENTS.md`](../AGENTS.md); they apply to people and AI assistants alike
 
 - **To understand FreeSO's code:** [fso/README.md](fso/README.md), then
   [fso/architecture.md](fso/architecture.md).
-- **To understand how NSOClient's code behaves:** [nso/README.md](nso/README.md).
-- **To run the client:** [nso/client.md](nso/client.md).
-- **To see where NSOClient stands:** the [scorecard](scorecard.md) for what's done and the evidence
+- **To understand how Simburbia's code behaves:** [nso/README.md](sb/README.md).
+- **To run the client:** [nso/client.md](sb/client.md).
+- **To see where Simburbia stands:** the [scorecard](scorecard.md) for what's done and the evidence
   for it, the [roadmap](roadmap.md) for what comes next, and the [results](results/README.md) for how
-  closely NSOClient matches FreeSO.
+  closely Simburbia matches FreeSO.
 
 ## Terms
 
 | Term                        | Meaning                                                                                                                                                                                                                                              |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | *The Sims Online* (TSO)     | Maxis and EA's online Sims game, released in 2002 and renamed *EA-Land* before it closed in 2008                                                                                                                                                     |
-| FreeSO                      | An open-source C# reimplementation of TSO, built on MonoGame. NSOClient is checked against it                                                                                                                                                        |
-| NewSO                       | The game SimsCraft is making: TSO playable again, small and LAN-first                                                                                                                                                                                |
-| NSOClient                   | NewSO's Swift code: the libraries that reimplement FreeSO's engine-independent parts, the client, and the tools                                                                                                                                      |
-| `newso`                     | NewSO's client. It shows a lot running; `--headless` runs one with no window and logs it                                                                                                                                                             |
-| Install                     | A copy of TSO's game files on disk (a `TSOClient` folder). The repository holds none; tests that need one read the `TSO_GAME_DIR` environment variable, or use [`NSOClient/MockInstall`](../NSOClient/MockInstall/README.md), a tiny made-up install |
+| FreeSO                      | An open-source C# reimplementation of TSO, built on MonoGame. Simburbia is checked against it                                                                                                                                                        |
+| Simburbia                       | The game SimsCraft is making: TSO playable again, small and LAN-first. Its Swift code, in `Simburbia/`, is the libraries that reimplement FreeSO's engine-independent parts, the client, and the tools                                                                                                                                                                                |
+| SB                          | Short for Simburbia, and the prefix of its own packages and tools (`SBClient`, `SBOracle`, `sb-oracle`); TSO's own formats keep the `TSO` prefix |
+| `simburbia`                     | Simburbia's client. It shows a lot running; `--headless` runs one with no window and logs it                                                                                                                                                             |
+| Install                     | A copy of TSO's game files on disk (a `TSOClient` folder). The repository holds none; tests that need one read the `TSO_GAME_DIR` environment variable, or use [`Simburbia/MockInstall`](../Simburbia/MockInstall/README.md), a tiny made-up install |
 | SimAntics                   | The virtual machine that runs object behavior in The Sims games                                                                                                                                                                                      |
 | Routine (`BHAV`), primitive | A routine is a small program an object runs; each of its instructions is either a call to another routine or a primitive, one of the VM's built-in operations                                                                                        |
-| update-46                   | The version of FreeSO that NewSO was built against.                                                                                                                                                                                                  |
+| update-46                   | The version of FreeSO that Simburbia was built against.                                                                                                                                                                                                  |
 | IFF, chunk                  | Maxis's resource file format. An object's IFF holds chunks: its definition (`OBJD`), routines (`BHAV`), strings (`STR#`), sprites, and so on                                                                                                         |
 | FAR, DBPF                   | Archive formats that bundle many files, such as all the objects' IFFs                                                                                                                                                                                |
 | PIFF                        | FreeSO's patch format. PIFF was used to patch items their engine struggled to run.                                                                                                                                                                   |
 | GUID                        | The 32-bit number that identifies an object type                                                                                                                                                                                                     |
 | Semi-global                 | A library of routines shared by a family of objects, such as all chairs                                                                                                                                                                              |
 | Lot, tick                   | A property Sims live on and objects are placed on; one step of the simulation                                                                                                                                                                        |
-| Oracle                      | `fso-oracle` runs FreeSO's code and `nso-oracle` runs NSOClient's, through the same experiments on the same install; the report on whether their records agree is how NSOClient is measured                                                          |
-| MOMI                        | TSO's in-universe name for its game masters; in `newso`, the window of system messages                                                                                                                                                               |
+| Oracle                      | `fso-oracle` runs FreeSO's code and `sb-oracle` runs Simburbia's, through the same experiments on the same install; the report on whether their records agree is how Simburbia is measured                                                          |
+| MOMI                        | TSO's in-universe name for its game masters; in `simburbia`, the window of system messages                                                                                                                                                               |
 | Beta                        | An early retail copy (v1.3.2.121) that a select number people could get. Players at this time got founder's badge on their profile.                                                                                                                  |
 | Base Game                   | v1.145.1.0, the earliest known retail copy available online.                                                                                                                                                                                         |
 | New & Improved (N&I)        | An October 2003 re-release, likely at around 1.1097.1.0, that brought with it pets, jobs, and more. (Anything added since then, but before EA-Land, is known as New & Improved.)                                                                     |
@@ -57,48 +57,48 @@ are in [`AGENTS.md`](../AGENTS.md); they apply to people and AI assistants alike
 
 ## Outline
 
-### [roadmap.md](roadmap.md): the NSOClient plan
+### [roadmap.md](roadmap.md): the Simburbia plan
 
-Scope, the alpha gate (the end-to-end jobs NSOClient must do before alpha), current focus,
+Scope, the alpha gate (the end-to-end jobs Simburbia must do before alpha), current focus,
 milestones (named after The Sims Online's unused cities) with estimates and progress, the ranked
 next milestones, the critical path, decisions for the maintainer, risks, and the revision history.
 
-### [scorecard.md](scorecard.md): NSOClient status with evidence
+### [scorecard.md](scorecard.md): Simburbia status with evidence
 
 One row per feature, each `done`, `partial`, or `missing`, with the code or test that proves it:
 file formats, content, SimAntics, fidelity to FreeSO, determinism, reliability, tests and tooling,
 and platforms. It also lists the known deliberate differences from FreeSO and open bugs. When the
 scorecard and the roadmap disagree, the scorecard wins.
 
-### [nso/](nso/README.md): how NSOClient works
+### [nso/](sb/README.md): how Simburbia works
 
 How the Swift libraries, the client, and the tools behave today, with code examples. `fso-oracle`
-and SimsScript have READMEs of their own ([fso-oracle](../NSOClient/FSO.Oracle/README.md),
-[SimsScript](../NSOClient/SimsScript/README.md)).
+and SimsScript have READMEs of their own ([fso-oracle](../Simburbia/FSO.Oracle/README.md),
+[SimsScript](../Simburbia/SimsScript/README.md)).
 
 | Page | Covers |
 | --- | --- |
-| [README.md](nso/README.md) | The packages, how they depend on each other, and the rules every package follows |
-| [files.md](nso/files.md) | TSOFiles: containers, IFF chunks, patches, tables, scanning and comparing installs |
-| [content.md](nso/content.md) | TSOContent: finding an install, loading objects, globals, and patches |
-| [simantics.md](nso/simantics.md) | SimAntics: the VM, entities, threads, variables, primitives, scheduling |
-| [lot.md](nso/lot.md) | The lot model: positions, the tile index, walls, floors, rooms, blueprints |
-| [client.md](nso/client.md) | `newso`: the window, its interface, screenshots, and headless and verbose runs |
-| [tools.md](nso/tools.md) | `tsofiles-check`, the install differences report, `nso-oracle`, `sso-oracle`, and `simsscript` |
+| [README.md](sb/README.md) | The packages, how they depend on each other, and the rules every package follows |
+| [files.md](sb/files.md) | TSOFiles: containers, IFF chunks, patches, tables, scanning and comparing installs |
+| [content.md](sb/content.md) | TSOContent: finding an install, loading objects, globals, and patches |
+| [simantics.md](sb/simantics.md) | SimAntics: the VM, entities, threads, variables, primitives, scheduling |
+| [lot.md](sb/lot.md) | The lot model: positions, the tile index, walls, floors, rooms, blueprints |
+| [client.md](sb/client.md) | `simburbia`: the window, its interface, screenshots, and headless and verbose runs |
+| [tools.md](sb/tools.md) | `tsofiles-check`, the install differences report, `sb-oracle`, `sso-oracle`, and `simsscript` |
 
-### [results/](results/README.md): how NSOClient measures up
+### [results/](results/README.md): how Simburbia measures up
 
 | Page | Covers |
 | --- | --- |
-| [nso-review.md](results/nso-review.md) | A report for peer review on whether NSOClient and FreeSO behave the same: `fso-oracle` and `nso-oracle` run the same experiments on each install, with agreements, every disagreement, what's inconclusive, and timings. Written after each phase of the roadmap |
-| [install-differences.md](results/install-differences.md) | How the installs differ, step by step from the beta to 1.1097.1.0: files, archive entries, IFF chunks, and object GUIDs, with no game data. The reference for keeping NSOClient working on the beta |
-| [install-notes.md](results/install-notes.md) | What the install differences mean for NewSO, kept by hand: the skill objects' alpha, hidden objects |
+| [sb-review.md](results/sb-review.md) | A report for peer review on whether Simburbia and FreeSO behave the same: `fso-oracle` and `sb-oracle` run the same experiments on each install, with agreements, every disagreement, what's inconclusive, and timings. Written after each phase of the roadmap |
+| [install-differences.md](results/install-differences.md) | How the installs differ, step by step from the beta to 1.1097.1.0: files, archive entries, IFF chunks, and object GUIDs, with no game data. The reference for keeping Simburbia working on the beta |
+| [install-notes.md](results/install-notes.md) | What the install differences mean for Simburbia, kept by hand: the skill objects' alpha, hidden objects |
 
 ### [fso/](fso/README.md): FreeSO's code, at update-46
 
 Written from reading the source in `TSOClient/`. Each page explains how one part of FreeSO works.
 The "Modern .NET rewrite" sections are from an earlier plan to modernize FreeSO itself, which
-SimsCraft dropped in favor of NSOClient; they're kept for reference.
+SimsCraft dropped in favor of Simburbia; they're kept for reference.
 
 | Page | Covers |
 | --- | --- |
@@ -134,6 +134,6 @@ A copy of the community wiki at simantics.wikidot.com, under its own license (CC
 
 ## Elsewhere in the repository
 
-- [`NSOClient/FSO.Oracle/README.md`](../NSOClient/FSO.Oracle/README.md): `fso-oracle`, which runs FreeSO's
-  SimAntics code through the experiments NSOClient is measured against.
+- [`Simburbia/FSO.Oracle/README.md`](../Simburbia/FSO.Oracle/README.md): `fso-oracle`, which runs FreeSO's
+  SimAntics code through the experiments Simburbia is measured against.
 - [`AGENTS.md`](../AGENTS.md): the workspace map and the rules for working in this repository.

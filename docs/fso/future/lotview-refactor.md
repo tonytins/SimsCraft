@@ -38,9 +38,9 @@ rebuilds it so both share one world:
 - **API:** avatar, lot, neighborhood, bulletin, and election endpoints, OAuth tokens with
   permissions, and batched lookups.
 
-## Relevance to NSOClient
+## Relevance to Simburbia
 
-The rendering work is outside NSOClient's engine-free scope, but it shows what a renderer built on
-top of NSOClient has to handle: 2D and 3D sharing one world, rotation, and multi-floor targeting.
+The rendering work is outside Simburbia's engine-free scope, but it shows what a renderer built on
+top of Simburbia has to handle: 2D and 3D sharing one world, rotation, and multi-floor targeting.
 The UTF-8 string change matters for any client that talks to a FreeSO server built after it, since
 the snapshot's protocol encodes those strings differently.

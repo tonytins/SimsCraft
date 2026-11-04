@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Object Data](https://simantics.wikidot.com/wiki:object-data)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 **Object Data** is an objects' built in fields such as which graphic is displaying or how dirty the object is. There are 80 in total, and each can be accessed by SimAntics via a [Scope](scopes.md). The relevant fields are usually set in the object's init function. NOTE: People also have object data, though some fields will not function for them.
 
@@ -116,7 +116,7 @@ There are various flag fields used by behaviors to determine if certain interact
 | 14 | Architectual Window |  |
 | 15 | Architectual Door |  |
 
-## Notes for NSOClient
+## Notes for Simburbia
 
 Checked against the FreeSO snapshot (update-46) (`VMEntity.GetValue` and `SetValue`):
 

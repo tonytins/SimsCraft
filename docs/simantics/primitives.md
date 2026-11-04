@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Primitives](https://simantics.wikidot.com/wiki:primitives)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 In SimAntics, the opcode of an instruction can either refer to a built-in command, known as a **primitive**, or to a subroutine. The subroutines can be privates (belong to the object) semiglobals or globals. A global will have an opcode 256 to 4095, a private will have an opcode from 4096 to 8191 and a semiglobal will have an opcode >= 8192.
 
@@ -1048,13 +1048,13 @@ No Operand.
 
 ### 67 - Inventory Operations
 
-## Notes for NSOClient
+## Notes for Simburbia
 
 - **Exit codes:** FreeSO has 11 (`VMPrimitiveExitCode`): go to true or false, the same on the next tick,
   return true or false, error, continue next tick, continue (a subroutine call), interrupt, and
   continue on a future tick (idle primitives).
 - **Expression (2):** in FreeSO the signed flag is ignored. Values are read as 32-bit integers and written
   back truncated. Arithmetic wraps and shift counts are masked to 5 bits. Dividing by zero sets -1,
-  and a remainder by zero leaves the value unchanged. NSOClient's `Primitives.Expression` lists the
+  and a remainder by zero leaves the value unchanged. Simburbia's `Primitives.Expression` lists the
   rest of the quirks and matches FreeSO case for case (scorecard FID-9).
-- Which primitives NSOClient has ported is tracked in [the scorecard](../scorecard.md#simantics).
+- Which primitives Simburbia has ported is tracked in [the scorecard](../scorecard.md#simantics).

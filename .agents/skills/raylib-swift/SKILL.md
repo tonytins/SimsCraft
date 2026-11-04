@@ -1,6 +1,6 @@
 ---
 name: raylib-swift
-description: How SimsCraft's client uses raylib-swift (raylib 6.0 from Swift) for its window, its frame loop, the camera, textures, render textures, text, and input, how the NSOInterface package and its cs2swift translation from CityLimits fit in, and how to check a visual change without the owner's desktop. Use this whenever you write, review, or debug code that imports Raylib, touches NSOClient/NSOInterface, the client, or interface-demo, adds or draws an asset, syncs CityLimits' interface, or verifies something on screen, even if the request never says "raylib".
+description: How SimsCraft's client uses raylib-swift (raylib 6.0 from Swift) for its window, its frame loop, the camera, textures, render textures, text, and input, how the NSOInterface package and its cs2swift translation from CityLimits fit in, and how to check a visual change without the owner's desktop. Use this whenever you write, review, or debug code that imports Raylib, touches Simburbia/NSOInterface, the client, or interface-demo, adds or draws an asset, syncs CityLimits' interface, or verifies something on screen, even if the request never says "raylib".
 ---
 
 # raylib-swift in SimsCraft
@@ -63,9 +63,9 @@ raylib's API changes between releases (`IsTextureReady` became `IsTextureValid`,
 
 | Place | raylib? |
 |---|---|
-| `NSOClient/NSOInterface`, and the client packages that come after it | yes |
+| `Simburbia/NSOInterface`, and the client packages that come after it | yes |
 | `TSOFiles`, `TSOFilesC`, `TSOContent`, `SimAntics`, `SimsScript` | never: no dependency, no import, no call |
-| The tools and oracles (`tsofiles-check`, `nso-oracle`, `sso-oracle`), and a future headless lot server | never. A raylib call there opens a window, or loads native code a server may not have |
+| The tools and oracles (`tsofiles-check`, `sb-oracle`, `sso-oracle`), and a future headless lot server | never. A raylib call there opens a window, or loads native code a server may not have |
 
 If you can't decide something without raylib, it belongs in the client. If something
 can be decided without it, it belongs in a library, behind a test. Which wall a Sim can
@@ -74,7 +74,7 @@ see is the VM's to work out; how that wall is drawn is the client's.
 ## 3. The lifecycle
 
 The order matters, because textures need the OpenGL context that `InitWindow` creates.
-`NSOClient/NSOInterface/Sources/interface-demo/main.swift` is the model:
+`Simburbia/NSOInterface/Sources/interface-demo/main.swift` is the model:
 
 1. `SetConfigFlags(...)`, before the window.
 2. `InitWindow(width, height, title)`.
@@ -131,12 +131,12 @@ is in `docs/fso/rendering.md`.
   into world depth the way FreeSO's `vsZSprite` does (`tso.content/ContentSrc/Effects/2DWorldBatch.fx`):
   from the draw group's `ObjectOffset` (`tso.files/formats/iff/chunks/DGRP.cs`), in a shader
   that writes the fragment's depth. Without it, a quad gets one depth, and neighboring
-  sprites seam. `newso` does this in `SpriteDepth`: sprites stay flat on the screen, drawn
+  sprites seam. `simburbia` does this in `SpriteDepth`: sprites stay flat on the screen, drawn
   after `EndMode3D` with the depth test on, and each pixel's depth runs from its tile's far
   corner toward the viewer (`LotScene.depthLine`), projected with the 3D pass's own matrices.
 - **Floors sit just behind the sprites on them.** TSO's depth art puts the feet of some
   objects a little behind the floor they stand on. FreeSO draws its 3D floors and terrain a
-  little back and down for this (`TerrainComponent.Draw`), and `newso` does the same
+  little back and down for this (`TerrainComponent.Draw`), and `simburbia` does the same
   (`SpriteZoom.floorBias`). Without it, table feet and chair legs are cut off. Walls get no
   bias, so a cut-down wall in front of an object correctly hides its base.
 - **Pre-composite per state and direction.** Build an object's textures for every graphic
@@ -145,7 +145,7 @@ is in `docs/fso/rendering.md`.
 - **Sims are built at run time.** TSOFiles decodes Vitaboy to plain values; the client turns
   them into raylib meshes with bone weights (TSO's meshes blend vertices between bones, so
   each vertex needs weights, not one rigid bone) and drives the bones from the decoded
-  animation. Nothing is converted ahead of time: NewSO reads the player's own install. A Sim
+  animation. Nothing is converted ahead of time: Simburbia reads the player's own install. A Sim
   is several models (body, head, hands) posed by one skeleton; some have no head or hands.
 - **raylib model pitfalls.** A failed `LoadModel` returns an empty model instead of failing,
   so check `meshCount` before use. A model's texture goes on the material its mesh uses,
@@ -200,11 +200,11 @@ as a tile or an object.
 
 ## 7. Text and the interface
 
-- `NSOClient/NSOInterface` is the base for NewSO's take on TSO's `.uis` screens. Its
+- `Simburbia/NSOInterface` is the base for Simburbia's take on TSO's `.uis` screens. Its
   `Sources/NSOInterface/CityLimits/` is cs2swift's translation of CityLimits' controls:
-  regenerated by `NSOClient/scripts/sync-interface.sh`, never edited. Change the C# in
-  CityLimits instead, or put NewSO's own Swift in `Sources/NSOInterface/NewSO/`.
-- Colors and sizes live in `Sources/NSOInterface/NewSO/Theme.swift`, not in draw code.
+  regenerated by `Simburbia/scripts/sync-interface.sh`, never edited. Change the C# in
+  CityLimits instead, or put Simburbia's own Swift in `Sources/NSOInterface/Simburbia/`.
+- Colors and sizes live in `Sources/NSOInterface/Simburbia/Theme.swift`, not in draw code.
 - The interface uses raylib's default font through `DrawText` and `MeasureText`. Lay text
   out from `MeasureText`, never from guessed widths: a fixed-width column once ran
   CityLimits' prices into their labels. Measuring needs the font a window loads; without

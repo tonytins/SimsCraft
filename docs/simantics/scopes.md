@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Scopes](https://simantics.wikidot.com/wiki:scopes)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 Several primitives make reference to variables stored in the VM to perform their actions. For example, the random number primitive provides the location of a variable for the random range. Usually (but not always) these take the form of two fields, a variable owner and variable data. The owner can be thought of like a scope and the possible values for this are described below.
 
@@ -374,9 +374,9 @@ I skipped a few EA-Land specific Custom Content related scopes here…
 
 Returns Avatar's ID.
 
-## Notes for NSOClient
+## Notes for Simburbia
 
-Checked against the FreeSO snapshot (update-46) (`VMMemory.cs`), which NSOClient's `VMMemory`
+Checked against the FreeSO snapshot (update-46) (`VMMemory.cs`), which Simburbia's `VMMemory`
 matches case for case (scorecard VM-4 and FID-9). Where FreeSO differs from the text above:
 
 - **2 and 5 (target object):** fail with "Target Object is Deprecated!".

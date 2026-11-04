@@ -3,7 +3,7 @@
 A Markdown copy of the [SimAntics Wiki](https://simantics.wikidot.com/), a community reference for
 the scripting language behind objects and Sims in The Sims and The Sims Online. It describes what
 the game does; the [FreeSO docs](../fso/simantics.md) describe how FreeSO's update-46 snapshot implements it.
-Where the two disagree, FreeSO's code is what NSOClient matches, and the "Notes for NSOClient"
+Where the two disagree, FreeSO's code is what Simburbia matches, and the "Notes for Simburbia"
 sections at the end of each page say so.
 
 | Page | What it covers |
@@ -20,14 +20,14 @@ sections at the end of each page say so.
 | [Walking Animations](walking-animations.md) | Animations the walking engine uses |
 
 The wiki is unfinished, and much of it is marked as guesswork. Treat it as a map, and check
-anything that matters against FreeSO's code or `fso-oracle` (see `NSOClient/FSO.Oracle/README.md`).
+anything that matters against FreeSO's code or `fso-oracle` (see `Simburbia/FSO.Oracle/README.md`).
 
 ## License and attribution
 
 These pages are adapted from the SimAntics Wiki at <https://simantics.wikidot.com/>, by its
 contributors (see each page's history there), retrieved 2026-10-16. The wiki is licensed under the
 [Creative Commons Attribution-ShareAlike 3.0 License](https://creativecommons.org/licenses/by-sa/3.0/),
-and so are these adapted pages, including the "Notes for NSOClient" sections added to them. The
+and so are these adapted pages, including the "Notes for Simburbia" sections added to them. The
 license covers this folder only; the rest of the repository is unaffected.
 
 Changes from the original:

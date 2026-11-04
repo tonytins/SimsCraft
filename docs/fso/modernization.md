@@ -1,6 +1,6 @@
 # Modernization guide
 
-> **Status: shelved.** SimsCraft chose to reimplement FreeSO's libraries in Swift (NSOClient)
+> **Status: shelved.** SimsCraft chose to reimplement FreeSO's libraries in Swift (Simburbia)
 > instead of modernizing FreeSO itself. This plan is kept for its survey of FreeSO's dependencies
 > and platform blockers, which still applies to the code in `TSOClient/`. Nothing in it is being
 > worked on.

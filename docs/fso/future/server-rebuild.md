@@ -45,6 +45,6 @@ describe the result; this page covers how it came together.
 
 ## In the snapshot
 
-Everything above is the snapshot's server. NSOClient doesn't port the server (it isn't engine-free),
-but the protocol and data service it defines are what any NSOClient-based client would need to
+Everything above is the snapshot's server. Simburbia doesn't port the server (it isn't engine-free),
+but the protocol and data service it defines are what any Simburbia-based client would need to
 talk to a FreeSO server.

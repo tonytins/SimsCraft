@@ -1,7 +1,7 @@
 # SimsCraft: the FreeSO snapshot
 
 These pages explain the FreeSO source code at beta/update-46 (August 2017; the
-snapshot in [`TSOClient/`](../../TSOClient/)), the reference that NSOClient's
+snapshot in [`TSOClient/`](../../TSOClient/)), the reference that Simburbia's
 Swift reimplementation draws on. **How it works (update-46)** describes the code as
 it is. The **Modern .NET rewrite** sections come from an earlier goal of
 rewriting FreeSO on .NET; they're kept for reference and no longer maintained.

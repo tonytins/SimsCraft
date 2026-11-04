@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Global Data](https://simantics.wikidot.com/wiki:global-data)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 **Global Data** refers to the fields containing information about the game state. There are 33 in total, and each can be accessed by SimAntics via a [Scope](scopes.md).
 
@@ -44,7 +44,7 @@
 
 Most of these are unused, especially the UI related ones, probably to avoid risking a client/server desync.
 
-## Notes for NSOClient
+## Notes for Simburbia
 
 Checked against the FreeSO snapshot (update-46) (`VM.cs`):
 

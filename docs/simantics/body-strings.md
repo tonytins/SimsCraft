@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Body Strings](https://simantics.wikidot.com/wiki:body-strings)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 Body Strings are a special type of string resource held by Person type objects which hold information on that person's appearance, gender, name(s, eg for random selection), person type (eg. adult, child, cat or dog) and other things. The meaning of each field is documented here:
 

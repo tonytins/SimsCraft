@@ -4,7 +4,7 @@ FreeSO's updates, newest first, by the names FreeSO gave them. SimsCraft's snaps
 [`TSOClient/`](../../TSOClient/) is FreeSO's `master` on August 10, 2017: **beta/update-46**, plus
 two days of server networking fixes (FreeSO's modified Mina library) and its "Any CPU" build. It's
 marked below, between update-46 and update-50. Everything above that line is newer than the
-snapshot, and NSOClient doesn't follow it.
+snapshot, and Simburbia doesn't follow it.
 
 FreeSO named its builds in four eras:
 

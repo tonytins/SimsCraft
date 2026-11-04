@@ -8,16 +8,16 @@ SimsCraft is rebuilding the engine of The Sims Online in Swift, so the game can 
 
 Key entrypoints:
 
-- ``NSOClient/`` - Swift packages, each independent:
+- ``Simburbia/`` - Swift packages, each independent:
   - ``TSOFiles/`` - file format readers (FAR, DBPF, IFF, and their chunks)
   - ``TSOFilesC/`` - a C ABI over TSOFiles
   - ``TSOFilesCheck/`` - ``tsofiles-check``, which scans a real install
   - ``TSOContent/`` - the content system, and the list of installs (``InstallKind``); its ``TSOConfig`` product reads them through swift-configuration
   - ``SimAntics/`` - the VM
   - ``SimsScript/`` - BHAV text assembly and an LSL-like compiler (proof of concept)
-  - ``NSOInterface/`` - the client's windows and controls on raylib-swift (see [The client](#the-client))
-  - ``Client/`` - ``newso``, NewSO's client, which loads, runs, and shows a lot
-  - ``FSO.Oracle/``, ``NSOOracle/``, ``ScriptOracle/`` - the oracles (see [The oracles](#the-oracles))
+  - ``NSOInterface/`` - the client's windows and controls on raylib-swift, until Hudini replaces it (see [The client](#the-client))
+  - ``SBClient/`` - ``simburbia``, Simburbia's client, which loads, runs, and shows a lot
+  - ``FSO.Oracle/``, ``SBOracle/``, ``ScriptOracle/`` - the oracles (see [The oracles](#the-oracles))
   - ``MockInstall/`` - a tiny made-up TSO install for tests and CI
   - ``Lots/`` - the owner's lots as blueprint XML
 - ``TSOClient/`` - FreeSO's source, frozen at a snapshot (read-only)
@@ -25,8 +25,8 @@ Key entrypoints:
   - ``roadmap.md`` - milestones, the alpha gate, owner decisions
   - ``scorecard.md`` - status per feature with evidence (wins over the roadmap)
   - ``fso/`` - how the FreeSO snapshot works, project by project
-  - ``nso/`` - how NSOClient behaves
-  - ``results/`` - how NSOClient measures up against FreeSO
+  - ``sb/`` - how Simburbia behaves
+  - ``results/`` - how Simburbia measures up against FreeSO
   - ``simantics/`` - the SimAntics Wiki in Markdown (CC BY-SA 3.0)
 - ``.agents/skills/`` - Swift, C, and .NET conventions, and the ``raylib-swift`` skill for the client
 
@@ -36,24 +36,24 @@ Key entrypoints:
 
 [The Sims Online](https://en.wikipedia.org/wiki/The_Sims_Online) (TSO) was an MMORPG based on The Sims. When the servers shutdown, [FreeSO](https://github.com/riperiperi/FreeSO) (FSO) re-implementated the game with their own open source server and client. Now, their servers have shutdown. With no new alternatives, FSO has been refactoring the client to serve as an "archive" client that can be used for self-hosting.
 
-SimsCraft started as FSOdoc, an early attempt to document a snapshot of FSO update-46 with AI, but has since grown to use that knowledge to start over fresh with a new client and server intended for small scale use, known as NewSO (NSO), which lives in ``NSOClient/``.
+SimsCraft started as FSOdoc, an early attempt to document a snapshot of FSO update-46 with AI, but has since grown to use that knowledge to start over fresh with a new client and server intended for small scale use, known as Simburbia (SB), which lives in ``Simburbia/``.
 
 The goals:
 
-- **Play The Sims Online again**. NewSO, playable with friends, is the end goal.
+- **Play The Sims Online again**. Simburbia, playable with friends, is the end goal.
 - **Explain FreeSO's codebase** in ``docs/fso/``: the reference the reimplementation draws on.
 - **Reimplement the game in Swift**. This is a new implementation, not a line-by-line port, that is intended for a lot server of our own, LAN play, and the client.
 - **Go past that baseline:** SimAntics extensions, scripting, and older games' data such as The Sims 1.
 
 ### Small and LAN First
 
-NSO prioritizes small-scale, self-hosted deployments. The project aims for support local area network (LAN) and Internet multiplayer, co-operative and competitive, expecting roughly 1–50 players on average, with a maximum of 255, all while retaining TSO's core MMOG functionality. 
+SB prioritizes small-scale, self-hosted deployments. The project aims for support local area network (LAN) and Internet multiplayer, co-operative and competitive, expecting roughly 1–50 players on average, with a maximum of 255, all while retaining TSO's core MMOG functionality. 
 
 The self-hosted infrastructure is designed to scale upward for massively multiplayer servers when needed, rather than requiring it from the start. Design references include [Luanti](https://github.com/luanti-org), [Space Station 14](https://github.com/space-wizards), and [OpenTTD](https://github.com/OpenTTD/OpenTTD).
 
 ## Learn from Available Sources
 
-Because TSO's servers shutdown decades ago now, FSO's code provides the only ground truth on how the game worked. Even though FSO took some creative liberties (as will NSO), the underlining game remains the same.
+Because TSO's servers shutdown decades ago now, FSO's code provides the only ground truth on how the game worked. Even though FSO took some creative liberties (as will SB), the underlining game remains the same.
 
 Learn from everything available: FSO's code, [FreeSims](https://github.com/francot514/FreeSims), the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game's AI extends SimAntics), [Don Hopkins](https://github.com/SimHacker), [SimObliterator Suite](https://github.com/DnfJeff/SimObliterator_Suite), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), and [The Modding Guide](https://cyndersanity.github.io/sims-legacy-mod-guide/index.html). Additionally, [TSO Mania](https://www.tsomania.net/) provides resources on how the game plays. 
 
@@ -63,32 +63,32 @@ Treat them as leads to verify against the code or the oracles.
 
 ```sh
 for package in TSOFiles TSOContent; do   # the packages you changed and those that depend on them (CI builds them all)
-    swift build --package-path "NSOClient/$package" && swift test --package-path "NSOClient/$package"
+    swift build --package-path "Simburbia/$package" && swift test --package-path "Simburbia/$package"
 done
-grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' NSOClient/*/Sources  # must print nothing
-swift run --package-path NSOClient/TSOFilesCheck -c release tsofiles-check            # scans every TSO_*_DIR install that's set
-swift run --package-path NSOClient/Client -c release newso --headless --ticks 9000    # run a lot a game hour with no window; read the log
-NSOClient/scripts/oracle-fixtures.sh /tmp/oracle                                       # FreeSO's side; needs TSO_GAME_DIR
-TSO_ORACLE_DIR=/tmp/oracle swift test --package-path NSOClient/NSOOracle               # NSOClient's side, compared
-NSOClient/scripts/oracle-review.sh --mock /tmp/review                                  # both oracles on MockInstall
-NSOClient/scripts/scenario-oracle.sh --mock                                            # SimsScript scenarios on both VMs
+grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' Simburbia/*/Sources  # must print nothing
+swift run --package-path Simburbia/TSOFilesCheck -c release tsofiles-check            # scans every TSO_*_DIR install that's set
+swift run --package-path Simburbia/SBClient -c release simburbia --headless --ticks 9000    # run a lot a game hour with no window; read the log
+Simburbia/scripts/oracle-fixtures.sh /tmp/oracle                                       # FreeSO's side; needs TSO_GAME_DIR
+TSO_ORACLE_DIR=/tmp/oracle swift test --package-path Simburbia/SBOracle               # Simburbia's side, compared
+Simburbia/scripts/oracle-review.sh --mock /tmp/review                                  # both oracles on MockInstall
+Simburbia/scripts/scenario-oracle.sh --mock                                            # SimsScript scenarios on both VMs
 git status --short -- TSOClient Charvatia FSOInstaller Other                           # must print nothing
 ```
 
 ### The oracles
 
-``fso-oracle`` (``NSOClient/FSO.Oracle``) is a small .NET tool that compiles FreeSO's SimAntics, Files, and Content sources headless and records what they do. ``nso-oracle`` runs the same experiments on NSOClient, and ``compare`` sets the two side by side. ``sso-oracle`` (``ScriptOracle``) asks smaller questions: each scenario is a SimsScript object with the values it should leave, compiled once and run on both VMs (``fso-oracle run-scenarios``).
+``fso-oracle`` (``Simburbia/FSO.Oracle``) is a small .NET tool that compiles FreeSO's SimAntics, Files, and Content sources headless and records what they do. ``sb-oracle`` runs the same experiments on Simburbia, and ``compare`` sets the two side by side. ``sso-oracle`` (``ScriptOracle``) asks smaller questions: each scenario is a SimsScript object with the values it should leave, compiled once and run on both VMs (``fso-oracle run-scenarios``).
 
 Treat them as two sides of an experiment, not an answer key and a student:
 
-- **A disagreement is some finding, not a failure**. Explain it before fixing it: it may be an NSOClient bug, a FreeSO bug NewSO fixes (record it, and make the comparison expect it), a quirk the game relies on, or another deliberate difference.
+- **A disagreement is some finding, not a failure**. Explain it before fixing it: it may be a Simburbia bug, a FreeSO bug Simburbia fixes (record it, and make the comparison expect it), a quirk the game relies on, or another deliberate difference.
 - **Inconclusive isn't agreement**. A case one side couldn't measure is counted by reason, never as a pass.
 - **Keep the experiments repeatable**. Where FreeSO's own code isn't, change the oracle as little as possible and document it in its README.
 - **The checks are a gate, not the goal**. They stop on a new disagreement so someone looks at it.
 
-Write ``docs/results/nso-review.md`` (``oracle-review.sh --review``) only at the end of a phase or milestone, or when the owner asks.
+Write ``docs/results/sb-review.md`` (``oracle-review.sh --review``) only at the end of a phase or milestone, or when the owner asks.
 
-Don't run ``dotnet``, ``msbuild``, ``mono``, or ``nuget``, except for ``FSO.Oracle`` (directly or through ``NSOClient/NSOClient.slnx``, which holds only the oracle). The snapshot doesn't build on Linux, and the oracle must never change a file under ``TSOClient/``.
+Don't run ``dotnet``, ``msbuild``, ``mono``, or ``nuget``, except for ``FSO.Oracle`` (directly or through ``Simburbia/Simburbia.slnx``, which holds only the oracle). The snapshot doesn't build on Linux, and the oracle must never change a file under ``TSOClient/``.
 
 ## Golden rules
 
@@ -108,7 +108,7 @@ Don't run ``dotnet``, ``msbuild``, ``mono``, or ``nuget``, except for ``FSO.Orac
 
 ### Never crash (outranks feature work)
 
-NSOClient reads files nobody controls: original installs, patched objects, user mods, and lot saves. A truncated archive, a corrupt chunk, or a hostile save must produce an error the caller can act on, never a trap. Fix a crash before building on top of it.
+Simburbia reads files nobody controls: original installs, patched objects, user mods, and lot saves. A truncated archive, a corrupt chunk, or a hostile save must produce an error the caller can act on, never a trap. Fix a crash before building on top of it.
 
 - **Library code never traps**. No force unwraps, ``try!``, ``as!``, implicitly unwrapped optionals, ``fatalError``, ``precondition``, or ``assert``-based control flow in ``Sources/``. Throw a typed error. Unfinished features throw rather than trap.
 - **No silent fallbacks for bad data**. Report invalid input; don't quietly replace it. The exception is a tolerance FreeSO had and real files rely on: keep it and say so in the doc comment.
@@ -121,18 +121,18 @@ NSOClient reads files nobody controls: original installs, patched objects, user 
 
 ### Forward compatibility
 
-FSO was built against a snapshot of TSO New & Improved (N&I), likely 1.1097.1.0, when the Mystic Tree was first introduced. However, those copies came from EA's own servers and are now hard to come by. NSO, meanwhile, was first built against a more easily accessible ISO images, Beta (1.3.2.121) and the later the 2002 retail copy (1.145.1.0), before rediscovering 1.1097.1.0, and NewSO will meet more data newer than any of them: FreeSO's content, mods, and later saves of its own.
+FSO was built against a snapshot of TSO New & Improved (N&I), likely 1.1097.1.0, when the Mystic Tree was first introduced. However, those copies came from EA's own servers and are now hard to come by. SB, meanwhile, was first built against a more easily accessible ISO images, Beta (1.3.2.121) and the later the 2002 retail copy (1.145.1.0), before rediscovering 1.1097.1.0, and Simburbia will meet more data newer than any of them: FreeSO's content, mods, and later saves of its own.
 
-So although NSO needs to account for any discrepancies made leading up to 1.1097.1.0 out of sheer necessity, the project should design their applications to expect newer data from newer versions of itself just out of good practice. Forward compatibility now means backwards compatibility later.
+So although SB needs to account for any discrepancies made leading up to 1.1097.1.0 out of sheer necessity, the project should design their applications to expect newer data from newer versions of itself just out of good practice. Forward compatibility now means backwards compatibility later.
 
 - **Port every version FreeSO reads**. FreeSO is the only reference the project has for understanding The Sims Online, so its version branches are the spec. Test the versions the installs lack with synthetic files, and mark them in the scorecard as unverified on real data.
 - **Unknown isn't corrupt**. Data newer than a reader knows (a chunk type, a higher version, extra trailing fields, an enum value) is skipped or kept raw and reported wherever the format lets the rest be read. It's never a trap, and never dropped without a report. Data that is actually broken, such as a size past the end, is still an error.
 - **Keep what you don't understand**. Anything that rewrites a file (patching, saving, re-encoding a BHAV) carries the parts it can't read through unchanged instead of dropping them.
-- **NewSO's own formats stay readable by older NewSO**. When NewSO writes a format of its own, or extends one of FreeSO's, version it. Add new data as parts an older build can skip or keep, and say which is safe. A change an older build can't safely skip takes a new major version, which older builds refuse with a clear message.
+- **Simburbia's own formats stay readable by older Simburbia**. When Simburbia writes a format of its own, or extends one of FreeSO's, version it. Add new data as parts an older build can skip or keep, and say which is safe. A change an older build can't safely skip takes a new major version, which older builds refuse with a clear message.
 
 ### Library rules
 
-These apply to the NSOClient libraries. Tools (``tsofiles-check``, the oracles) may print, and are freer.
+These apply to the Simburbia libraries. Tools (``tsofiles-check``, the oracles) may print, and are freer.
 
 - **Engine-free**. No rendering, audio playback, UI, logging, or printing in library targets. Decode to plain values (RGBA pixels, PCM samples, typed chunks) and report through errors and results.
 - **Deterministic**. SimAntics must give the same results on every machine for lockstep play: wrap 16-bit arithmetic (``&+``, ``&-``, ``&*``), never iterate a ``Dictionary`` or ``Set`` in VM logic, process entities in object ID order, take randomness only from the VM's seed, never read the clock, and review any floating point that feeds simulation state.
@@ -148,8 +148,8 @@ These apply to the NSOClient libraries. Tools (``tsofiles-check``, the oracles) 
 
 ### The client
 
-- **TSO's interface**. These windows and controls are the base for NewSO's take on TSO's ``.uis`` screens.
-- **Seeing it**. ``swift run --package-path NSOClient/NSOInterface interface-demo`` opens a window with the controls; ``--screenshot <file.png>`` draws a few frames hidden and saves the last, for checking a change without anyone at the screen.
+- **TSO's interface**. These windows and controls are the base for Simburbia's take on TSO's ``.uis`` screens.
+- **Seeing it**. ``swift run --package-path Simburbia/NSOInterface interface-demo`` opens a window with the controls; ``--screenshot <file.png>`` draws a few frames hidden and saves the last, for checking a change without anyone at the screen.
 - **Building on Linux** needs the X11 and GL headers (``libx11-dev`` and friends, as in CI). 
 - **Use the ``raylib-swift`` skill** in ``.agents/skills/raylib-swift/`` for any work that imports Raylib: it covers the API's Swift shapes, the lifecycle, the frame, textures, render textures, input, the examples to read, and how to check a visual change on a private display. These rules win where the two disagree.
 - **The libraries never import raylib**. Rendering reads simulation state and never writes it. If something can't be tested without a window, it belongs in the client.

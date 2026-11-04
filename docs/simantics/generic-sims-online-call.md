@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Generic Sims Online Call](https://simantics.wikidot.com/wiki:generic-sims-online-call)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 This primitive is used to call upon game functions which are either not common enough to include as a primitive or very specialized with no parameters (eg. Disable/Enable Build/Buy).
 

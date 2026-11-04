@@ -1,11 +1,11 @@
-# NSOClient roadmap: milestones and what's next
+# Simburbia roadmap: milestones and what's next
 
 > **Last reviewed:** 2026-10-16 · **Last updated:** 2026-10-16 · **Change:** minor (21 primitives; both real lots run a full in-game day in step with FreeSO; next: Sims) · **Target:** behavior parity with FreeSO's engine-free libraries at the beta/update-46 snapshot (FSO.Files, FSO.Content, FSO.SimAntics)
 
 Forward-looking: the milestones, the current focus, and what comes next for the Swift packages in
-[`NSOClient/`](../NSOClient/). The evidence behind every status is in [scorecard.md](scorecard.md).
+[`Simburbia/`](../Simburbia/). The evidence behind every status is in [scorecard.md](scorecard.md).
 What FreeSO's code does, and why, is in [fso/](fso/README.md); how the Swift code behaves is in
-[nso/](nso/README.md).
+[nso/](sb/README.md).
 
 Keep it current: at the end of every session, update the milestone rows, the scorecard, and the
 revision history. Re-estimate when a milestone lands.
@@ -16,9 +16,9 @@ Three independent SwiftPM packages, each with its own tests:
 
 | Package | Ports | Depends on |
 | --- | --- | --- |
-| [TSOFiles](../NSOClient/TSOFiles/) | FSO.Files, plus the Vitaboy model formats (see [decisions](#decisions-for-the-owner)) | Foundation |
-| [TSOContent](../NSOClient/TSOContent/) | FSO.Content, without GPU upload | TSOFiles |
-| [SimAntics](../NSOClient/SimAntics/) | FSO.SimAntics, headless (no LotView, no HIT) | TSOContent, TSOFiles |
+| [TSOFiles](../Simburbia/TSOFiles/) | FSO.Files, plus the Vitaboy model formats (see [decisions](#decisions-for-the-owner)) | Foundation |
+| [TSOContent](../Simburbia/TSOContent/) | FSO.Content, without GPU upload | TSOFiles |
+| [SimAntics](../Simburbia/SimAntics/) | FSO.SimAntics, headless (no LotView, no HIT) | TSOContent, TSOFiles |
 
 Out of scope here: rendering, audio playback, UI, networking transports, and servers. Those consume
 these packages later.
@@ -26,7 +26,7 @@ these packages later.
 ## Alpha gate
 
 These are libraries, so the gate is a set of end-to-end jobs a caller must be able to do against a
-real TSO install, on Linux, with no crash. Any `no` keeps NSOClient pre-alpha. A row blocks only if
+real TSO install, on Linux, with no crash. Any `no` keeps Simburbia pre-alpha. A row blocks only if
 the job can't be done at all for typical inputs; a missing sub-case or a known difference from FreeSO
 is `partial, not blocking`.
 
@@ -54,22 +54,22 @@ In order:
        Create Object Instance primitive out of the world.
      - [x] C2. Placement in the world: footprints, placement checks, and the placement entry point.
      - [x] C3. Slots and containment, and Find Location For.
-   - [x] Mock install wiring: TSOContent and SimAntics tests read `NSOClient/MockInstall` (focused
+   - [x] Mock install wiring: TSOContent and SimAntics tests read `Simburbia/MockInstall` (focused
      edge-case fixtures stay in code), fso-oracle loads it, and CI runs both oracles on it
      (`oracle-review.sh --mock`). Primitive fixtures on the mock wait for a mock lot, in D2.
    - [x] D. In two steps:
      - [x] D1. Lot loading from blueprint XML with its objects, seeded loading in `fso-oracle`, and
-       `nso-oracle run-lot`, with digests compared tick by tick (the mock lot matches; real lots
+       `sb-oracle run-lot`, with digests compared tick by tick (the mock lot matches; real lots
        match until Run Tree By Name).
-     - [x] D2. `nso-oracle run-primitive`, on the lot `fso-oracle run-primitive` loads, and primitive
+     - [x] D2. `sb-oracle run-primitive`, on the lot `fso-oracle run-primitive` loads, and primitive
        fixtures on the mock lot. Every case matches on both installs, the lot as loaded included;
-       the primitive comparisons moved from the SimAntics tests into NSOOracle's and the review.
+       the primitive comparisons moved from the SimAntics tests into SBOracle's and the review.
    - [x] Every primitive that blocked objects or lots without Sims: Run Tree By Name, Notify Stack
      Object Out Of Idle, Get Distance To and Get Direction To, Transfer Funds, Remove Object Instance,
      Set Balloon Headline, Idle For Input, Breakpoint, Special Effect, Stop All Sounds, and Get
      Terrain Info. Both real lots run a full in-game day in step with FreeSO.
 2. **A first client, before the fourth pass,** so the work so far can be seen instead of only
-   compared. `NSOClient/Client` (`newso`) loads a lot from the install (or MockInstall), runs it in
+   compared. `Simburbia/SBClient` (`simburbia`) loads a lot from the install (or MockInstall), runs it in
    the VM at TSO's 30 ticks a second, and draws it through the 3D camera of decision 7 with
    stand-ins until sprites decode: floors tinted by room, walls and fences (cut down or full), and
    each object's footprint. Clicking an object opens an inspector with its GUID, tile, facing, and
@@ -88,10 +88,10 @@ In order:
      `run-primitive` requests can name Sims, FreeSO with an idle Sim is shown repeatable, and the
      mock install gets a made-up person object and appearance. Started 2026-10-29: the mock Sim has
      what FreeSO needs to create it (body strings, a skeleton, motive tuning, animation tables), and
-     NewSO reports a Sim's setup as unsupported until phase B. Found on the way: FreeSO's
+     Simburbia reports a Sim's setup as unsupported until phase B. Found on the way: FreeSO's
      `VMAvatar.SetAvatarType` reads missing body strings after defaulting to adult, so a Sim without
-     them always crashes FreeSO (a fix for NewSO); and FreeSO can't create a Sim on the base game
-     or the beta, whose `adult.skel` is a loose file rather than in `skeletons.dat` (NewSO could
+     them always crashes FreeSO (a fix for Simburbia); and FreeSO can't create a Sim on the base game
+     or the beta, whose `adult.skel` is a loose file rather than in `skeletons.dat` (Simburbia could
      read both).
    - [ ] B. The Sim entity: avatars from the person template, person data, motives and their decay,
      running every tick; Set Motive Deltas, Test Sim Interacting With, and Look Towards.
@@ -114,13 +114,13 @@ In order:
      decodes every frame on both installs.
    - [x] C. `SPR#`: both byte orders, its versions, and the opaque black default palette; all 6,579
      frames decode on both installs.
-   - [x] D. `fso-oracle sprites` and `nso-oracle sprites` compared frame for frame: every record
+   - [x] D. `fso-oracle sprites` and `sb-oracle sprites` compared frame for frame: every record
      agrees on both installs (93,265 production, 91,788 beta), and MockInstall has a made-up
      sprite archive for the comparison without game data.
-   - [ ] E. Objects in the client: an object's draw group for its graphic state, drawn by `newso` in
+   - [ ] E. Objects in the client: an object's draw group for its graphic state, drawn by `simburbia` in
      place of the boxes, first as flat quads, then with decision 7's depth.
      - [x] E1. Flat: TSOContent finds an object's drawing group (`ObjectResource.drawGroup(id:)`),
-       `LotScene.objectSprites` places each sprite as FreeSO's `DGRPRenderer` does, and `newso`
+       `LotScene.objectSprites` places each sprite as FreeSO's `DGRPRenderer` does, and `simburbia`
        draws them back to front over the lot, through a camera that matches TSO's 30° view at its
        three zooms, in all four rotations. The owner's house draws with every object's sprites.
      - [x] E2. Depth: SPR2 depth made global from each sprite's object offset, in a shader that
@@ -145,7 +145,7 @@ criteria met, not lines written.
 | Albertstown | Scaffolding: three packages, Swift 6 mode, Swift Testing | 0 | 1–2 | 100% | 0 | Path dependencies TSOContent → TSOFiles, SimAntics → TSOContent, TSOFiles. No `platforms:` (owner decision). |
 | Xanadu | Binary reading and containers: ByteReader, FAR1, FAR3, RefPack, IFF container, DBPF, install scanner | 1,859 | 12–19 | 100% | 0 | Done: all containers, plus `InstallScanner` and the `tsofiles-check` command (exit 0 clean, 1 failures, 2 usage); 55 test cases. Kept quirks: RefPack short input and growth, 0xFD to 0xFF, FAR3 duplicate IDs, IFF trailing byte, DBPF version arithmetic and first-wins IDs. Real install: 0 failures over 82,131 entries. |
 | Pixie Point | Typed IFF chunks for TSO: behavior, strings, objects, interactions, slots | 2,042 | 14–20 | 100% | 0 | Done: `BHAV`, `BCON`, `TRCN`, `TPRP`, `STR#`, `CTSS`, `TTAs`, `OBJD`, `OBJf`, `GLOB`, `SLOT`, `TTAB`, `FWAV`, the field-encoded number reader, and chunk parsing in `tsofiles-check`; 100 tests, 2 against the real install. Real install: 51,620 chunks, 0 failures. The TS1-only chunks moved to Charvatia. |
-| Hyde Park | Sprites and images: `SPR#`, `SPR2`, `PALT`, `DGRP`, `BMP_`, `THMB`, BMP, TGA, PNG to RGBA | 3,543 | 24–35 | 70% | 7–11 | Decode to plain RGBA plus SPR2 depth, no textures. Done: `PALT`, `DGRP`, `SPR2`, `SPR#`, the oracle comparison, and objects drawn flat in `newso` (phases A to E1). Includes TargaImagePCL's TGA reader. |
+| Hyde Park | Sprites and images: `SPR#`, `SPR2`, `PALT`, `DGRP`, `BMP_`, `THMB`, BMP, TGA, PNG to RGBA | 3,543 | 24–35 | 70% | 7–11 | Decode to plain RGBA plus SPR2 depth, no textures. Done: `PALT`, `DGRP`, `SPR2`, `SPR#`, the oracle comparison, and objects drawn flat in `simburbia` (phases A to E1). Includes TargaImagePCL's TGA reader. |
 | King Canyons | Patching and tables: PIFF apply, OTF, `tuning.dat`, `datadefinition.dat`, INI | 802 | 5–8 | 100% | 0 | Done: PIFF chunk and patch application with FreeSO's index rules, `PatchRegistry`, `OTFFile`, `TuningFile`, `DataDefinition`, `INIFile`; 125 tests, 6 against the real install. PIFF encoding (237 C# lines) isn't ported; decision 4 is still open. |
 | Landry Lakes | Audio formats: UTK, XA, HIT, HOT, EVT, HSM, FSC, TLO, hitlists | 1,651 | 11–17 | 0% | 11–17 | Decoding only; playback is a client concern. |
 | Nichol's Notch | Vitaboy model formats: mesh, skeleton, animation, appearance, binding, outfit, hand groups, BCF/CFP | 1,511 | 10–15 | 0% | 10–15 | Package placement is decision 1. |
@@ -159,7 +159,7 @@ criteria met, not lines written.
 | Upper Shankelston | EOD plugin handlers | 5,217 | 65–105 | 0% | 65–105 | Server-side logic only; panels belong to a client. |
 | Virginia Islands | Lot utilities: world and TS1 activators, architecture tools, lot rotation, terrain restore | 2,680 | 35–55 | 0% | 35–55 | Needed for houses from XML and surrounding lots. |
 | Charvatia | TS1 house and neighborhood chunks: `OBJT`, `OBJM`, `ARRY`, `WALm`, `FLRm`, `CARR`, `FAMI`, `FAMs`, `NBRS`, `NGBH`, `SIMI`, `TATT`, and field-encoded strings | 764 | 5–8 | 0% | 5–8 | Only TS1 hybrid mode reads these; a TSO install contains none (checked 2026-10-15). Deferred by the owner; port it when TS1 hybrid is needed, ideally checked against a TS1 install. `OBJM` is decoded by heuristic search in FreeSO. |
-| Yatesport | SimsScript: a text assembly for BHAVs, an LSL-like language that compiles to them, a decompiler from existing objects, LSL `state`s and interactions, editor support | new | 70–120 | 5% | 67–114 | Later, after alpha; not counted in the totals below. Proof of concept in `NSOClient/SimsScript` (decision 5). |
+| Yatesport | SimsScript: a text assembly for BHAVs, an LSL-like language that compiles to them, a decompiler from existing objects, LSL `state`s and interactions, editor support | new | 70–120 | 5% | 67–114 | Later, after alpha; not counted in the totals below. Proof of concept in `Simburbia/SimsScript` (decision 5). |
 | | **Total** | **≈ 53,000** | **≈ 580–930** | **≈ 18% ready** | **≈ 419–658** | |
 
 ## Upcoming milestones, ranked
@@ -183,7 +183,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 1. **Where the Vitaboy model formats live.** In TSOFiles (they're file formats) or a fourth package
    `Vitaboy` (as in FreeSO). Recommended: TSOFiles, to keep three packages.
 2. **How to record FreeSO replays.** Decided (2026-10-15): an oracle harness. A .NET 10 console tool
-   in `NSOClient/FSO.Oracle/` compiles FreeSO's SimAntics, Files, and Content sources (linked read-only)
+   in `Simburbia/FSO.Oracle/` compiles FreeSO's SimAntics, Files, and Content sources (linked read-only)
    with stubs for rendering and audio, and runs the VM headless (`VM.UseWorld = false`, as the lot
    server does). It serves two kinds of reference results: first, per-primitive differential tests
    (the Swift tests send an operand and variables, the oracle runs FreeSO's primitive); later,
@@ -192,7 +192,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
    `TSO_GAME_DIR` and not committed. AGENTS.md allows `dotnet` for this tool only.
 3. **Wire compatibility of lockstep commands.** Decided (2026-10-16): not a requirement. FreeSO's
    server protocol began as an attempt to talk to the original TSO client and still carries code
-   from then, though it later stopped being compatible; NSOClient doesn't hold to it. Matching
+   from then, though it later stopped being compatible; Simburbia doesn't hold to it. Matching
    FreeSO's commands byte for byte stays an option where it doubles as a fidelity check.
 4. **Editing support.** PIFF encoding and `IffFile` change tracking only matter for an editor. Port
    them now, or defer. Recommended: defer.
@@ -210,7 +210,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
    (`TSOClient/tso.content/ContentSrc/Effects/2DWorldBatch.fx`) does: from the draw group's
    `ObjectOffset` (`TSOClient/tso.files/formats/iff/chunks/DGRP.cs`), in a shader that writes the
    fragment depth. Vitaboy models are built from TSOFiles' decoded data at run time, with TSO's
-   blend weights (`TSOClient/tso.vitaboy.model/Mesh.cs`), never converted ahead of time, since NewSO
+   blend weights (`TSOClient/tso.vitaboy.model/Mesh.cs`), never converted ahead of time, since Simburbia
    reads the player's own install. FreeSO's 2D approach stays the reference for what a lot should
    look like. Sprites without depth (every `SPR#` frame) aren't drawn in the world, as FreeSO's
    `DGRPRenderer` leaves them out; the owner checked the house drawn this way (2026-10-28) and it's
@@ -238,6 +238,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-03 | major | NewSO becomes **Simburbia** (SB). `NSOClient/` is now `Simburbia/`, its client package `SBClient` (the command `simburbia`), and `NSOOracle` `SBOracle` (`sb-oracle`); `docs/nso/` is `docs/sb/` and the review `docs/results/sb-review.md`. Names outside the code moved too, before anything was released: the blueprint marker `<simburbia version>`, `SB_USER_DIR` (and `sb.user.dir`), and the player folder `Simburbia`. TSO's own formats keep the `TSO` prefix; `NSOInterface` keeps its name until Hudini replaces it. Earlier rows keep the old names. |
 | 2026-10-29 | minor | Blueprints, step 2: `Blueprint.xml()` writes TSO's dialect as `blueprint.dtd` lays it out (names, `hidden`, the revision, a comment per level, NewSO's marker), keeping what reading didn't understand; every job lot and every blueprint in the repository round-trips. `newso --rewrite-blueprint` names each object from its `OBJD`, and the owner's house is rewritten so people can read it: 211 objects named. FreeSO reads the rewritten house the same (room maps and a 1,800-tick run identical). FMT-22 done. |
 | 2026-10-29 | patch | `newso` honors a blueprint's `hidden="1"`: the job lots' portals and zone markers, which showed in the nightclub, are no longer drawn or picked. It's the lot format's, not SimAntics', so the client applies it (`LotSession.hiddenByBlueprint`, from `VM.loadLot(_:)`, which reports each blueprint object's object IDs) and the VM's state is untouched. |
 | 2026-10-29 | minor | Blueprints, step 1: `Blueprint` reads TSO's dialect in full (revision, names, `hidden`, flag layers, puddles, sounds, the `<newso>` marker) as well as FreeSO's, and keeps what it doesn't know. All 23 of 1.1097.1.0's job lots read; only `nightclub00_01.xml` needs the one tolerated repair. Found on the way: Foundation's `XMLDocument` on Linux recovers from broken XML, so a truncated blueprint used to load part of a lot; `XMLParser` now checks first and it throws. Sound IDs are read unsigned, as FreeSO reads them (TSO's go past 2^31). FMT-22. |

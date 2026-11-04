@@ -8,10 +8,10 @@ closest to the one FreeSO was built against. `tsofiles-check` wrote this on 2026
 archive entries, IFF chunks (the resources inside the game's object files), and object IDs (GUIDs);
 it holds none of the game's own data.
 
-When NSOClient, or FreeSO (which NSOClient is checked against), behaves differently on two copies,
+When Simburbia, or FreeSO (which Simburbia is checked against), behaves differently on two copies,
 this shows what changed in the game's files, before anyone looks for a bug in the code. It's
 written once: delete it and run `tsofiles-check` with the variables set to write it again. What the
-differences mean for NewSO is noted by hand beside it, in `install-notes.md`.
+differences mean for Simburbia is noted by hand beside it, in `install-notes.md`.
 
 ## Summary
 

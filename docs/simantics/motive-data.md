@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Motive Data](https://simantics.wikidot.com/wiki:motive-data)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 **Motive Data** refers to a person's built in motive fields, which drive the "Greening" gameplay of the Sims series. There are 16 in total, and each can be accessed by SimAntics via a [Scope](scopes.md). Note: The ID table below can also be used when referring to object advertisement data.
 
@@ -25,6 +25,6 @@
 | 14 | Social | -100 to 100. |
 | 15 | Fun | -100 to 100. |
 
-## Notes for NSOClient
+## Notes for Simburbia
 
 The table above matches FreeSO's `VMMotive` (0 to 15).

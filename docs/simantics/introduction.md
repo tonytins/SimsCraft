@@ -2,7 +2,7 @@
 
 > From the SimAntics Wiki ([Introduction to SimAntics](https://simantics.wikidot.com/wiki:introduction-to-simantics), [Edith](https://simantics.wikidot.com/wiki:edith), [Interactions](https://simantics.wikidot.com/wiki:interactions)), retrieved 2026-10-16, by its contributors, under
 > [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Converted to Markdown and lightly
-> edited; sections headed "Notes for NSOClient" are ours. See [README.md](README.md).
+> edited; sections headed "Notes for Simburbia" are ours. See [README.md](README.md).
 
 **SimAntics** is a [CISC](http://en.wikipedia.org/wiki/Complex_instruction_set_computing) bytecode language which powers the objects in The Sims and The Sims Online.
 
@@ -103,7 +103,7 @@ Certain features, such as spawning new instances of objects on a lot and debuggi
 
 **Interactions** are functions that can be queued onto objects or people by other objects or the player. Each interaction has a priority; if this is less than the interaction after it then the interaction is automatically canceled. Interactions are normally defined by Tree Tables (TTAB), but occasionally they directly execute functional trees not referenced by TTAB. Not much is known about interactions right now.
 
-## Notes for NSOClient
+## Notes for Simburbia
 
 In FreeSO's update-46, an error result unwinds the thread's whole stack. Any other failure inside a thread
 resets the object, and a dialog reports it, at most once every 20 seconds. An object that fails
