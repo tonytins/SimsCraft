@@ -480,20 +480,78 @@ options:
                         writer.Write(frame.Routine?.ID ?? (ushort)0);
                         writer.Write(frame.InstructionPointer);
                     }
+                    if (entity is VMAvatar avatar) WriteSim(writer, avatar);
                 }
             }
             var digest = Convert.ToHexString(SHA256.HashData(stream.ToArray())).ToLowerInvariant();
             results.WriteLine($"{prefix}tick {tick} seed {vm.Context.RandomSeed:x16} entities {vm.Entities.Count} digest {digest}");
             if (!dump) return;
-            // The same fields, readable: `  id guid x y level direction data=... stack=routine:ip,...`.
+            // The same fields, readable: `  id guid x y level direction data=... stack=routine:ip,...`,
+            // and for a Sim, ` person=... motives=... animations=... carry=... queue=...`.
             foreach (var entity in vm.Entities.OrderBy(entity => entity.ObjectID))
             {
                 var stack = entity.Thread?.Stack ?? new List<VMStackFrame>();
                 results.WriteLine($"  {entity.ObjectID} {entity.Object?.OBJ?.GUID ?? 0u:x8} {entity.Position.x} {entity.Position.y} "
                     + $"{entity.Position.Level} {(byte)entity.Direction} data={string.Join(",", entity.ObjectData ?? Array.Empty<short>())} "
-                    + $"stack={string.Join(",", stack.Select(frame => $"{frame.Routine?.ID ?? 0}:{frame.InstructionPointer}"))}");
+                    + $"stack={string.Join(",", stack.Select(frame => $"{frame.Routine?.ID ?? 0}:{frame.InstructionPointer}"))}"
+                    + (entity is VMAvatar avatar ? SimFields(avatar) : ""));
             }
         }
+
+        /// <summary>The digest's version 1 fields of a Sim, after its stack (see README.md).</summary>
+        private static void WriteSim(BinaryWriter writer, VMAvatar avatar)
+        {
+            writer.Write(PersonDataCount);
+            for (var i = 0; i < PersonDataCount; i++) writer.Write(avatar.GetPersonData((VMPersonDataVariable)i));
+            writer.Write(MotiveCount);
+            for (var i = 0; i < MotiveCount; i++) writer.Write(avatar.GetMotiveData((VMMotive)i));
+            var animations = avatar.Animations ?? new List<VMAnimationState>();
+            writer.Write(animations.Count);
+            foreach (var animation in animations) WriteAnimation(writer, animation);
+            writer.Write((byte)(avatar.CarryAnimationState == null ? 0 : 1));
+            if (avatar.CarryAnimationState != null) WriteAnimation(writer, avatar.CarryAnimationState);
+            var queue = avatar.Thread?.Queue ?? new List<VMQueuedAction>();
+            writer.Write(queue.Count);
+            foreach (var action in queue)
+            {
+                writer.Write(action.ActionRoutine?.ID ?? (ushort)0);
+                writer.Write(action.Callee?.ObjectID ?? (short)0);
+                writer.Write(action.InteractionNumber);
+                writer.Write(action.Priority);
+                writer.Write((byte)action.Mode);
+                writer.Write(action.UID);
+                writer.Write((byte)(action.Cancelled ? 1 : 0));
+            }
+        }
+
+        private static void WriteAnimation(BinaryWriter writer, VMAnimationState animation)
+        {
+            var name = Encoding.UTF8.GetBytes(animation.Anim?.Name ?? "");
+            writer.Write(name.Length);
+            writer.Write(name);
+            writer.Write(BitConverter.SingleToUInt32Bits(animation.CurrentFrame));
+            writer.Write(BitConverter.SingleToUInt32Bits(animation.Speed));
+            writer.Write((byte)(animation.PlayingBackwards ? 1 : 0));
+            writer.Write((byte)(animation.Loop ? 1 : 0));
+            writer.Write((byte)(animation.EndReached ? 1 : 0));
+            writer.Write(animation.EventsRun);
+        }
+
+        private static string SimFields(VMAvatar avatar)
+        {
+            string Animation(VMAnimationState state) =>
+                $"{state.Anim?.Name ?? ""}@{state.CurrentFrame.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}";
+            var person = Enumerable.Range(0, PersonDataCount).Select(i => avatar.GetPersonData((VMPersonDataVariable)i));
+            var motives = Enumerable.Range(0, MotiveCount).Select(i => avatar.GetMotiveData((VMMotive)i));
+            var queue = avatar.Thread?.Queue ?? new List<VMQueuedAction>();
+            return $" person={string.Join(",", person)} motives={string.Join(",", motives)}"
+                + $" animations={string.Join(",", (avatar.Animations ?? new List<VMAnimationState>()).Select(Animation))}"
+                + $" carry={(avatar.CarryAnimationState == null ? "-" : Animation(avatar.CarryAnimationState))}"
+                + $" queue={string.Join(",", queue.Select(action => $"{action.ActionRoutine?.ID ?? 0}:{action.Callee?.ObjectID ?? 0}:{action.Priority}"))}";
+        }
+
+        /// <summary>FreeSO's person data and motive arrays, as <c>VMAvatar</c> sizes them.</summary>
+        private const int PersonDataCount = 101, MotiveCount = 16;
 
         private sealed class Options
         {

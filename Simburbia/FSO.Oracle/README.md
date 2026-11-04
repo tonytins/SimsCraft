@@ -127,7 +127,7 @@ for run in 1 2; do fso-oracle run-lot --blueprint Simburbia/Lots/tonys-house.xml
 diff /tmp/sims-1.txt /tmp/sims-2.txt && echo repeatable
 ```
 
-## The state digest (version 0)
+## The state digest (version 1)
 
 SHA-256 over little-endian values, in this order:
 
@@ -136,10 +136,26 @@ SHA-256 over little-endian values, in this order:
 3. for each entity, in object ID order:
    object ID (16), object GUID (32), tile x (16), tile y (16), level (8),
    direction (8), the object data count (32) and values (16 each), the thread's
-   stack depth (32), then each frame's routine ID (16) and instruction pointer (16).
+   stack depth (32), then each frame's routine ID (16) and instruction pointer (16);
+4. and after a Sim's stack only (a `VMAvatar`), since version 1:
+   - the person data count (32, FreeSO's 101) and values (16 each);
+   - the motive count (32, 16) and values (16 each);
+   - the animation count (32) and each animation, then whether there's a carry animation (8)
+     and it if so: the name's UTF-8 length (32) and bytes, the current frame and the speed as
+     32-bit float bits, whether it plays backwards, loops, and has ended (8 each), and how many
+     events it has run (8);
+   - the action queue's length (32) and each action: its routine ID (16), the callee's object ID
+     (16, 0 for none), interaction number (32), priority (16), mode (8), ID (16), and whether it's
+     cancelled (8).
 
-The Swift port must compute the same digest from the same state. Fields will be
-added in later versions; bump the version when they are.
+Version 1 changes nothing for other entities, so a lot without Sims has the same digest in both
+versions. Frames and speeds are compared as float bits, so animation has to match FreeSO's
+floating point exactly. `--dump` adds a Sim's fields to its line: `person=... motives=...
+animations=name@frame,... carry=name@frame (or -) queue=routine:callee:priority,...`.
+
+The Swift port (SimAntics' `StateDigest`) must compute the same digest from the same state. Until
+it runs animations and the queue (phases C and D), its Sims write none of either. Bump the version
+when fields are added again.
 
 ## Single primitives: `run-primitive` (protocol version 1)
 

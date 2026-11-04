@@ -142,6 +142,25 @@ func addToAttribute(_ index: Int16, _ amount: Int16, true truePointer: UInt8 = 2
             #expect(bytes.count == 12 + 2 + 4 + 4 + 1 + 1 + 4 + 160 + 4)
         }
     }
+
+    /// Version 1 adds a Sim's state after its stack, and nothing for any other entity.
+    @Test func writesTheVersion1FieldsForSimsOnly() throws {
+        try withVM(seed: 0x0102) { vm, entity throws in
+            let objectBytes = StateDigest.bytes(of: vm)
+            entity.isAvatar = true
+            entity.personData[3] = 7
+            entity.motiveData[15] = -2
+            let simBytes = StateDigest.bytes(of: vm)
+            #expect(Array(simBytes.prefix(objectBytes.count)) == objectBytes)
+            let added = Array(simBytes.dropFirst(objectBytes.count))
+            // 101 person data, 16 motives, no animations, no carry animation, an empty queue.
+            #expect(added.count == 4 + 202 + 4 + 32 + 4 + 1 + 4)
+            #expect(Array(added.prefix(4)) == [101, 0, 0, 0] && Array(added[10..<12]) == [7, 0])
+            #expect(Array(added[206..<210]) == [16, 0, 0, 0] && Array(added[240..<242]) == [0xFE, 0xFF])
+            #expect(added.suffix(9) == [0, 0, 0, 0, 0, 0, 0, 0, 0])
+            #expect(StateDigest.version == 1)
+        }
+    }
 }
 
 @Suite struct SleepTests {
