@@ -73,6 +73,17 @@ interface library for raylib-swift, which grew out of the NSOInterface package t
 used to have. Its `hudini-demo` shows them on their own. Simburbia's colors are
 `InterfaceTheme.simburbia`, for now Hudini's standard palette.
 
+The top bar and the Help, MOMI, and inspector windows are described in Hudini's UIScript XML, in
+[`Simburbia/Interface/`](../../Simburbia/Interface/): `topbar.xml`, `help.xml`, `momi.xml`, and
+`inspector.xml`. Each says where its controls go, what fixed text they hold, and their colors;
+the client fills in what changes (the lot, the time, the messages, the object) and draws what
+UIScript has no control for (the speed arrows and the round help button, in regions the document
+places). Each window's document is its content, under the title bar Hudini's `WindowFrame` draws.
+The client reads them when its window opens: one that's missing, doesn't read, or lacks a control
+the client uses (`InterfaceDocuments.required`) stops it with a message naming it. Moving a
+control, or rewording the help, is an edit to a document, with no rebuild. The format is close to
+TSO's own `.uis` screens, which Hudini also reads.
+
 ## Without a window
 
 Three options run the lot without anyone at the screen, and a fourth rewrites its blueprint.

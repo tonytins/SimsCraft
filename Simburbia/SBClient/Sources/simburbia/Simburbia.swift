@@ -116,9 +116,15 @@ struct Simburbia: ParsableCommand {
             return
         }
 
+        // The interface's documents, read before the window opens, so a missing or broken one
+        // says so instead of leaving the window blank.
+        let (interface, warnings) = try Interface.load(from: Self.simburbiaFolder)
+        for warning in warnings {
+            FileHandle.standardError.write(Data("simburbia: \(warning)\n".utf8))
+        }
         let log = logs ? RunLog(session: session, install: Self.describe(options.gameDirectory)) : nil
-        let app = ClientApp(session: session, hidden: screenshot != nil, zoomStep: zoom.map { $0 - 1 }, focus: focus.flatMap(focusTile),
-                            rotation: rotation, log: log)
+        let app = ClientApp(session: session, interface: interface, hidden: screenshot != nil, zoomStep: zoom.map { $0 - 1 },
+                            focus: focus.flatMap(focusTile), rotation: rotation, log: log)
         if let screenshot {
             guard app.saveScreenshot(to: screenshot, after: ticks ?? 300) else {
                 throw Failure(description: "couldn't save the screenshot to \(screenshot)")

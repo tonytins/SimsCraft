@@ -8,9 +8,10 @@ final class ClientApp {
     private let session: LotSession
     private var scene = LotScene()
     private let view = LotView()
-    private let inspector = Inspector()
-    private let help = HelpWindow()
-    private let momi = MomiWindow()
+    private let topBar: TopBar
+    private let inspector: Inspector
+    private let help: HelpWindow
+    private let momi: MomiWindow
     private let library = SpriteLibrary()
     private let textures: SpriteTextures
     /// Sprite depth; `nil` if the shader didn't compile, and sprites draw back to front only.
@@ -25,8 +26,9 @@ final class ClientApp {
     private let log: RunLog?
 
     /// Opens the window, which is hidden when the client only takes a screenshot, at a zoom
-    /// step and centered on a tile when they're given.
-    init(session: LotSession, hidden: Bool, zoomStep: Int? = nil, focus: SIMD2<Float>? = nil, rotation: Int = 0, log: RunLog? = nil) {
+    /// step and centered on a tile when they're given, with the interface its documents describe.
+    init(session: LotSession, interface: Interface, hidden: Bool, zoomStep: Int? = nil, focus: SIMD2<Float>? = nil,
+         rotation: Int = 0, log: RunLog? = nil) {
         self.session = session
         self.log = log
         textures = SpriteTextures(library: library)
@@ -37,6 +39,10 @@ final class ClientApp {
         SetTargetFPS(60)
         // Escape closes the inspector instead of the client.
         SetExitKey(.null)
+        topBar = TopBar(script: interface.topBar)
+        inspector = Inspector(script: interface.inspector)
+        help = HelpWindow(script: interface.help)
+        momi = MomiWindow(script: interface.momi)
         depth = SpriteDepth()
 
         rebuildScene()
@@ -101,26 +107,27 @@ final class ClientApp {
         if IsKeyPressed(.pageUp) { view.level = min(view.level + 1, Architecture.stories) }
         if IsKeyPressed(.pageDown) { view.level = max(view.level - 1, 1) }
         if IsKeyPressed(.escape) {
-            if help.isOpen { help.isOpen = false } else if momi.isOpen { momi.isOpen = false } else { inspector.close() }
+            if help.window.isOpen { help.window.isOpen = false } else if momi.window.isOpen { momi.window.isOpen = false } else { inspector.close() }
         }
 
+        topBar.update(topBarState)
         let mouse = GetMousePosition()
-        let overInterface = TopBar.contains(mouse) || inspector.contains(mouse) || help.contains(mouse) || momi.contains(mouse)
+        let overInterface = topBar.contains(mouse) || inspector.contains(mouse) || help.window.contains(mouse) || momi.window.contains(mouse)
         if !overInterface { view.zoom(by: GetMouseWheelMove()) }
         if IsMouseButtonDown(.right) { view.pan(by: GetMouseDelta()) }
         hovered = overInterface ? nil : view.object(at: mouse, in: scene, camera: view.camera(screenHeight: Int(GetScreenHeight())))
         // The windows take the click when they want it, then the bar; otherwise a click picks
         // what's under the pointer.
-        let usedByWindow = help.update() || momi.update() || inspector.update()
+        let usedByWindow = help.window.update() || momi.window.update() || inspector.update()
         if !usedByWindow, IsMouseButtonPressed(.left) {
-            switch TopBar.click(at: mouse, topBarState) {
+            switch topBar.click(at: mouse) {
             case .speed(let index):
                 session.setSpeed(index: index)
                 session.isPaused = false
             case .help:
-                help.isOpen.toggle()
+                help.window.isOpen.toggle()
             case .messages:
-                momi.isOpen.toggle()
+                momi.window.isOpen.toggle()
             case nil:
                 if !overInterface { inspector.selected = hovered }
             }
@@ -146,15 +153,18 @@ final class ClientApp {
         ClearBackground(Color(r: 34, g: 44, b: 58, a: 255))
         view.draw(scene, camera: camera, objectsWithSprites: objectsWithSprites, selected: inspector.selected, hovered: hovered)
         view.drawSprites(sprites, camera: camera, textures: textures, depth: depth, order: &drawOrder, selected: inspector.selected, hovered: hovered)
-        TopBar.draw(topBarState)
+        let state = topBarState
+        topBar.update(state)
+        topBar.draw(state)
         if let id = inspector.selected, let entity = session.vm.entity(id: id) {
             inspector.draw(entity)
         } else if let id = hovered, let entity = session.vm.entity(id: id) {
             let mouse = GetMousePosition()
             DrawText(Inspection(entity).title, Int(mouse.x) + 14, Int(mouse.y) + 10, 16, InterfaceTheme.simburbia.text)
         }
-        momi.draw(session.systemMessages)
-        help.draw()
+        momi.show(session.systemMessages)
+        momi.window.draw()
+        help.window.draw()
         EndDrawing()
     }
 

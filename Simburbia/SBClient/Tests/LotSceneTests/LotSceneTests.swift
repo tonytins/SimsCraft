@@ -1,6 +1,7 @@
 // The client's view of a lot, checked on MockInstall's lot without a window.
 
 import Foundation
+import Hudini
 import LotScene
 import SimAntics
 import Testing
@@ -331,4 +332,17 @@ private func simdLength(_ vector: SIMD3<Float>) -> Float {
     }
     #expect(ClientOptions.simburbiaFolder(executableFolder: app.appendingPathComponent("MacOS"), sourceFolder: source)
             == app.appendingPathComponent("Resources"))
+}
+
+@Test func theInterfaceDocumentsHaveWhatTheClientUses() throws {
+    for (document, controls) in InterfaceDocuments.required {
+        let script = try UIScript(contentsOf: InterfaceDocuments.url(of: document, in: simburbiaFolder))
+        #expect(controls.allSatisfy { script.control(named: $0) != nil }, "\(document).xml lacks one of \(controls)")
+        // A misspelled attribute is ignored rather than refused, so none may be.
+        #expect(script.ignoredAttributes.isEmpty, "\(document).xml: \(script.ignoredAttributes)")
+    }
+    // One speed arrow per speed the player can pick.
+    let topBar = try UIScript(contentsOf: InterfaceDocuments.url(of: "topbar", in: simburbiaFolder))
+    #expect(LotSession.speeds.indices.allSatisfy { topBar.control(named: "speed\($0)") != nil })
+    #expect(topBar.control(named: "speed\(LotSession.speeds.count)") == nil)
 }

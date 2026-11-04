@@ -25,8 +25,9 @@ client (`simburbia --version`, the major.minor.patch GitVersion works out; see
 [the client's page](../../docs/sb/client.md#versions)), and stages a folder with:
 
 - the client;
-- `Lots/` and `MockInstall/`, only the files git tracks, which the client finds beside itself
-  (in `Contents/Resources` in the Mac app), so it opens the mock lot with no game installed;
+- `Interface/`, `Lots/`, and `MockInstall/`, only the files git tracks, which the client finds
+  beside itself (in `Contents/Resources` in the Mac app): the windows' UIScript documents, and the
+  lots, so it opens the mock lot with no game installed;
 - the readme and the licence (AGPL-3.0).
 
 FreeSO's content folder isn't packaged: the client finds it through `FSO_CONTENT_DIR`, or in a

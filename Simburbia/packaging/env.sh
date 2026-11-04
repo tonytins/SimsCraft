@@ -59,8 +59,8 @@ build_client() {
     export BIN VERSION
 }
 
-# Puts what a player needs in a folder: the client, its lots and the mock install (only the
-# files git tracks, so nothing local slips in), and the readme and licence.
+# Puts what a player needs in a folder: the client, its interface documents, its lots, and the
+# mock install (only the files git tracks, so nothing local slips in), and the readme and licence.
 stage() {
     local dest="$1" file
     rm -rf "$dest"
@@ -69,7 +69,11 @@ stage() {
     while IFS= read -r file; do
         mkdir -p "$dest/$(dirname "${file#Simburbia/}")"
         cp "$ROOT/$file" "$dest/${file#Simburbia/}"
-    done < <(git -C "$ROOT" ls-files Simburbia/Lots Simburbia/MockInstall)
+    done < <(git -C "$ROOT" ls-files Simburbia/Interface Simburbia/Lots Simburbia/MockInstall)
+    # The smoke test runs headless, which never reads the interface, so its documents are checked here.
+    for file in topbar help momi inspector; do
+        [[ -f "$dest/Interface/$file.xml" ]] || fail "the package has no Interface/$file.xml."
+    done
     cp "$ROOT/README.md" "$dest/README.md"
     cp "$ROOT/Simburbia/LICENSE" "$dest/LICENSE"
 }

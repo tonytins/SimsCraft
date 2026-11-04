@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The Help window: the client's keys and what they do, opened from the top bar's help button.
+  It's the window's content, under a title bar the client draws. Add a key with a new pair of
+  rows.
+-->
+<UIScript version="1">
+  <Window width="300" height="194"/>
+
+  <Style name="key" textColor="#E4E8EE" fontSize="16"/>
+  <Style name="effect" textColor="#FFF800" fontSize="16"/>
+
+  <Text name="key1" x="12" y="12" width="170" height="16" style="key" text="Space"/>
+  <Text name="effect1" x="138" y="12" width="150" height="16" style="effect" alignment="right" text="Pause"/>
+  <Text name="key2" x="12" y="34" width="170" height="16" style="key" text="1-3"/>
+  <Text name="effect2" x="138" y="34" width="150" height="16" style="effect" alignment="right" text="Speed"/>
+  <Text name="key3" x="12" y="56" width="170" height="16" style="key" text="Q/E"/>
+  <Text name="effect3" x="138" y="56" width="150" height="16" style="effect" alignment="right" text="Rotate"/>
+  <Text name="key4" x="12" y="78" width="170" height="16" style="key" text="Mouse Wheel"/>
+  <Text name="effect4" x="138" y="78" width="150" height="16" style="effect" alignment="right" text="Zoom"/>
+  <Text name="key5" x="12" y="100" width="170" height="16" style="key" text="Right-drag"/>
+  <Text name="effect5" x="138" y="100" width="150" height="16" style="effect" alignment="right" text="Pan"/>
+  <Text name="key6" x="12" y="122" width="170" height="16" style="key" text="PgUp/PgDn"/>
+  <Text name="effect6" x="138" y="122" width="150" height="16" style="effect" alignment="right" text="Floor"/>
+  <Text name="key7" x="12" y="144" width="170" height="16" style="key" text="W"/>
+  <Text name="effect7" x="138" y="144" width="150" height="16" style="effect" alignment="right" text="Walls"/>
+  <Text name="key8" x="12" y="166" width="170" height="16" style="key" text="Click on Object"/>
+  <Text name="effect8" x="138" y="166" width="150" height="16" style="effect" alignment="right" text="Inspect"/>
+</UIScript>

@@ -18,6 +18,7 @@ Key entrypoints:
   - ``SBClient/`` - ``simburbia``, Simburbia's client, which loads, runs, and shows a lot
   - ``FSO.Oracle/``, ``SBOracle/``, ``ScriptOracle/`` - the oracles (see [The oracles](#the-oracles))
   - ``MockInstall/`` - a tiny made-up TSO install for tests and CI
+  - ``Interface/`` - the client's top bar and windows, in Hudini's UIScript XML
   - ``Lots/`` - the owner's lots as blueprint XML
   - ``packaging/`` - the scripts that build the client into packages players download
 - ``TSOClient/`` - FreeSO's source, frozen at a snapshot (read-only)

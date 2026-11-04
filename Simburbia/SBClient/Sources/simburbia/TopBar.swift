@@ -5,21 +5,21 @@ import Raylib
 /// The bar along the top of the screen: the lot, how fast time runs, the time; then the floor,
 /// any errors, the object count, and the button that opens the help.
 ///
-/// Laid out after the owner's prototype interface (`Simburbia/mockups/prototype-interface`),
-/// which doubles as Simburbia's fallback and debug interface. The prototype's money slot waits for
-/// money to exist.
-struct TopBar {
-    static let height = 28
-    private static let fontSize = 16
-    private static let gap = 24
-    private static let background = Color(r: 59, g: 59, b: 59, a: 255)        // #3B3B3B
-    private static let speedOn = Color(r: 62, g: 110, b: 190, a: 255)         // #3E6EBE
-    private static let speedOff = Color(r: 217, g: 217, b: 217, a: 255)       // #D9D9D9
-    private static let errorText = Color(r: 255, g: 0, b: 0, a: 255)          // #FF0000
-    private static let helpButton = Color(r: 74, g: 138, b: 66, a: 255)       // #4A8A42
-    private static let arrowSize: Float = 14
-    private static let arrowStep: Float = 16
-    private static var textY: Int { (height - fontSize) / 2 }
+/// Laid out by `Interface/topbar.xml`, after the owner's prototype interface
+/// (`docs/design/prototype-interface.figcraft`), which doubles as Simburbia's fallback and debug
+/// interface. The document places everything; the bar fills in the text and draws its regions:
+/// the background, the speed arrows, and the help button.
+final class TopBar {
+    private let script: UIScript
+    private let view: UIScriptView
+
+    init(script: UIScript) {
+        self.script = script
+        view = UIScriptView(script: script, theme: .simburbia)
+    }
+
+    /// The bar's height, from its document.
+    var height: Float { script.window.size.height }
 
     /// What the bar shows this frame.
     struct State {
@@ -39,201 +39,91 @@ struct TopBar {
         case messages
     }
 
-    /// The left edge of the speed arrows, after the lot name.
-    private static func arrowsLeft(_ state: State) -> Float {
-        Float(16 + MeasureText(state.lotName, fontSize) + gap)
+    func contains(_ point: Vector2) -> Bool {
+        point.y >= 0 && point.y < height
     }
 
-    /// The square a speed arrow sits in.
-    private static func arrow(_ index: Int, _ state: State) -> Rectangle {
-        Rectangle(x: arrowsLeft(state) + Float(index) * arrowStep, y: (Float(height) - arrowSize) / 2,
-                  width: arrowSize, height: arrowSize)
-    }
-
-    /// The help button's circle.
-    private static var helpCenter: Vector2 {
-        Vector2(x: Float(GetScreenWidth()) - 18, y: Float(height) / 2)
-    }
-
-    /// The right-hand texts, right to left from the help button: the object count, the errors
-    /// (only when there are any), and the floor, each with where it's drawn.
-    private static func rightItems(_ state: State) -> [(text: String, color: Color, bounds: Rectangle, action: Action?)] {
-        var items: [(text: String, color: Color, bounds: Rectangle, action: Action?)] = []
-        var right = Int(helpCenter.x) - 10 - gap
-        func add(_ text: String, _ color: Color, _ action: Action?) {
-            let width = MeasureText(text, fontSize)
-            right -= width
-            items.append((text, color, Rectangle(x: Float(right), y: 0, width: Float(width), height: Float(height)), action))
-            right -= gap
-        }
-        add("\(state.objects) Objects", .white, nil)
-        if state.errors > 0 { add("\(state.errors) \(state.errors == 1 ? "Error" : "Errors")", errorText, .messages) }
-        add(LotSession.floorName(state.level), .white, nil)
-        return items
-    }
-
-    static func contains(_ point: Vector2) -> Bool {
-        point.y >= 0 && point.y < Float(height)
+    /// Fills the document's text from the state, and stretches it to the screen.
+    func update(_ state: TopBar.State) {
+        view.setWindowSize(Vector2(x: Float(GetScreenWidth()), y: height))
+        view.setText(state.lotName, named: "lotName")
+        view.setText(state.isPaused ? "\(state.clock)  Paused" : state.clock, named: "clock")
+        view.setText(LotSession.floorName(state.level), named: "floor")
+        view.setText("\(state.errors) \(state.errors == 1 ? "Error" : "Errors")", named: "errors")
+        view.setHidden(state.errors == 0, named: "errors")
+        view.setText("\(state.objects) Objects", named: "objects")
     }
 
     /// The bar's response to this frame's click, if the click was on something it has.
-    static func click(at point: Vector2, _ state: State) -> Action? {
-        if CheckCollisionPointCircle(point, helpCenter, 10) { return .help }
-        for index in LotSession.speeds.indices where CheckCollisionPointRec(point, arrow(index, state)) {
-            return .speed(index)
-        }
-        return rightItems(state).first { $0.action != nil && CheckCollisionPointRec(point, $0.bounds) }?.action
-    }
-
-    static func draw(_ state: State) {
-        DrawRectangle(0, 0, Int(GetScreenWidth()), height, background)
-        DrawText(state.lotName, 16, textY, fontSize, .white)
-
-        // A right-pointing triangle per speed, blue up to the one time runs at; none while paused.
+    func click(at point: Vector2) -> Action? {
+        if view.pressButton(at: point, origin: .zero) == .pressed(control: "errors") { return .messages }
+        if let help = view.bounds(named: "help", at: .zero), CheckCollisionPointRec(point, help) { return .help }
         for index in LotSession.speeds.indices {
-            let box = arrow(index, state)
-            let color = !state.isPaused && index <= state.speedIndex ? speedOn : speedOff
-            DrawTriangle(Vector2(x: box.x, y: box.y), Vector2(x: box.x, y: box.y + box.height),
-                         Vector2(x: box.x + box.width, y: box.y + box.height / 2), color)
+            if let arrow = view.bounds(named: "speed\(index)", at: .zero), CheckCollisionPointRec(point, arrow) {
+                return .speed(index)
+            }
         }
-        let clockX = Int(arrowsLeft(state) + Float(LotSession.speeds.count) * arrowStep) + gap
-        DrawText(state.isPaused ? "\(state.clock)  Paused" : state.clock, clockX, textY, fontSize, .white)
+        return nil
+    }
 
-        let center = helpCenter
-        DrawCircleV(center, 10, helpButton)
-        DrawText("?", Int(center.x) - MeasureText("?", fontSize) / 2, textY, fontSize, .black)
-        for item in rightItems(state) {
-            DrawText(item.text, Int(item.bounds.x), textY, fontSize, item.color)
+    func draw(_ state: TopBar.State) {
+        let speedOn = script.styles["speedOn"]?.fillColor ?? .blue
+        let speedOff = script.styles["speedOff"]?.fillColor ?? .lightGray
+        let help = script.styles["help"]
+        view.draw(at: .zero) { name, bounds in
+            switch name {
+            case "bar":
+                DrawRectangleRec(bounds, self.script.styles["bar"]?.backgroundColor ?? .darkGray)
+            case "help":
+                // A circle with a question mark, as the prototype has it.
+                let center = Vector2(x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2)
+                DrawCircleV(center, min(bounds.width, bounds.height) / 2, help?.fillColor ?? .green)
+                let size = help?.fontSize ?? 16
+                DrawText("?", Int(center.x) - MeasureText("?", size) / 2, Int(center.y) - size / 2, size, help?.textColor ?? .black)
+            default:
+                // A right-pointing triangle per speed, lit up to the one time runs at; none while paused.
+                guard name.hasPrefix("speed"), let index = Int(name.dropFirst("speed".count)) else { return }
+                let color = !state.isPaused && index <= state.speedIndex ? speedOn : speedOff
+                DrawTriangle(Vector2(x: bounds.x, y: bounds.y), Vector2(x: bounds.x, y: bounds.y + bounds.height),
+                             Vector2(x: bounds.x + bounds.width, y: bounds.y + bounds.height / 2), color)
+            }
         }
     }
 }
 
-/// The window that lists the client's keys and what they do, opened from the top bar.
+/// The window that lists the client's keys and what they do (`Interface/help.xml`), opened from
+/// the top bar.
 final class HelpWindow {
-    private static let fontSize = 16
-    private static let lineHeight = 22
-    private static let effectColor = Color(r: 255, g: 248, b: 0, a: 255)       // #FFF800
-    private static let keys: [(key: String, effect: String)] = [
-        ("Space", "Pause"), ("1-3", "Speed"), ("Q/E", "Rotate"), ("Mouse Wheel", "Zoom"), ("Right-drag", "Pan"),
-        ("PgUp/PgDn", "Floor"), ("W", "Walls"), ("Click on Object", "Inspect"),
-    ]
-    private static let size = Vector2(x: 300, y: Float(36 + keys.count * lineHeight + 12))
-    private let frame = WindowFrame(title: "Help", theme: .simburbia)
+    let window: DocumentWindow
 
-    var isOpen = false
-
-    private var bounds: Rectangle {
-        frame.place(size: Self.size, at: Vector2(x: Float(GetScreenWidth()) / 2 + 40, y: (Float(GetScreenHeight()) - Self.size.y) / 2))
-    }
-
-    func contains(_ point: Vector2) -> Bool {
-        isOpen && CheckCollisionPointRec(point, bounds)
-    }
-
-    /// Lets the window be dragged and closed. Returns whether it used this frame's click.
-    func update() -> Bool {
-        guard isOpen else { return false }
-        let bounds = self.bounds
-        if frame.followPointer(in: bounds) { return true }
-        if frame.update(in: bounds) == .close {
-            isOpen = false
-            return true
-        }
-        return false
-    }
-
-    func draw() {
-        guard isOpen else { return }
-        let bounds = self.bounds
-        frame.draw(in: bounds)
-        let content = WindowFrame.content(in: bounds)
-        var y = Int(content.y) + 12
-        for (key, effect) in Self.keys {
-            DrawText(key, Int(content.x) + 12, y, Self.fontSize, InterfaceTheme.simburbia.text)
-            let right = Int(content.x + content.width) - 12
-            DrawText(effect, right - MeasureText(effect, Self.fontSize), y, Self.fontSize, Self.effectColor)
-            y += Self.lineHeight
+    init(script: UIScript) {
+        let size = script.window.size
+        window = DocumentWindow(title: "Help", script: script) {
+            // Centered top to bottom, title bar and all.
+            Vector2(x: Float(GetScreenWidth()) / 2 + 40, y: (Float(GetScreenHeight()) - size.height - Float(WindowFrame.titleHeight)) / 2)
         }
     }
 }
 
-/// MOMI: the window of system messages, opened from the top bar's error count. A log of the
-/// messages, newest at the bottom, and below it the input, disabled: there's no one to write to
-/// until online play.
+/// MOMI: the window of system messages (`Interface/momi.xml`), opened from the top bar's error
+/// count. A log of the messages, newest at the bottom, and below it the input, disabled: there's
+/// no one to write to until online play.
 final class MomiWindow {
-    private static let fontSize = 14
-    private static let lineHeight = 18
-    private static let size = Vector2(x: 420, y: 260)
-    private static let logBackground = Color(r: 34, g: 34, b: 34, a: 255)     // #222222
-    private static let inputBackground = Color(r: 20, g: 20, b: 20, a: 255)   // #141414
-    private let frame = WindowFrame(title: "MOMI", theme: .simburbia)
-    private var wrapped: [String] = []
-    private var wrappedCount = -1
-    /// How many lines the log is scrolled up from its newest.
-    private var scroll = 0
+    let window: DocumentWindow
+    private var shownCount = -1
 
-    var isOpen = false
-
-    private var bounds: Rectangle {
-        frame.place(size: Self.size, at: Vector2(x: Float(GetScreenWidth()) / 2 - Self.size.x - 40,
-                                       y: (Float(GetScreenHeight()) - Self.size.y) / 2))
+    init(script: UIScript) {
+        let size = script.window.size
+        window = DocumentWindow(title: "MOMI", script: script) {
+            Vector2(x: Float(GetScreenWidth()) / 2 - size.width - 40, y: (Float(GetScreenHeight()) - size.height - Float(WindowFrame.titleHeight)) / 2)
+        }
     }
 
-    private var log: Rectangle {
-        let content = WindowFrame.content(in: bounds)
-        return Rectangle(x: content.x + 10, y: content.y + 10, width: content.width - 20, height: content.height - 66)
-    }
-
-    private var input: Rectangle {
-        let content = WindowFrame.content(in: bounds)
-        return Rectangle(x: content.x + 10, y: content.y + content.height - 46, width: content.width - 20, height: 36)
-    }
-
-    func contains(_ point: Vector2) -> Bool {
-        isOpen && CheckCollisionPointRec(point, bounds)
-    }
-
-    /// Lets the window be dragged, closed, and its log scrolled. Returns whether it used this
-    /// frame's click.
-    func update() -> Bool {
-        guard isOpen else { return false }
-        let bounds = self.bounds
-        if CheckCollisionPointRec(GetMousePosition(), log) {
-            scroll = max(0, scroll + Int(GetMouseWheelMove().rounded()))
-        }
-        if frame.followPointer(in: bounds) { return true }
-        if frame.update(in: bounds) == .close {
-            isOpen = false
-            return true
-        }
-        return false
-    }
-
-    func draw(_ messages: [String]) {
-        guard isOpen else { return }
-        let bounds = self.bounds
-        frame.draw(in: bounds)
-        let log = self.log
-        // Wrapping measures text, so it's redone only when a message arrives.
-        if messages.count != wrappedCount {
-            wrapped = messages.flatMap { TextWrapper.lines(for: $0, fontSize: Self.fontSize, maximumWidth: Int(log.width) - 16) }
-            wrappedCount = messages.count
-        }
-        DrawRectangleRec(log, Self.logBackground)
-        let visible = max(1, (Int(log.height) - 12) / Self.lineHeight)
-        scroll = min(scroll, max(0, wrapped.count - visible))
-        let end = wrapped.count - scroll
-        let shown = wrapped[max(0, end - visible)..<max(0, end)]
-        var y = Int(log.y) + 6
-        if wrapped.isEmpty {
-            DrawText("No messages.", Int(log.x) + 8, y, Self.fontSize, InterfaceTheme.simburbia.secondaryText)
-        }
-        for line in shown {
-            DrawText(line, Int(log.x) + 8, y, Self.fontSize, InterfaceTheme.simburbia.text)
-            y += Self.lineHeight
-        }
-        let input = self.input
-        DrawRectangleRec(input, Self.inputBackground)
-        DrawText("Replies arrive with online play.", Int(input.x) + 8, Int(input.y) + 11, Self.fontSize, InterfaceTheme.simburbia.secondaryText)
+    /// Shows the messages; the list wraps and scrolls them, so it's refilled only when one arrives.
+    func show(_ messages: [String]) {
+        guard messages.count != shownCount else { return }
+        window.view.list(named: "log")?.items = messages
+        window.view.setHidden(!messages.isEmpty, named: "empty")
+        shownCount = messages.count
     }
 }

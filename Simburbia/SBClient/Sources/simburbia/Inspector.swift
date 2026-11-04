@@ -3,50 +3,47 @@ import LotScene
 import Raylib
 import SimAntics
 
-/// The window that shows the selected object: what it is, where, and what it's running.
+/// The window that shows the selected object (`Interface/inspector.xml`): what it is, where,
+/// and what it's running.
 final class Inspector {
-    private static let size = Vector2(x: 380, y: 260)
-    private static let lineHeight = 18
-    private let frame = WindowFrame(title: "Object", theme: .simburbia)
+    let window: DocumentWindow
+    private var shownLines: [String] = []
+
+    init(script: UIScript) {
+        let size = script.window.size
+        window = DocumentWindow(title: "Object", script: script) {
+            Vector2(x: Float(GetScreenWidth()) - size.width - 20, y: 50)
+        }
+    }
 
     /// The object being inspected, by its ID in the VM; `nil` hides the window.
-    var selected: Int16?
-
-    private var bounds: Rectangle {
-        frame.place(size: Self.size, at: Vector2(x: Float(GetScreenWidth()) - Self.size.x - 20, y: 50))
+    var selected: Int16? {
+        didSet { window.isOpen = selected != nil }
     }
 
     func close() {
         selected = nil
     }
 
-    /// Whether a point is over the open window.
     func contains(_ point: Vector2) -> Bool {
-        selected != nil && CheckCollisionPointRec(point, bounds)
+        window.contains(point)
     }
 
     /// Lets the window be dragged and closed. Returns whether it used this frame's click.
     func update() -> Bool {
-        guard selected != nil else { return false }
-        let bounds = self.bounds
-        if frame.followPointer(in: bounds) { return true }
-        if frame.update(in: bounds) == .close {
-            close()
-            return true
-        }
-        return false
+        let used = window.update()
+        if !window.isOpen { selected = nil }
+        return used
     }
 
     func draw(_ entity: Entity) {
         let inspection = Inspection(entity)
-        let bounds = self.bounds
-        frame.title = inspection.title
-        frame.draw(in: bounds)
-        let content = WindowFrame.content(in: bounds)
-        var y = Int(content.y) + 10
-        for line in inspection.lines {
-            DrawText(line, Int(content.x) + 12, y, 14, InterfaceTheme.simburbia.text)
-            y += Self.lineHeight
+        window.frame.title = inspection.title
+        // The list wraps the lines, so it's refilled only when they change.
+        if inspection.lines != shownLines {
+            window.view.list(named: "lines")?.items = inspection.lines
+            shownLines = inspection.lines
         }
+        window.draw()
     }
 }

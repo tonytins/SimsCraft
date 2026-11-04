@@ -48,6 +48,8 @@ let package = Package(
             .product(name: "SimAntics", package: "SimAntics"),
             .product(name: "TSOContent", package: "TSOContent"),
             .product(name: "TSOFiles", package: "TSOFiles"),
+            // The interface documents are read with Hudini, as the client reads them.
+            .product(name: "Hudini", package: "hudini"),
         ]),
     ],
     swiftLanguageModes: [.v6]

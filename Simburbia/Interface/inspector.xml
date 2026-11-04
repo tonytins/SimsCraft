@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The inspector: the object clicked on, what it is, where it is, and what it's running. The client
+  titles its window with the object's name and fills "lines" with the rest. It's the window's
+  content, under a title bar the client draws.
+-->
+<UIScript version="1">
+  <Window width="380" height="230"/>
+
+  <Style name="lines" textColor="#E4E8EE" backgroundColor="#00000000" borderColor="#00000000" fontSize="14"/>
+
+  <List name="lines" x="4" y="6" width="372" height="218" style="lines"/>
+</UIScript>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MOMI, the window of system messages, opened from the top bar's error count. MOMI was TSO's
+  in-universe name for its game masters. The client fills "log" with the messages, newest at the
+  bottom, and shows "empty" while there are none. The input stays disabled until online play.
+  It's the window's content, under a title bar the client draws.
+-->
+<UIScript version="1">
+  <Window width="420" height="230"/>
+
+  <Style name="log" textColor="#E4E8EE" backgroundColor="#222222" borderColor="#222222" fontSize="14"/>
+  <Style name="dim" textColor="#969EAA" fontSize="14"/>
+  <Style name="input" textColor="#969EAA" backgroundColor="#141414" fontSize="14"/>
+
+  <List name="log" x="10" y="10" width="400" height="164" style="log"/>
+  <Text name="empty" x="18" y="16" width="380" height="14" style="dim" text="No messages."/>
+  <FormattedText name="input" x="10" y="184" width="400" height="36" style="input"
+                 text="Replies arrive with online play."/>
+</UIScript>

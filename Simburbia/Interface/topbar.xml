@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The bar along the top of the screen, after the owner's prototype interface
+  (docs/design/prototype-interface.figcraft): the lot, how fast time runs, the time; then the
+  floor, any errors, the object count, and the button that opens the help.
+
+  The client stretches it to the screen's width. It draws the regions itself: "bar" filled with
+  the "bar" style's background, each "speed" arrow as a triangle (the "speedOn" style's fill up
+  to the speed time runs at, the "speedOff" fill above it, and all "speedOff" while paused), and
+  "help" as a circle in the "help" style. "errors" shows only while there are any. The money
+  slot waits for money to exist.
+-->
+<UIScript version="1">
+  <Window width="1280" height="28"/>
+
+  <Style name="bar" backgroundColor="#3B3B3B"/>
+  <Style name="barText" textColor="#FFFFFF" fontSize="16"/>
+  <Style name="speedOn" fillColor="#3E6EBE"/>
+  <Style name="speedOff" fillColor="#D9D9D9"/>
+  <Style name="help" fillColor="#4A8A42" textColor="#000000" fontSize="16"/>
+  <Style name="errors" textColor="#FF0000" highlightedTextColor="#FF6A60" selectedTextColor="#FF6A60"
+         backgroundColor="#00000000" borderColor="#00000000" fontSize="16"/>
+
+  <Region name="bar" x="0" y="0" width="1280" height="28" edgeOffsetLeft="0" edgeOffsetRight="0" style="bar"/>
+
+  <Text name="lotName" x="16" y="6" width="180" height="16" style="barText"/>
+  <Region name="speed0" x="204" y="7" width="14" height="14"/>
+  <Region name="speed1" x="220" y="7" width="14" height="14"/>
+  <Region name="speed2" x="236" y="7" width="14" height="14"/>
+  <Text name="clock" x="274" y="6" width="240" height="16" style="barText"/>
+
+  <Text name="floor" x="0" y="6" width="110" height="16" edgeOffsetRight="330" style="barText" alignment="right"/>
+  <Button name="errors" x="0" y="4" width="110" height="20" edgeOffsetRight="196" style="errors"/>
+  <Text name="objects" x="0" y="6" width="120" height="16" edgeOffsetRight="52" style="barText" alignment="right"/>
+  <Region name="help" x="0" y="4" width="20" height="20" edgeOffsetRight="8" style="help"/>
+</UIScript>
