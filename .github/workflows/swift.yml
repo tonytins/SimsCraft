@@ -36,6 +36,9 @@ jobs:
     container: swift:6.3
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The client's version counts commits (GitVersion), which a shallow clone can't.
+          fetch-depth: 0
 
       - name: Install X11 and GL headers for raylib (NSOInterface)
         run: |
@@ -68,6 +71,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The client's version counts commits (GitVersion), which a shallow clone can't.
+          fetch-depth: 0
 
       - name: Show the Swift version
         run: swift --version

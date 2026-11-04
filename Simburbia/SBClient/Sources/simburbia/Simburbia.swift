@@ -19,7 +19,8 @@ struct Simburbia: ParsableCommand {
         With --headless, no window opens: the lot runs --ticks ticks as fast as the machine allows \
         and logs what happens to standard error, then exits. --verbose logs the same while the \
         window is open.
-        """
+        """,
+        version: "Simburbia \(GitVersion.version)"
     )
 
     @Option(help: "The TSO install to read.")

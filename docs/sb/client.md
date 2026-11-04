@@ -85,7 +85,7 @@ Three options run the lot without anyone at the screen, and a fourth rewrites it
   named, and quits without running it: how a lot saved by FreeSO becomes one people can read
   ([blueprints.md](blueprints.md)). It can name its own lot (`--lot`) to rewrite it in place.
 
-A run's log, through swift-log, has the lot and the install's version, each system message as it
+A run's log, through swift-log, has Simburbia's version, the lot and the install's version, each system message as it
 arrives, a line each game hour, and a summary. Every line is stamped with the tick and the game
 time, never the clock, so two runs of the same lot log alike:
 
@@ -103,6 +103,15 @@ Options that need a window are refused with `--headless`, and `--ticks` is refus
 TSO counts 150 ticks a game minute, as FreeSO sets it in TSO mode. At 30 ticks a second, a game
 minute lasts 5 real seconds, a game hour 5 minutes, and a game day 2 hours at normal speed. A
 headless run of the owner's house covers a game day in about 9 seconds.
+
+## Versions
+
+`simburbia --version` prints Simburbia's version, which the owner's GitVersion plugin works out
+as the client builds: the base in [`Simburbia/GitVersion.txt`](../../Simburbia/GitVersion.txt)
+(`0.1.1000`), plus each commit since that touches `Simburbia/`, after the .NET SDK's
+`major.minor.1xxx`. The branch and commit follow it (`0.1.1003+main.1a2b3c4d5e6f`), and `.dirty`
+when the working tree has staged changes. A build needs the whole history: a shallow clone fails
+on purpose, since its count would be wrong.
 
 ## How it's built
 

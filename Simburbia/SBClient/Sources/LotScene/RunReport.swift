@@ -21,10 +21,10 @@ public enum RunReport {
         return "\(minutes / 60) h \(minutes % 60) min"
     }
 
-    /// What a run starts with: the lot, the install, and what the lot holds.
-    public static func start(_ session: LotSession, install: String) -> [String] {
+    /// What a run starts with: Simburbia's version, the lot, the install, and what the lot holds.
+    public static func start(_ session: LotSession, version: String, install: String) -> [String] {
         let vm = session.vm
-        var lines = ["\(stamp(vm)): lot \(session.lotName), install \(install)",
+        var lines = ["\(stamp(vm)): Simburbia \(version), lot \(session.lotName), install \(install)",
                      "\(stamp(vm)): \(vm.entities.count) entities; a game minute is \(vm.clock.ticksPerMinute) ticks, "
                          + "so a game day is \(ticksPerGameDay(vm)) ticks, \(gameDayLength(vm)) at normal speed"]
         for missing in session.leftOut {

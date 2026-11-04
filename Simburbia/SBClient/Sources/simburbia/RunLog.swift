@@ -20,7 +20,7 @@ final class RunLog {
     init(session: LotSession, install: String) {
         self.session = session
         lastHour = session.vm.clock.hours
-        for line in RunReport.start(session, install: install) { logger.info("\(line)") }
+        for line in RunReport.start(session, version: GitVersion.version, install: install) { logger.info("\(line)") }
         for problem in session.contentProblems { logger.warning("\(RunReport.stamp(session.vm)): \(problem)") }
         // Errors from loading the lot, before the first tick of the run.
         update()

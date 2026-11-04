@@ -17,6 +17,8 @@ let package = Package(
         .package(path: "../NSOInterface"),
         .package(url: "https://github.com/tonytins/raylib-swift", branch: "main"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.6.0"),
+        // The owner's build-tool plugin: the version from Simburbia/GitVersion.txt and the commits since.
+        .package(url: "https://github.com/tonytins/GitVersion", from: "0.2.0"),
         .package(url: "https://github.com/apple/swift-configuration", from: "1.0.0"),
         // Headless and verbose runs log through it; it's already in the graph through swift-configuration.
         .package(url: "https://github.com/apple/swift-log", from: "1.16.0"),
@@ -38,7 +40,8 @@ let package = Package(
             .product(name: "SimAntics", package: "SimAntics"),
             .product(name: "TSOConfig", package: "TSOContent"),
             .product(name: "TSOContent", package: "TSOContent"),
-        ]),
+            .product(name: "GitVersion", package: "GitVersion"),
+        ], plugins: [.plugin(name: "GitVersionPlugin", package: "GitVersion")]),
         .testTarget(name: "LotSceneTests", dependencies: [
             "LotScene",
             .product(name: "SimAntics", package: "SimAntics"),
