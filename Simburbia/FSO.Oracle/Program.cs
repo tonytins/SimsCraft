@@ -73,7 +73,9 @@ options:
   --scenarios DIR   run-scenarios: the folder sso-oracle build wrote
   --ticks N         run-lot and run-objects: ticks to run after loading (default: 1800, one minute of game time)
   --every N         run-lot and run-objects: also print a digest every N ticks (default: 0, only at the end)
-  --dump            run-lot: after each digest, the digested fields of every entity, one line each";
+  --dump            run-lot: after each digest, the digested fields of every entity, one line each
+  --sims N          run-lot: join N made-up Sims after loading, as a player joins a lot (see SimJoin.cs)
+  --sim-template HEX  the person object they're made from (default: FreeSO's template person, 7FD96B54)";
 
         public static int Main(string[] args)
         {
@@ -157,7 +159,16 @@ options:
             }
             if (args[0] == "run-lot")
             {
-                RunLot(LoadLot(blueprint, options.Seed), options, results);
+                var vm = LoadLot(blueprint, options.Seed);
+                if (options.Sims > 0)
+                {
+                    // Sims join as the lot server joins them, inside a tick; then the VM is seeded
+                    // again, so the first digest starts from the seed whether or not Sims joined.
+                    SimJoin.Join(vm, options.Sims, options.SimTemplate);
+                    vm.Tick();
+                    vm.Context.RandomSeed = options.Seed;
+                }
+                RunLot(vm, options, results);
             }
             else
             {
@@ -493,6 +504,8 @@ options:
             public int Ticks = 1800;
             public int Every;
             public bool Dump;
+            public int Sims;
+            public uint SimTemplate = 0x7FD9_6B54;
             public ulong Seed = 0x0F50_D0C5_EED0_0001;
 
             public static Options Parse(string[] args)
@@ -522,6 +535,12 @@ options:
                         case "--ticks": options.Ticks = Count(); break;
                         case "--every": options.Every = Count(); break;
                         case "--dump": options.Dump = true; break;
+                        case "--sims": options.Sims = Count(); break;
+                        case "--sim-template":
+                            options.SimTemplate = uint.TryParse(Value(), System.Globalization.NumberStyles.HexNumber, null, out var guid)
+                                ? guid
+                                : throw new ArgumentException("--sim-template takes a GUID in hexadecimal");
+                            break;
                         case "--seed":
                             options.Seed = ulong.TryParse(Value(), System.Globalization.NumberStyles.HexNumber, null, out var seed)
                                 ? seed

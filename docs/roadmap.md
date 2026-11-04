@@ -110,6 +110,13 @@ In order:
      them always crashes FreeSO (a fix for Simburbia); and FreeSO can't create a Sim on the base game
      or the beta, whose `adult.skel` is a loose file rather than in `skeletons.dat` (Simburbia could
      read both).
+     - [x] A1. Sims join the oracle's lots (2026-11-04): `fso-oracle run-lot --sims N` joins made-up
+       Sims through FreeSO's `VMNetSimJoinCmd`, and two runs give the same digests (the house with a
+       Sim on 1.1097.1.0, which runs the template's own code by the mailbox). Found: without a
+       mailbox the join tries only tile 3,3, and leaves the Sim out of the world if it's taken.
+     - [ ] A2. The digest's version 1: Sims' state (person data, motives, animation, the queue),
+       added for Sims only, so lots without them keep their digests.
+     - [ ] A3. Primitive cases that name Sims, and the mock lots' Sims joining as on a real install.
    - [ ] B. The Sim entity: avatars from the person template, person data, motives and their decay,
      running every tick; Set Motive Deltas, Test Sim Interacting With, and Look Towards.
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
@@ -256,6 +263,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | patch | Queen Margaret's fourth pass, phase A: the login window uses Hudini's new close-button option, selectable lists, and secure fields, dropping C3's workarounds; and step A1, Sims joining the oracle's lots through FreeSO's own join command, shown repeatable on 1.1097.1.0 and MockInstall. Phase A is split into A1 to A3. |
 | 2026-11-04 | minor | The client's step C3, which finishes C: the login window. Without `--lot`, the loading screen loads the install (`LoadedInstall`, split from `LotSession` so lots load onto it), then the login window of the owner's mockup opens over TSO's art, with Simburbia's version at the bottom right: Start lists Simburbia's lots, the mock ones on MockInstall, and the player's (`Lots` in the user folder), and Play loads the picked one through the loading screen; Join is shown, disabled until networking; Delete and New wait. The window is two UIScript documents (`login-start`, `login-join`) in Hudini's window frame with its tabs. Three gaps in Hudini turned up (no way to hide the close button, no selectable lists, no password fields); the client works around the first two. `--lot`, screenshots, and headless runs skip login, so nothing waits for a click; `--login-screenshot` shows it. Checked by driving the whole flow on a virtual display: login, Play, loading, the lot running. |
 | 2026-11-04 | minor | The client's step C2: TSO's art. TSOContent's `UIGraphicsProvider` reads the interface's graphics by ID from `uigraphics`, as FreeSO's does, and TSOFiles decodes BMP (8-bit plain and RLE8, 24-bit) and Targa (plain and run-length), the formats every interface graphic but one PNG uses on all three installs; bitmaps lose their near-magenta as in FreeSO. The loading screen shows the install's own `setup` background, New & Improved's or the 2002 copies', scaled to the window's height, and Simburbia's logo without one. Hyde Park F is half done (BMP and TGA; `BMP_`, `THMB`, and PNG wait). FreeSO's decoders for these aren't in the snapshot, so pixel parity is unverified. |
 | 2026-11-04 | minor | The client's step C added ahead of the fourth pass (loading and login, then the lot, the first part of TSO's flow), and C1 done: the window opens on a loading screen at once, TSO's dark blue with Simburbia's logo until C2 reads TSO's art, while the install and the lot load on another thread and hand the session over once. Lines slide in under the caption as FreeSO's `LoadingScreen` slides them, a second each and only as loading reaches them: TSO's own (tables 154 and 155, read with Hudini's `CSTCatalog`), or Simburbia's (`Interface/uitext`). The lot's textures are made off screen before it appears, then a half-second buffer. `--loading-screenshot` saves a frame of it. The black flash before the lot is gone. |

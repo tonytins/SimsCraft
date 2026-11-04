@@ -100,6 +100,33 @@ FNV-1a 64 hash of its RGBA (`128x64:0123abcd...`), comma-separated. `sb-oracle
 architecture` prints the same from TSOContent's providers, and `compare` reads both as
 `architecture.tsv`.
 
+## Sims on a lot: `run-lot --sims`
+
+`run-lot --sims N` brings N made-up Sims onto the lot after it loads, the way a player joins one:
+FreeSO's `VMNetSimJoinCmd`, as the lot server runs it when an avatar arrives (`SimJoin.cs`). They
+join inside a tick, and then the VM is seeded again, so the first digest starts from the seed.
+
+Each Sim is the person template (`VMAvatar.TEMPLATE_PERSON`, or the object `--sim-template`
+names, such as MockInstall's Mock Sim, `4D4F4307`), with an identity made up here and no player's
+or city's data: Sim `n` is "Oracle Sim n", persist ID `0x0AC1E000 + n`, a visitor (so FreeSO's
+roommate bookkeeping doesn't run), male, skin tone 0, in FreeSO's default suits, with every motive
+and persisted skill at 0, and no relationships, jobs, or budget. Setting the template is the one
+change: a static FreeSO left open, not a file under `TSOClient`.
+
+The join places a Sim by the lot's mailbox (`VMFindLocationFor`), or without one at tile 3,3. If
+that tile is taken, FreeSO tries nowhere else, and the Sim stays out of the world, as on
+`mock-lot.xml`, whose chair stands at 3,3.
+
+**Repeatable:** checked 2026-11-04. FreeSO's Sim setup takes randomness only from the seeded
+context (the only other unseeded `Random`s are in EOD plugins an idle Sim doesn't reach), and two
+runs give the same digests at every point: the owner's house with one Sim over 1,800 ticks on
+1.1097.1.0, and `mock-lot.xml` with two over 900. To check again:
+
+```sh
+for run in 1 2; do fso-oracle run-lot --blueprint Simburbia/Lots/tonys-house.xml --sims 1 --every 300 >/tmp/sims-$run.txt; done
+diff /tmp/sims-1.txt /tmp/sims-2.txt && echo repeatable
+```
+
 ## The state digest (version 0)
 
 SHA-256 over little-endian values, in this order:
