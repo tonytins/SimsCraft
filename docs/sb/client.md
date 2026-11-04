@@ -28,8 +28,10 @@ the top bar.
 ## Loading
 
 The window opens on a loading screen at once, as TSO's does, while the install and the lot load
-on another thread; the session is handed to the window once, when it's ready. Until TSO's art is
-read (step C2), the screen is Simburbia's logo on TSO's dark blue (`#09182F`). Under it, a caption
+on another thread; the session is handed to the window once, when it's ready. The screen is the
+install's own loading art, TSO's `setup` graphic (New & Improved's, or the 2002 copies'), scaled
+to the window's height and centred on TSO's dark blue (`#09182F`), as FreeSO's `UISetupBackground`
+draws it; without one, as on MockInstall, it's Simburbia's logo. Under it, a caption
 and lines that slide in from the right one after another, as FreeSO's `LoadingScreen` slides them:
 each takes a second and comes in only when loading has reached its share, so the screen shows
 for at least four seconds. The text is TSO's own when there's an install (the caption is table

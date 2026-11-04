@@ -98,4 +98,25 @@ struct RealInstallTests {
         #expect(floors.globalCount == 29)
         #expect(try walls.junctions().near != nil)
     }
+
+    /// Every interface graphic decodes, but for formats Simburbia doesn't read yet; `setup`, the
+    /// loading screen's background, is TSO's 800 by 600.
+    @Test func decodesEveryInterfaceGraphic() throws {
+        let graphics = UIGraphicsProvider(files: content.files)
+        var decoded = 0, unsupported: [String] = [], failures: [String] = []
+        for id in graphics.ids {
+            do {
+                if try graphics.image(id: id) != nil { decoded += 1 }
+            } catch {
+                let text = String(describing: error)
+                if text.contains("unsupported") { unsupported.append("\(id)") } else { failures.append("\(id): \(text)") }
+            }
+        }
+        print("TSOContent real install: \(graphics.ids.count) interface graphics, \(decoded) decoded, unsupported \(unsupported)")
+        #expect(graphics.duplicates.isEmpty && graphics.failures.isEmpty)
+        #expect(failures.isEmpty, "\(failures.prefix(5))")
+        #expect(unsupported.count <= 1)
+        let setup = try #require(try graphics.image(id: AssetID(packed: 0x3A3_0000_0001)))
+        #expect(setup.width == 800 && setup.height == 600)
+    }
 }

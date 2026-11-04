@@ -41,6 +41,7 @@ let package = Package(
             .product(name: "SimAntics", package: "SimAntics"),
             .product(name: "TSOConfig", package: "TSOContent"),
             .product(name: "TSOContent", package: "TSOContent"),
+            .product(name: "TSOFiles", package: "TSOFiles"),
             .product(name: "GitVersion", package: "GitVersion"),
         ], plugins: [.plugin(name: "GitVersionPlugin", package: "GitVersion")]),
         .testTarget(name: "LotSceneTests", dependencies: [

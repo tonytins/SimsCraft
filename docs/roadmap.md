@@ -90,7 +90,7 @@ In order:
      - [x] C1. Screens and loading: the window opens on a loading screen, as TSO's, while the
        install and the lot load on another thread; TSO's own loading lines slide in from the
        install's text (read with Hudini), or Simburbia's; textures are made before the lot appears.
-     - [ ] C2. TSO's art: UI graphics by file ID and BMP and TGA (Hyde Park F), for TSO's `setup`
+     - [x] C2. TSO's art: UI graphics by file ID and BMP and TGA (Hyde Park F), for TSO's `setup`
        background, with Simburbia's logo as the fallback.
      - [ ] C3. The Start/Join window of the owner's mockup, over the loading background: lots from
        `Simburbia/Lots` and the player's folder, Play through the loading screen, and Join shown
@@ -143,7 +143,8 @@ In order:
      - [x] E2. Depth: SPR2 depth made global from each sprite's object offset, in a shader that
        writes the fragment's depth, so objects, walls, and later Sims sort per pixel. Ports
        FreeSO's `vsZSprite` and `depthCalc2`, and update-46's floor bias.
-   - [ ] F. Images (`BMP_`, `THMB`, BMP, TGA, PNG), when the interface and walls need them.
+   - [ ] F. Images (`BMP_`, `THMB`, BMP, TGA, PNG), when the interface and walls need them. BMP and
+     TGA since 2026-11-04 (client C2); `BMP_`, `THMB`, and PNG wait.
 
 ## Milestones
 
@@ -255,6 +256,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | minor | The client's step C2: TSO's art. TSOContent's `UIGraphicsProvider` reads the interface's graphics by ID from `uigraphics`, as FreeSO's does, and TSOFiles decodes BMP (8-bit plain and RLE8, 24-bit) and Targa (plain and run-length), the formats every interface graphic but one PNG uses on all three installs; bitmaps lose their near-magenta as in FreeSO. The loading screen shows the install's own `setup` background, New & Improved's or the 2002 copies', scaled to the window's height, and Simburbia's logo without one. Hyde Park F is half done (BMP and TGA; `BMP_`, `THMB`, and PNG wait). FreeSO's decoders for these aren't in the snapshot, so pixel parity is unverified. |
 | 2026-11-04 | minor | The client's step C added ahead of the fourth pass (loading and login, then the lot, the first part of TSO's flow), and C1 done: the window opens on a loading screen at once, TSO's dark blue with Simburbia's logo until C2 reads TSO's art, while the install and the lot load on another thread and hand the session over once. Lines slide in under the caption as FreeSO's `LoadingScreen` slides them, a second each and only as loading reaches them: TSO's own (tables 154 and 155, read with Hudini's `CSTCatalog`), or Simburbia's (`Interface/uitext`). The lot's textures are made off screen before it appears, then a half-second buffer. `--loading-screenshot` saves a frame of it. The black flash before the lot is gone. |
 | 2026-11-04 | minor | The client's 2B, step B4, which finishes 2B: TSO's three wall modes (cutaway, the new default, then down and up, stepped through with W or picked with `--walls`). Cutaway ports FreeSO's `GenerateRoomCut` and `ApplyCutRectangle`: walls come down in front of the last three indoor rooms the pointer was over and around the pointer, with the slanted cutaway styles where a cut ends. Full-height walls get their end caps and the junction pieces where they meet (`GenerateWallData`, `RotateJunction`). Doors and windows now cut their own openings: the client gives each kind with a style from 22 to 255 a style made of its own sprites, numbered from 256 as `VMGameObject.PositionChange` does, while the VM keeps the definition's number (DIFF-20); SimAntics' new `Entity.architecturalWallSides` says which walls an object styles. A screenshot's cutaway follows the middle of the screen. Checked on the owner's house in all three modes, windows included, and on the mock lot. |
 | 2026-11-04 | minor | The client's 2B, step B3: walls drawn as update-46's `WallComponent` draws them, as sprites with depth instead of boxes. Each side and diagonal takes its pattern, masked by its style (a full wall, a cut-down one, a fence), turned with the view (`RotateWall`), and placed from the tile's top corner on screen; each pixel's depth comes from FreeSO's generated gradients, through a wall variant of the sprite depth shader, so walls and objects hide each other where they should. FreeSO's cut logic (`GenerateWallData`, `RotateCuts`) is ported whole, so the client's walls-cut toggle is TSO's walls-down mode on the floor in view; doors leave their wall out when it's cut; diagonal tiles draw their two floor halves. Every wall pattern, style mask, and junction frame matches FreeSO's pixel for pixel on all three installs. `simburbia --walls up` starts with walls standing. Checked on the owner's house in all four rotations. Not yet: the cutaway mode, end caps, and junctions (B4), and the wall styles doors and windows make from their own sprites (`AddDynamicWallStyle`), so a wall shows behind a window's frame for now. |

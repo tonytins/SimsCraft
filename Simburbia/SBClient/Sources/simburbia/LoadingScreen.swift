@@ -2,6 +2,8 @@ import Foundation
 import Hudini
 import LotScene
 import Raylib
+import TSOContent
+import TSOFiles
 
 /// What the loading screen says: a caption and the lines that slide in under it.
 ///
@@ -88,19 +90,46 @@ final class SessionLoader: @unchecked Sendable {
 }
 
 /// The screen shown while the client loads, as TSO's: its art, its caption, and the lines sliding
-/// in under it (FreeSO's `LoadingScreen` and `UISetupBackground`). Until TSO's art is read, it's
-/// Simburbia's logo on TSO's dark blue.
+/// in under it (FreeSO's `LoadingScreen` and `UISetupBackground`). The art is TSO's `setup`
+/// graphic when the install has it, else Simburbia's logo, on TSO's dark blue.
 final class LoadingScreen {
+    /// TSO's loading and login background (`UIFileIDs.setup`).
+    static let setupID = AssetID(packed: 0x3A3_0000_0001)
+
+    /// The install's `setup` graphic, or `nil` without one, and why when it can't be read.
+    static func setupArt(gameDirectory: URL) -> (image: RasterImage?, warning: String?) {
+        guard let files = try? GameFileIndex(root: gameDirectory) else { return (nil, nil) }
+        do {
+            return (try UIGraphicsProvider(files: files).image(id: setupID), nil)
+        } catch {
+            return (nil, "TSO's loading art can't be read, so Simburbia's is shown: \(error)")
+        }
+    }
+
     /// `UISetupBackground`'s fill.
     static let background = Color(r: 0x09, g: 0x18, b: 0x2F, a: 255)
 
     private let text: LoadingText
     private var logo: Texture2D?
+    /// TSO's `setup`, drawn instead of the logo when there is one.
+    private var art: Texture2D?
     private(set) var lines: SlidingLines
 
-    init(text: LoadingText, logo path: URL) {
+    /// Call after the window opens: the art becomes a texture.
+    init(text: LoadingText, art image: RasterImage?, logo path: URL) {
         self.text = text
         lines = SlidingLines(lines: text.lines)
+        if var image {
+            let texture = image.rgba.withUnsafeMutableBytes { bytes in
+                LoadTextureFromImage(Image(data: bytes.baseAddress, width: Int32(clamping: image.width), height: Int32(clamping: image.height),
+                                           mipmaps: 1, format: Int32(truncatingIfNeeded: PixelFormat.uncompressedR8g8b8a8.rawValue)))
+            }
+            if IsTextureValid(texture) {
+                SetTextureFilter(texture, .bilinear)
+                art = texture
+            }
+        }
+        guard art == nil else { return }
         let texture = LoadTexture(path.path)
         if IsTextureValid(texture) {
             SetTextureFilter(texture, .bilinear)
@@ -120,7 +149,13 @@ final class LoadingScreen {
         let scale = height / 600
         BeginDrawing()
         ClearBackground(Self.background)
-        if let logo {
+        if let art {
+            // Scaled to the screen's height and centred, as `UISetupBackground` scales it to 600.
+            let artScale = height / Float(art.height)
+            let artWidth = Float(art.width) * artScale
+            DrawTexturePro(art, Rectangle(x: 0, y: 0, width: Float(art.width), height: Float(art.height)),
+                           Rectangle(x: (width - artWidth) / 2, y: 0, width: artWidth, height: height), .zero, 0, .white)
+        } else if let logo {
             let side = min(height * 0.6, width * 0.6)
             let destination = Rectangle(x: (width - side) / 2, y: height * 0.12, width: side, height: side)
             DrawTexturePro(logo, Rectangle(x: 0, y: 0, width: Float(logo.width), height: Float(logo.height)),
@@ -139,9 +174,11 @@ final class LoadingScreen {
         DrawText(line, Int32((width - measured) / 2 + offset), Int32(y), size, InterfaceTheme.simburbia.text)
     }
 
-    /// Releases the logo; call before the window closes.
+    /// Releases the art and the logo; call before the window closes.
     func unload() {
         if let logo { UnloadTexture(logo) }
+        if let art { UnloadTexture(art) }
         logo = nil
+        art = nil
     }
 }

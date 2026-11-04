@@ -139,6 +139,23 @@ let otf = try OTFFile(contentsOf: chairsOTF)
 print(otf.table(id: 4096)?.key(id: 0)?.value ?? 0)
 ```
 
+## Images
+
+`BMPImage` and `TargaImage` (`Images/RasterImage.swift`) decode the picture files TSO's interface
+uses into a `RasterImage`: red, green, blue, and alpha for each pixel, top row first.
+
+| Reader | Reads |
+| --- | --- |
+| `BMPImage` | 8-bit with a palette, plain or run-length (RLE8), and 24-bit; the 40-byte header; bottom-up, or top-down with a negative height |
+| `TargaImage` | 24- and 32-bit truecolor, plain (type 2) or run-length (type 10); bottom-up or top-down by the descriptor; `hasFooter` finds the 2.0 footer |
+
+Every size, offset, and run is checked against the bytes, and a picture past 64 million pixels is
+refused. A 32-bit Targa whose descriptor declares no alpha bits is opaque, and a run-length bitmap
+that ends before its last row leaves the rest transparent. Every interface graphic of all three
+installs decodes as Pillow decodes it, pixel for pixel, but such short bitmaps, which Pillow
+refuses (three on 1.1097.1.0, one on each 2002 copy; checked 2026-11-04). FreeSO decodes these with MonoGame and TargaImagePCL, neither in the snapshot, so
+parity with FreeSO itself is unverified.
+
 ## Scanning and comparing installs
 
 `InstallScanner` opens every container under a folder, reads every entry, and parses every

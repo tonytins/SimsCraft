@@ -187,6 +187,23 @@ On 1.1097.1.0 there are 234 floors (29 global) and 304 wall patterns with catalo
 base game and the beta, 169 and 221. `sb-oracle architecture` and `fso-oracle architecture` agree
 on every ID on all three and on `MockInstall`.
 
+## Interface graphics
+
+`UIGraphicsProvider` ports FreeSO's: every FAR3 archive under `uigraphics`, by asset ID, the file
+ID shifted up 32 bits and then the type ID, as FreeSO's `UIFileIDs` write them (TSO's loading and
+login background, `setup`, is `0x3A300000001`). It also finds the handful of graphics FreeSO reads
+from loose files, and the one ID it redirects.
+
+```swift
+let graphics = UIGraphicsProvider(files: content.files)
+let setup = try graphics.image(id: AssetID(packed: 0x3A3_0000_0001))   // RGBA, 800 by 600
+```
+
+`image(id:)` decodes as FreeSO's `ImageLoader` does: a BMP, with its near-magenta pixels made
+transparent, or a Targa with the 2.0 footer. Anything else, such as 1.1097.1.0's one PNG, is an
+error. An ID two archives both hold keeps the first and is listed in `duplicates`; an archive
+that can't be read is listed in `failures` (no install has either).
+
 ## Errors
 
 Every failure is a `ContentError`:
