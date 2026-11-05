@@ -367,16 +367,18 @@ struct Request {
         return try array(value, name, maximumCount: maximumCount).map { Int32(try integer($0, name, Int64(Int32.min), Int64(Int32.max))) }
     }
 
-    /// An object of index to value, such as `{"3": 10}`, in the request's order.
+    /// An object of index to value, such as `{"3": 10}`, in index order: both oracles apply
+    /// presets that way, since a JSON object's keys have no order to rely on (`JSONSerialization`
+    /// returns them in any), and some presets depend on others (a Sim's job values on its job ID).
     private static func sparse(_ value: JSONValue?, _ name: String) throws -> [(Int, Int16)] {
         guard let value else { return [] }
         guard case .object(let fields, let keys) = value else { throw RequestError("\"\(name)\" must be an object of index to value") }
-        return try keys.map { key in
+        return try keys.map { key -> (Int, Int16) in
             guard key.allSatisfy(\.isASCII), key.allSatisfy(\.isNumber), let index = Int(key), index <= 0xFFFF, let field = fields[key] else {
                 throw RequestError("\"\(name)\" key \"\(key)\" is not an index")
             }
             return (index, Int16(try integer(field, name, Int64(Int16.min), Int64(Int16.max))))
-        }
+        }.sorted { $0.0 < $1.0 }
     }
 
     private static let objectStateKeys = ["data", "attributes", "list", "direction", "person", "motives", "motiveChanges"]
@@ -396,7 +398,7 @@ struct Request {
             }
             return (index, (Int16(try integer(items[0], "perHour", Int64(Int16.min), Int64(Int16.max))),
                             Int16(try integer(items[1], "max", Int64(Int16.min), Int64(Int16.max))), ticked))
-        }
+        }.sorted { $0.0 < $1.0 }
     }
 
     private static func objectStates(_ value: JSONValue?) throws -> [(Int16, ObjectState)] {
@@ -419,7 +421,7 @@ struct Request {
             result.motives = try sparse(state["motives"], "motives")
             result.motiveChanges = try motiveChangeStates(state["motiveChanges"])
             return (objectID, result)
-        }
+        }.sorted { $0.0 < $1.0 }   // in object ID order, as sparse()
     }
 
     /// `{"hours": h, "minutes": m, "minuteFractions": f}`, each required.

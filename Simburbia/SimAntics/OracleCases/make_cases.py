@@ -554,9 +554,75 @@ def set_motive_deltas_cases(lot_guids, sim):
                    {"caller": objects[0], "operand": set_motive_deltas_operand(HUNGER, flags, LITERAL, 10, LITERAL, 50)})
 
 
+def sim_expression_cases(lot_guids, sim):
+    """Expression on a Sim's motives and person data, through FreeSO's accessors: every value read
+    into a temp (and some past the end), from the caller and the stack object and by temp; values
+    written, including past the motives' limits and the person data FreeSO treats specially (the
+    online job ID and the job values it opens, priority, skill lock, render flags, ghost); and an
+    object read or written as if it were a Sim."""
+    MY_MOTIVES, STACK_MOTIVES, STACK_MOTIVE_BY_TEMP = 14, 15, 17
+    MY_PERSON, STACK_PERSON, MY_PERSON_BY_TEMP, STACK_PERSON_BY_TEMP = 18, 19, 30, 31
+    PRIORITY, IS_GHOST, SKILL_LOCK, RENDER_FLAGS = 33, 68, 70, 74
+    JOB_ID, JOB_GRADE, JOB_XP, JOB_SICK_DAYS, JOB_FLAGS = 91, 92, 93, 94, 98
+    # Distinct values to read back, set through the accessors first (so special ones go where
+    # FreeSO sends them, or nowhere).
+    person = {str(i): (i * 37) % 200 - 60 for i in range(101)}
+    person[str(JOB_ID)] = 2
+    motives = {str(i): (i * 13) % 180 - 90 for i in range(16)}
+    preset = {"objects": {str(sim): {"person": person, "motives": motives}}}
+    others = [object_id for object_id in range(1, len(lot_guids) + 1) if object_id != sim]
+    for index in list(range(16)) + [16, -1]:
+        for scope, stack in [(MY_MOTIVES, 0), (STACK_MOTIVES, sim)]:
+            yield (f"read motive {index} scope {scope}",
+                   {"caller": sim, "stackObject": stack, **preset, "operand": expression_operand(ASSIGN, TEMPS, 0, scope, index)})
+        yield (f"read motive by temp {index}",
+               {"caller": sim, "stackObject": sim, **preset, "temps": [0, index],
+                "operand": expression_operand(ASSIGN, TEMPS, 0, STACK_MOTIVE_BY_TEMP, 1)})
+    for index in list(range(101)) + [101, -1]:
+        for scope, stack in [(MY_PERSON, 0), (STACK_PERSON, sim)]:
+            yield (f"read person {index} scope {scope}",
+                   {"caller": sim, "stackObject": stack, **preset, "operand": expression_operand(ASSIGN, TEMPS, 0, scope, index)})
+        for scope in [MY_PERSON_BY_TEMP, STACK_PERSON_BY_TEMP]:
+            yield (f"read person by temp {index} scope {scope}",
+                   {"caller": sim, "stackObject": sim, **preset, "temps": [0, index],
+                    "operand": expression_operand(ASSIGN, TEMPS, 0, scope, 1)})
+    for index in list(range(16)) + [16]:
+        for value in [7, 300, -300]:
+            for scope, stack in [(MY_MOTIVES, 0), (STACK_MOTIVES, sim)]:
+                yield (f"write motive {index} = {value} scope {scope}",
+                       {"caller": sim, "stackObject": stack, **preset, "operand": expression_operand(ASSIGN, scope, index, LITERAL, value)})
+    for index in list(range(101)) + [101]:
+        for value in [3, -1000]:
+            for scope, stack in [(MY_PERSON, 0), (STACK_PERSON, sim)]:
+                yield (f"write person {index} = {value} scope {scope}",
+                       {"caller": sim, "stackObject": stack, **preset, "operand": expression_operand(ASSIGN, scope, index, LITERAL, value)})
+    # The online job: a new ID opens that job (up to 4); its values then go to the job.
+    for job in [0, 3, 4, 5, -1]:
+        yield (f"write job id {job}", {"caller": sim, **preset, "operand": expression_operand(ASSIGN, MY_PERSON, JOB_ID, LITERAL, job)})
+    for index in [JOB_GRADE, JOB_XP, JOB_SICK_DAYS, JOB_FLAGS]:
+        for job in [2, 7]:
+            job_preset = {"objects": {str(sim): {"person": {str(JOB_ID): job}}}}
+            yield (f"job {job} write person {index}",
+                   {"caller": sim, **job_preset, "operand": expression_operand(ASSIGN, MY_PERSON, index, LITERAL, 6)})
+    for index in [PRIORITY, IS_GHOST, SKILL_LOCK, RENDER_FLAGS]:
+        yield (f"special person {index} = 1 then read",
+               {"caller": sim, "objects": {str(sim): {"person": {str(index): 1}}},
+                "operand": expression_operand(ASSIGN, TEMPS, 0, MY_PERSON, index)})
+    # An object as the stack object, read and written as a Sim.
+    for other in others[:2]:
+        for scope, index in [(STACK_MOTIVES, 7), (STACK_PERSON, 7), (STACK_PERSON_BY_TEMP, 1)]:
+            yield (f"object {other} read scope {scope}",
+                   {"caller": sim, "stackObject": other, "temps": [0, 7], "operand": expression_operand(ASSIGN, TEMPS, 0, scope, index)})
+            yield (f"object {other} write scope {scope}",
+                   {"caller": sim, "stackObject": other, "temps": [0, 7], "operand": expression_operand(ASSIGN, scope, index, LITERAL, 5)})
+        yield (f"object {other} as caller reads its motives",
+               {"caller": other, "operand": expression_operand(ASSIGN, TEMPS, 0, MY_MOTIVES, 7)})
+
+
 # Each needs a Sim: (opcode, generator of (lot GUIDs, the Sim's object ID)).
 SIM_GENERATORS = {
     "set_motive_deltas": (29, set_motive_deltas_cases),
+    "sim_expression": (2, sim_expression_cases),
 }
 
 

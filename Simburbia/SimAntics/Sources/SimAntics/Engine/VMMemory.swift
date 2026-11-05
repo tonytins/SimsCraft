@@ -173,26 +173,22 @@ enum VMMemory {
             try setSim(frame.caller, index: data, value: value, personData: false)
             return true
         case .myPersonData:
-            try setSim(frame.caller, index: data, value: value, personData: true)
-            return true
+            return try setSim(frame.caller, index: data, value: value, personData: true)
         case .stackObjectMotives:
             try setSim(frame.stackObject, index: data, value: value, personData: false)
             return true
         case .stackObjectPersonData:
-            try setSim(frame.stackObject, index: data, value: value, personData: true)
-            return true
+            return try setSim(frame.stackObject, index: data, value: value, personData: true)
         case .stackObjectMotiveByTemp:
             let i = try element(thread.tempRegisters, data, "temp")
             try setSim(frame.stackObject, index: i, value: value, personData: false)
             return true
         case .stackObjectPersonDataByTemp:
             let i = try element(thread.tempRegisters, data, "temp")
-            try setSim(frame.stackObject, index: i, value: value, personData: true)
-            return true
+            return try setSim(frame.stackObject, index: i, value: value, personData: true)
         case .myPersonDataByTemp:
             let i = try element(thread.tempRegisters, data, "temp")
-            try setSim(frame.caller, index: i, value: value, personData: true)
-            return true
+            return try setSim(frame.caller, index: i, value: value, personData: true)
         case .dynamicSpriteFlagForTempOfStackObject:
             let target = frame.stackObject
             let index = try element(thread.tempRegisters, data, "temp")
@@ -327,16 +323,17 @@ enum VMMemory {
 
     /// A scope only Sims have. FreeSO casts the entity to a Sim first, which fails for an
     /// object, then calls into the Sim (``Entity/setPersonDatum(_:to:)``, ``Entity/setMotive(_:to:)``).
-    private static func setSim(_ entity: Entity?, index: Int16, value: Int16, personData: Bool) throws(SimAnticsError) {
+    /// Returns whether it was set, which the person data setter can refuse (an online job ID past
+    /// 4), as FreeSO returns `SetPersonData`'s result; a motive is always set.
+    @discardableResult
+    private static func setSim(_ entity: Entity?, index: Int16, value: Int16, personData: Bool) throws(SimAnticsError) -> Bool {
         guard let entity else {
             throw .nullReference("no entity")
         }
         guard entity.isAvatar else { throw .invalidCast("the entity isn't a Sim") }
-        if personData {
-            try entity.setPersonDatum(Int(index), to: value)
-        } else {
-            try entity.setMotive(Int(index), to: value)
-        }
+        if personData { return try entity.setPersonDatum(Int(index), to: value) }
+        try entity.setMotive(Int(index), to: value)
+        return true
     }
 
     private static func simOnly(_ entity: Entity?, index: () throws(SimAnticsError) -> Int16, personData: Bool) throws(SimAnticsError) -> Int16 {

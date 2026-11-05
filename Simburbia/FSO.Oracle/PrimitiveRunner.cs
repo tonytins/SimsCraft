@@ -420,7 +420,11 @@ namespace FSO.Oracle
                 return array.Select(item => (int)Integer(item, name, int.MinValue, int.MaxValue)).ToArray();
             }
 
-            /// <summary>An object of index to value, such as <c>{"3": 10}</c>.</summary>
+            /// <summary>
+            /// An object of index to value, such as <c>{"3": 10}</c>, in index order: both oracles apply
+            /// presets that way, since a JSON object's keys have no order to rely on, and some presets
+            /// depend on others (a Sim's job values on its job ID).
+            /// </summary>
             private static List<(int, short)> Sparse(JsonNode node, string name)
             {
                 if (node == null) return new List<(int, short)>();
@@ -428,7 +432,7 @@ namespace FSO.Oracle
                 return json.Select(pair => int.TryParse(pair.Key, NumberStyles.None, CultureInfo.InvariantCulture, out var index) && index <= 0xFFFF
                         ? (index, (short)Integer(pair.Value, name, short.MinValue, short.MaxValue))
                         : throw new RequestException($"\"{name}\" key \"{pair.Key}\" is not an index"))
-                    .ToList();
+                    .OrderBy(entry => entry.Item1).ToList();
             }
 
             private static readonly string[] ObjectStateKeys = { "data", "attributes", "list", "direction", "person", "motives", "motiveChanges" };
@@ -446,7 +450,7 @@ namespace FSO.Oracle
                         throw new RequestException("a motive change must be [perHour, max, ticked]");
                     return (index, (short)Integer(change[0], "perHour", short.MinValue, short.MaxValue),
                         (short)Integer(change[1], "max", short.MinValue, short.MaxValue), ticked);
-                }).ToList();
+                }).OrderBy(entry => entry.index).ToList();
             }
 
             private static List<(short, ObjectState)> ObjectStates(JsonNode node)
@@ -466,7 +470,7 @@ namespace FSO.Oracle
                         Person = Sparse(state["person"], "person"), Motives = Sparse(state["motives"], "motives"),
                         MotiveChanges = MotiveChangeStates(state["motiveChanges"]) }));
                 }
-                return states;
+                return states.OrderBy(state => state.Item1).ToList();  // in object ID order, as Sparse
             }
         }
 

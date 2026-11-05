@@ -112,7 +112,7 @@ struct FixtureComparisonTests {
     /// The cases of primitives that need a Sim, on the lot in `sim-primitives.lot` with its Sims
     /// joined. A fixture folder with none (FreeSO couldn't join a Sim on that install) has nothing
     /// to check.
-    @Test(arguments: ["set_motive_deltas"])
+    @Test(arguments: ["set_motive_deltas", "sim_expression"])
     func primitivesWithASimMatchFreeSO(primitive: String) throws {
         let directory = try required(oracleDirectory)
         let requestsFile = directory.appendingPathComponent("\(primitive).sim-requests.jsonl")

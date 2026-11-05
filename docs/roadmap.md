@@ -121,7 +121,7 @@ In order:
        cases can name them; SimAntics' `VM.joinSim` places a Sim by the mailbox, else on tile 3,3,
        FreeSO's fallback, kept free on `mock-lot-sim.xml`, whose Sim now joins rather than being
        in the blueprint. The review scripts take each lot's Sims from one table (`lot_sims`).
-   - [ ] B. The Sim entity: avatars from the person template, person data, motives and their decay,
+   - [x] B. The Sim entity: avatars from the person template, person data, motives and their decay,
      running every tick, and Set Motive Deltas. Its gate is the mock Sim; on the real installs the
      template's own code reaches phase C's primitives, so their Sims stay inconclusive until then.
      - [x] B1. Sim setup: a Sim set up as `VMAvatar.Init` does (body strings, outfits, name,
@@ -136,7 +136,7 @@ In order:
        Motive Deltas. The mock Sim matches FreeSO over a game day. The unpatched 2002 and beta
        discs lack the motive tuning patches delivered, so Simburbia's own defaults fill in
        (`Simburbia/Tuning/tuning.xml`, DIFF-33), on both oracles.
-     - [ ] B4. Primitive cases that name the mock Sim (Set Motive Deltas, person data and motives).
+     - [x] B4. Primitive cases that name the mock Sim (Set Motive Deltas, person data and motives).
        - [x] B4a. Scaffolding: cases preset and report a Sim's person data, motives, and motive
          changes, and the lot's category, and run on a lot of their own with the Sim joined.
        - [x] B4b. A whole mock Sim from Kenney's CC0 character (`generators/mock_avatar.py`): a
@@ -146,7 +146,7 @@ In order:
          `GetAvatarPlace`, the hand slot, and moving what's in it (the carry animation waits
          for phase C).
        - [x] B4d. Set Motive Deltas cases.
-       - [ ] B4e. Person data and motive cases through Expression, then the review.
+       - [x] B4e. Person data and motive cases through Expression, then the review.
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
      speed, and events; FreeSO's animation state; Animate Sim, Reach, Grab, Drop, and Change Suit
      Or Accessory (as state). Made-up animations in the mock. One idle Sim runs in step.
@@ -292,6 +292,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-05 | minor | Fourth pass, step B4e, which finishes phase B: 1,007 Expression cases on the mock Sim's motives and person data agree with FreeSO. They found two things. Simburbia's `setValue` dropped the person data setter's result, so a refused write (a job ID past 4) went true where FreeSO's goes false; fixed, with a regression test. And `sb-oracle` applied a case's presets in hash order (`JSONSerialization` keeps no key order) where `fso-oracle` used the written order, which mattered for a Sim's job values after its job ID; both oracles now apply presets in index order. |
 | 2026-11-04 | patch | Fourth pass, step B4d: 1,653 Set Motive Deltas cases with the mock Sim (once, an hour, clearing; every motive and two past the last; six lot categories; several scopes; an object caller) agree with FreeSO. The mock's `tuning.dat` is now written by `generators/mock_tuning.py`, with made-up weights outside the None category that don't divide 1000 evenly, so the scaling truncates on both sides; None stays at 1, so the mock lots' runs are unchanged. The same cases on 1.1097.1.0 are inconclusive until phase D: the template person reaches Push Interaction as it joins. |
 | 2026-11-04 | minor | Fourth pass, step B4c: Sims are placed as FreeSO's `VMAvatar` places them, with a 6-by-6 obstacle, `GetAvatarPlace`, a hand slot that carries what it holds, and position changes without walls. The Set Motive Deltas scaffold cases, which disagreed only on how the Sim sat on the lot, return to the fixtures. FreeSO's empty-hand `ClearSlot` crash does nothing here. |
 | 2026-11-04 | minor | Fourth pass, steps B4a and B4b. B4a: `run-primitive` on both oracles presets and reports a Sim's person data, motives, and motive changes and the lot's category, and primitives that need a Sim run on a lot of their own with it joined. It found that FreeSO places a Sim as `VMAvatar` does (a 6-by-6 obstacle footprint, `GetAvatarPlace`, a hand slot) where Simburbia uses the object path, now B4c. B4b: the mock Sim gets a whole body from Kenney's CC0 character, written in TSO's avatar formats by `generators/mock_avatar.py`; `fso-oracle avatars`, new, decodes it with FreeSO's readers (FreeSO's headless content never loads meshes), and reads all of 1.1097.1.0's avatar files but five test animations. |

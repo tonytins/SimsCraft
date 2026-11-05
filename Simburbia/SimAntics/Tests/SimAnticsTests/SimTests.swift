@@ -132,6 +132,22 @@ private func withSim(_ strings: [String]?, ownWalks: [String]? = nil,
         }
     }
 
+    /// A refused person data write reports false through the variable scopes, as FreeSO's
+    /// `SetVariable` returns `SetPersonData`'s result, so Expression's assignment goes false.
+    @Test func aRefusedPersonDataWriteIsFalseThroughEveryScope() throws {
+        try withSim(bodyStrings()) { vm, sim, _ throws in
+            let (_, frame) = try vm.makePrimitiveFrame(opcode: 7, operand: [0, 0, 0, 0], caller: sim)
+            frame.stackObjectID = sim.objectID
+            frame.thread.tempRegisters[1] = Int16(PersonData.onlineJobID)
+            #expect(try frame.setValue(5, of: Variable(.myPersonData, Int16(PersonData.onlineJobID))) == false)
+            #expect(try frame.setValue(5, of: Variable(.stackObjectPersonData, Int16(PersonData.onlineJobID))) == false)
+            #expect(try frame.setValue(5, of: Variable(.myPersonDataByTemp, 1)) == false)
+            #expect(try frame.setValue(5, of: Variable(.stackObjectPersonDataByTemp, 1)) == false)
+            #expect(try frame.setValue(3, of: Variable(.myPersonData, Int16(PersonData.onlineJobID))))
+            #expect(try frame.setValue(300, of: Variable(.myMotives, Int16(Motive.fun))))  // motives: always set, clamped
+        }
+    }
+
     @Test func boundsAndMotiveLimits() throws {
         try withSim(bodyStrings()) { _, sim, _ throws in
             #expect(throws: SimAnticsError.indexOutOfRange("person data 101")) { try sim.personDatum(101) }
