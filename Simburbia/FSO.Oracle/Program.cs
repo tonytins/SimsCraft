@@ -29,10 +29,15 @@ namespace FSO.Oracle
        fso-oracle operands [options]
        fso-oracle sprites [--game DIR]
        fso-oracle architecture [--game DIR]
+       fso-oracle avatars [--game DIR]
 
 sprites decodes every SPR2, SPR#, and DGRP in the install's objspf*.far archives with
 FreeSO's readers and prints one line per frame or drawing group, with hashes of the
 pixels (see SpriteDump.cs).
+
+avatars decodes every file in the install's avatar archives (avatardata/**/*.dat) with
+FreeSO's Vitaboy readers and prints one line each, with meshes' bounds once skinned on the
+install's adult skeleton (see AvatarDump.cs).
 
 run-lot loads a lot from blueprint XML into a headless FreeSO VM, as FreeSO's lot
 server does, ticks it, and prints a state digest.
@@ -79,7 +84,7 @@ options:
 
         public static int Main(string[] args)
         {
-            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "run-scenarios", "operands", "sprites", "architecture" }.Contains(args[0]))
+            if (args.Length == 0 || !new[] { "run-lot", "run-primitive", "list-objects", "run-objects", "room-maps", "run-scenarios", "operands", "sprites", "architecture", "avatars" }.Contains(args[0]))
             {
                 Console.Error.WriteLine(Usage);
                 return 2;
@@ -104,6 +109,12 @@ options:
             if (args[0] == "sprites")
             {
                 SpriteDump.Run(options.GameDirectory, results);
+                return 0;
+            }
+            // Nor do avatars: FreeSO leaves meshes, textures, and hand groups out without one too.
+            if (args[0] == "avatars")
+            {
+                AvatarDump.Run(options.GameDirectory, results);
                 return 0;
             }
 

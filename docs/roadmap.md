@@ -137,6 +137,16 @@ In order:
        discs lack the motive tuning patches delivered, so Simburbia's own defaults fill in
        (`Simburbia/Tuning/tuning.xml`, DIFF-33), on both oracles.
      - [ ] B4. Primitive cases that name the mock Sim (Set Motive Deltas, person data and motives).
+       - [x] B4a. Scaffolding: cases preset and report a Sim's person data, motives, and motive
+         changes, and the lot's category, and run on a lot of their own with the Sim joined.
+       - [x] B4b. A whole mock Sim from Kenney's CC0 character (`generators/mock_avatar.py`): a
+         skeleton under TSO's bone names, body and head meshes, outfits, a hand group, and
+         placeholder animations, which FreeSO decodes (`fso-oracle avatars`).
+       - [ ] B4c. Sims on the lot as `VMAvatar` places them: the obstacle footprint,
+         `GetAvatarPlace`, the hand slot, and moving what's in it (the carry animation waits
+         for phase C).
+       - [ ] B4d. Set Motive Deltas cases.
+       - [ ] B4e. Person data and motive cases through Expression, then the review.
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
      speed, and events; FreeSO's animation state; Animate Sim, Reach, Grab, Drop, and Change Suit
      Or Accessory (as state). Made-up animations in the mock. One idle Sim runs in step.
@@ -282,6 +292,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-04 | minor | Fourth pass, steps B4a and B4b. B4a: `run-primitive` on both oracles presets and reports a Sim's person data, motives, and motive changes and the lot's category, and primitives that need a Sim run on a lot of their own with it joined. It found that FreeSO places a Sim as `VMAvatar` does (a 6-by-6 obstacle footprint, `GetAvatarPlace`, a hand slot) where Simburbia uses the object path, now B4c. B4b: the mock Sim gets a whole body from Kenney's CC0 character, written in TSO's avatar formats by `generators/mock_avatar.py`; `fso-oracle avatars`, new, decodes it with FreeSO's readers (FreeSO's headless content never loads meshes), and reads all of 1.1097.1.0's avatar files but five test animations. |
 | 2026-11-04 | minor | Fourth pass, step B3: a Sim's tick. `Entity.decayMotives` ports `VMAvatarMotiveDecay` (the Room motive from the room score each tick; each game minute the seven decaying motives, by the lot category's weights, and Mood), keeping its quirks: float-then-truncate thousandths, products cut to 32 bits before dividing, and rates and fractions that wrap as shorts (the mock's Hunger does). `tickMotiveChange` ports `VMMotiveChange`, and Set Motive Deltas (opcode 29) runs with `ScaleRate`; the tick also retries an out-of-world Sim by the mailbox, all in `VMAvatar.Tick`'s order. The mock Sim's lot now agrees with FreeSO over a game day (lots run: 3 agree, none inconclusive), with real decay on both sides. Motive tuning: the unpatched 2002 and beta discs' `tuning.dat` lacks what patches delivered, so TSOContent lays the install's file over Simburbia's own defaults (`Simburbia/Tuning/tuning.xml`, in TSOFiles' new `TuningXML` format), key by key for now; the numbers are ours, with TSO Mania's easy, average, and hard categories, and `fso-oracle` lays them under older installs too (DIFF-33). 1.1097.1.0 takes nothing from them. On the 2002 copy FreeSO now gets past the tuning but stops creating a Sim on a missing skeleton (Vitaboy), a gap for phase C. |
 | 2026-11-04 | patch | Fourth pass, step B2: room score, low priority. `VM.roomScore` ports `RefreshLighting`'s and `RefreshRoomScore`'s score (room impact over area in twelfths, or 30 outdoors, less 10 or 15, within ±100), refreshed as FreeSO refreshes it, with its quirks: objects with negative impact wait for the next full refresh, a room lit by another keeps 0, and "outdoors" is the last support room's. The Refresh primitive now refreshes it. Room maps record scores on both oracles; every one agrees on MockInstall and on 1.1097.1.0's 24 readable lots. A Sim's Room motive takes it in B3. |
 | 2026-11-04 | minor | Fourth pass, step B1: Sims are set up. `Entity.setUpSim` ports `VMAvatar`'s constructor and `Init` (body strings with FreeSO's random picks, which draw `NextRandom(count − 1)` for outfits and `NextRandom(count)` for names; walk and swim tables; starting motives; Neat 1000), person data and motives go through FreeSO's accessors and their special cases, and `VM.joinSim` applies a joining player's state. The mock Sim matches FreeSO at tick 0 in everything but the Room motive (room score, B2), and 1.1097.1.0's template person matches FreeSO's digest at creation, seed included, before its own code reaches Push Interaction (phase D). Where FreeSO crashes on bad body strings, Simburbia reports and carries on (DIFF-32). A Sim's first tick reports motive decay as unsupported until B3. |

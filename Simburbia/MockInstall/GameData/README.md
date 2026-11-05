@@ -18,10 +18,11 @@ Sims Online, and credit isn't required, but it's given: thank you, Kenney.
 | `Preview.png` | Kenney's preview of the pack |
 | `License.txt` | Kenney's license |
 
-## How it will be used
+## How it's used
 
-Queen Margaret's fourth pass (Sims) turns it into TSO's avatar formats, written by a generator in
-`../generators/` so the result can be made again: a skeleton, meshes, bindings, outfits, an
-appearance, and textures, with Kenney's bones renamed to TSO's, since objects and animations name
-bones. Until then the mock install's Sim keeps its made-up one-bone skeleton, which is enough for
-FreeSO to create a Sim but not for one to move.
+`../generators/mock_avatar.py` turns it into TSO's avatar formats in `../TSOClient/avatardata/`: a
+skeleton under TSO's bone names (objects and animations name bones; Kenney's are mapped onto TSO's
+29, and its control bones dropped), a body and a head mesh cut from Kenney's one mesh, bindings,
+appearances, outfits, and textures from the two human skins, and placeholder animations. The
+zombie skins aren't used yet. Kenney's character rests in a T-pose with its own joint axes, so
+animations written for TSO's skeleton wouldn't fit it; the placeholders are made for it.

@@ -3,7 +3,7 @@
 **Nothing in this folder is from The Sims Online.** It's a tiny, made-up install, for testing
 only. Every object, routine, wall, floor, and name in `TSOClient/` was written for SimsCraft's
 tests, and none of it comes from, or stands for, EA's game data. It can't be played.
-`GameData/` holds the mock Sim to come, Kenney's CC0 character (see [its README](GameData/README.md)).
+`GameData/` holds the source of the mock Sim's body, Kenney's CC0 character (see [its README](GameData/README.md)).
 
 It exists so tests and CI can run without a copy of TSO: point `TSO_GAME_DIR` at `TSOClient/` here,
 and anything that reads an install (`tsofiles-check`, TSOContent, the SimAntics VM) reads this one
@@ -25,7 +25,7 @@ It follows the layout of a real install, with only what the content system needs
 | `objectdata/objects/objspf.far` | `mockchair.spf`: made-up sprites for the `sprites` comparison (a palette, `SPR2` versions 1000 and 1001 using every run command, `SPR#` in both byte orders, and `DGRP` versions 20000, 20001, and 20004). DGRP 0 is the chairs' own (base graphic 0 plus graphic 0), with near images for north and east, so the client draws them. Two cover edge cases: `SPR#` #201 is big-endian version 1001, which FreeSO misreads (DIFF-26), and `SPR2` #102 has alpha 40, past the 5 bits the field holds, which FreeSO and Simburbia both wrap to 73 |
 | `objectdata/globals/global.iff` | One global routine (256) that returns true, and the Sim's walk (`STR#` 150) and swim (`STR#` 158) animation names, made up |
 | `tuning.dat` | The global tuning a Sim's motives read, made up: `lotmotives` (a weight of 1 for every lot category and motive) and `simmotives` (small decay rates, 16 waking hours) |
-| `avatardata/skeletons/skeletons.dat` | A FAR3 holding `adult.skel`, a made-up skeleton of one bone (`ROOT`), laid out as 1.1097.1.0's is |
+| `avatardata/` | The mock Sim's body, made from Kenney's character by `generators/mock_avatar.py`, in FAR3 archives laid out as 1.1097.1.0's are: `adult.skel` (TSO's 29 adult bone names and parents, placed on Kenney's joints and scaled to TSO's height), a body and a head mesh (Kenney's one mesh, cut at the head), female and male textures (JPEG; the clothes are painted on, so every skin tone wears the same), their bindings, appearances, and outfits, a hand group with no hand meshes (Kenney's hands are part of the body), and four placeholder animations (`mock-stand`, `mock-walk`, `mock-walk-fast`, `mock-swim`). File IDs are `0x4D4F....` |
 | `objectdata/globals/mockglobals.iff` | The objects' semi-global: one routine (8192) that returns true |
 | `objectdata/globals/build.iff` | The build catalog's strings: five wall styles (`STR#` 0x81), two floors (0x82), three wallpapers (0x83), and pool and water (0x85). There's one more wallpaper than floors, as in the real tables, since FreeSO counts the global floors from the wallpaper strings (DIFF-29) |
 | `objectdata/globals/walls.iff` | Wall styles 1 (wall), 2, 12, 13, and 14 (fences, banister), and 7 and 8 (the cutaway styles), with cut-down masks for 1, 7, and 8; patterns 1 to 3 (plaster, brick, blue paint), 248 to 251 (the fences' own), and 252 and 253 (the cutaway overlays); and the 46 junction pieces. Each sprite has the four sides FreeSO draws, at its sizes for each zoom |
@@ -60,11 +60,11 @@ answer, and puts its cash in TempXL 0, which it copies to attribute 2. Objects o
 all have persist ID 0, which FreeSO resolves to the lowest-numbered object, so on the mock lot
 the money moves in and out of object 1, and alone on a lot it's the register's own.
 
-The Sim has what FreeSO needs to create one, all made up: its body strings (type, outfits left
-empty for FreeSO's default, name, gender, age, and skin tone), an adult skeleton in a FAR3 archive,
-the motive tuning in `tuning.dat`, and the global walk and swim animation tables. FreeSO creates
-and runs it; Simburbia doesn't run Sims yet, so it reports the Sim's setup as unsupported, and the
-oracles count it as not measured until Queen Margaret's fourth pass.
+The Sim has everything FreeSO needs to create one, nothing from EA: its body strings (type, the
+female body and head outfits, name, gender, age, and skin tone), its body in `avatardata/`, the
+motive tuning in `tuning.dat`, and the global walk and swim animation tables, whose names the
+placeholder animations answer. Both oracles create and run it, and agree over a game day.
+`fso-oracle avatars` decodes its body with FreeSO's own readers.
 
 `Lots/mock-lot.xml` is a made-up lot for it: a closed 3 by 3 room with floor, a chair out of
 the world, a chair in the room, two tables outside (one facing south, with a group ID), the lamp in the
@@ -74,9 +74,8 @@ oracles' `run-lot --sims 1 --sim-template 4D4F4307`) rather than being in the bl
 no mailbox, so the Sim arrives on tile 3,3, the join's fallback; the chair that stands there on
 `mock-lot.xml` stands on 4,4 here instead. Keep 3,3 free on this lot. On `mock-lot.xml` the chair
 still takes 3,3, so a Sim joining there stays out of the world, as FreeSO's join leaves it. The lots
-are kept apart so the Sim, which Simburbia can't set up yet, doesn't stop the primitive cases and
-the lot run on `mock-lot.xml` from being measured; Simburbia's side of the Sim's lot counts as not
-measured until Queen Margaret's fourth pass sets Sims up (phase B).
+are kept apart so the primitive cases on `mock-lot.xml` keep their lot; cases that need a Sim run on
+`mock-lot-sim.xml` with it joined.
 
 `fso-oracle` reads it too: its game overlay adds placeholders for what FreeSO loads and
 Simburbia doesn't (audio, tuning, the missing wall and floor archives, and so on). CI runs both oracles on
@@ -93,8 +92,11 @@ The files are kept as they are, not generated. Add to them as tests need: anothe
 chunk type, a quirk to cover. Update the tables above when you do, and keep everything made up.
 
 `generators/` keeps the scripts that made some of the files, to show how they were built:
-`mock_sim.py` gave the Sim its body strings, animation names, skeleton, and tuning, and
-`mock_build.py` wrote the walls and floors. Each ran once
-on the committed files and refuses to run again on files it has already patched, except
-`mock_build.py`, which writes only the files that are missing, so deleting one remakes it. The script that
+`mock_sim.py` gave the Sim its body strings, animation names, first skeleton, and tuning,
+`mock_build.py` wrote the walls and floors, and `mock_avatar.py` makes the Sim's body from
+`GameData/` (replacing `mock_sim.py`'s one-bone skeleton and naming the outfits in the body strings).
+`mock_sim.py` ran once on the committed files and refuses to run again on files it has already
+patched; `mock_build.py` writes only the files that are missing, so deleting one remakes it; and
+`mock_avatar.py` rewrites everything it makes each run (`python3 generators/mock_avatar.py .` here,
+with ImageMagick for the textures), byte for byte the same. The script that
 made `objspf.far` wasn't kept.

@@ -100,6 +100,19 @@ FNV-1a 64 hash of its RGBA (`128x64:0123abcd...`), comma-separated. `sb-oracle
 architecture` prints the same from TSOContent's providers, and `compare` reads both as
 `architecture.tsv`.
 
+## Avatars: `avatars`
+
+`avatars` decodes every file in the install's avatar archives (`avatardata/**/*.dat`, FAR 3) with
+FreeSO's Vitaboy readers. FreeSO's content leaves meshes, textures, and hand groups out without a
+graphics device, as the oracle runs it, so this is the only check they get. One tab-separated line
+per file: the archive, the entry's name, type ID, and file ID, then what was read (`skel`: its
+bones and parents; `mesh`: bones, faces, real and blend vertices, and the real vertices' bounds once
+skinned on the install's `adult.skel`; `bnd`, `apr`, `oft`, `hag`: the IDs they name; `anim`: name,
+duration, distance, and each motion's bone and frames; textures: their size and first bytes). An
+entry that throws prints `error`. On 1.1097.1.0 FreeSO's animation reader fails on five of TSO's own
+leftover test animations (`a2o-test-animation2` to `6`). Simburbia has no avatar readers yet, so
+there's no `sb-oracle` side; phase C's readers will print the same.
+
 ## Sims on a lot: `run-lot --sims`
 
 `run-lot --sims N` (and `run-primitive --sims N`, before each request's fresh lot, so requests can
@@ -387,7 +400,11 @@ each one on standard error:
   tuning, audio archives with one track, sound groups, a data definition, and an empty
   `cities` folder (and, where the install has none, wall and floor globals with build-mode
   string tables and the first wall and floor archives; MockInstall has its own since 2026-11-04);
-- blueprint objects the install doesn't have, or that FreeSO can't load (such as one whose FreeSO patch doesn't fit the install, or a Sim whose avatar FreeSO can't build because the install has no skeletons, as on MockInstall), are left out of the lot and reported.
+- a `tuning.dat` copy with Simburbia's default tuning (`Simburbia/Tuning/tuning.xml`, copied
+  beside the oracle) laid under the install's key by key, where the install lacks keys the
+  defaults have, as the unpatched 2002 and beta discs lack the motive tuning; the copy is read
+  back through FreeSO's own reader (the scorecard's DIFF-33);
+- blueprint objects the install doesn't have, or that FreeSO can't load (such as one whose FreeSO patch doesn't fit the install, or a Sim whose avatar FreeSO can't build because the install has no adult skeleton FreeSO can find), are left out of the lot and reported. A Sim that joins (`--sims`) isn't: on the 2002 copy FreeSO's `SimAvatar` fails building one, and the run stops.
 
 The install is never written to. FreeSO's user data (such as the sandbox
 ban list) goes to a scratch folder inside the overlay, which is deleted on exit.

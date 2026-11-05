@@ -3,7 +3,8 @@
 
 - body strings (STR# 200) named by the Sim's OBJD BodyStringID, in objiff.far's mocksim.iff;
 - the walk (STR# 150) and swim (STR# 158) animation names, in global.iff;
-- a one-bone skeleton, adult.skel, in avatardata/skeletons/skeletons.dat;
+- a one-bone skeleton, adult.skel, in avatardata/skeletons/skeletons.dat (since replaced by
+  mock_avatar.py's, which also names the outfits in the body strings);
 - the motive tuning, in tuning.dat.
 
 It patches the files in place, once: it was run on 2026-10-29 to make what's committed, and it
