@@ -13,6 +13,11 @@ public struct TuningFile: Sendable, Equatable {
         /// The settings in file order.
         public var values: [(key: String, value: String)]
 
+        public init(name: String, values: [(key: String, value: String)]) {
+            self.name = name
+            self.values = values
+        }
+
         /// The value for a key, matched exactly.
         public func value(forKey key: String) -> String? {
             values.first { $0.key == key }?.value
