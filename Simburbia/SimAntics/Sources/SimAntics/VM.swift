@@ -74,6 +74,8 @@ public final class VM {
     private var deleted: [Entity] = []
     private var isLoading = false
     private var routines: [RoutineKey: Routine] = [:]
+    /// The motive tuning once read, or why it couldn't be (``motiveTuning()``).
+    var motiveTuningStorage: Result<MotiveTuning, SimAnticsError>?
 
     private struct RoutineKey: Hashable {
         var file: String

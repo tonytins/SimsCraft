@@ -127,3 +127,39 @@ func tableEntry(guid: UInt32, file: String, name: String? = nil, group: Int16 = 
 func objectTable(_ entries: [String]) -> String {
     "<ObjectInfoTable>\n" + entries.joined(separator: "\n") + "\n</ObjectInfoTable>"
 }
+
+/// A `tuning.dat`: a Persist header, then the entries as a literal-only RefPack stream, each
+/// string a 7-bit length and its bytes with 13 added.
+func tuningDat(_ entries: [(name: String, values: [(String, String)])]) -> Data {
+    func string(_ writer: inout ByteWriter, _ text: String) {
+        writer.uint8(UInt8(text.utf8.count))
+        writer.raw(text.utf8.map { $0 &+ 13 })
+    }
+    var body = ByteWriter()
+    body.uint32(UInt32(entries.count))
+    for entry in entries {
+        string(&body, entry.name)
+        body.uint32(UInt32(entry.values.count))
+        for (key, value) in entry.values { string(&body, key); string(&body, value) }
+    }
+    let bytes = [UInt8](body.bytes)
+    var stream: [UInt8] = []
+    var index = 0
+    while bytes.count - index >= 4 {
+        let run = min(112, (bytes.count - index) / 4 * 4)
+        stream.append(UInt8(0xE0 + run / 4 - 1))
+        stream.append(contentsOf: bytes[index..<(index + run)])
+        index += run
+    }
+    stream.append(UInt8(0xFC + (bytes.count - index)))
+    stream.append(contentsOf: bytes[index...])
+    var writer = ByteWriter()
+    writer.uint8(1)
+    writer.uint32(UInt32(bytes.count))
+    writer.uint32(UInt32(stream.count))
+    writer.uint32(UInt32(stream.count))
+    writer.uint16(0xFB10)
+    writer.raw([0, 0, 0])
+    writer.raw(stream)
+    return writer.bytes
+}

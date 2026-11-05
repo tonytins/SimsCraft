@@ -104,6 +104,7 @@ namespace FSO.Oracle
             }
             AdaptObjectTable(root, added);
             AdaptCatalog(root, added);
+            if (!added.Any(change => change.Contains(" tuning.dat;"))) AdaptTuning(root, added);
 
             Path = root + "/";
             UserPath = System.IO.Path.Combine(root, "fso-oracle-user") + "/";
@@ -197,6 +198,103 @@ namespace FSO.Oracle
             File.Delete(path); // the link, not the install's file
             document.Save(path);
             changes.Add($"packingslips/catalog.xml has no names (\"n\"); adapted a copy using object table names for {adapted} entries");
+        }
+
+        /// <summary>
+        /// The unpatched 2002 and beta discs' `tuning.dat` lacks the motive tuning patches
+        /// delivered, which FreeSO needs to create any Sim. Simburbia lays its own defaults
+        /// (`Simburbia/Tuning/tuning.xml`, copied beside the oracle) under the install's file key
+        /// by key; the copy does the same, so both sides run on the same values. An install that
+        /// has every key (1.1097.1.0, MockInstall) is left alone.
+        /// </summary>
+        private static void AdaptTuning(string root, List<string> changes)
+        {
+            var path = System.IO.Path.Combine(root, "tuning.dat");
+            if (!File.Exists(path)) return;
+            var install = new FSO.Files.Tuning(path);
+            var entries = install.EntriesByName.Values
+                .Select(entry => (Name: entry.EntryName, Values: entry.KeyValues.Select(pair => (pair.Key, pair.Value)).ToList()))
+                .ToList();
+            var defaults = XDocument.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "tuning.xml"));
+            var added = 0;
+            foreach (var entry in defaults.Root.Elements("Entry"))
+            {
+                var name = (string)entry.Attribute("name");
+                var index = entries.FindIndex(e => e.Name.ToLowerInvariant() == name.ToLowerInvariant());
+                if (index < 0)
+                {
+                    entries.Add((name, new List<(string, string)>()));
+                    index = entries.Count - 1;
+                }
+                foreach (var value in entry.Elements("Value"))
+                {
+                    var key = (string)value.Attribute("key");
+                    if (entries[index].Values.Any(pair => pair.Item1 == key)) continue;
+                    entries[index].Values.Add((key, string.Concat(value.Nodes().OfType<XText>().Select(text => text.Value)).Trim()));
+                    added++;
+                }
+            }
+            if (added == 0) return;
+
+            var bytes = Tuning(entries);
+            File.Delete(path); // the link, not the install's file
+            File.WriteAllBytes(path, bytes);
+            // Read it back the way the game will, so a writing mistake stops here.
+            var check = new FSO.Files.Tuning(path);
+            if (check.EntriesByName.Values.Sum(entry => entry.KeyValues.Count) != entries.Sum(entry => entry.Values.Count))
+                throw new InvalidDataException("the adapted tuning.dat doesn't read back as written");
+            changes.Add($"tuning.dat lacks {added} values Simburbia's default tuning has; adapted a copy with them");
+        }
+
+        /// <summary>
+        /// A `tuning.dat`: a Persist header, then the entries as a literal-only RefPack stream
+        /// (runs of 4 to 112 bytes, then a stop code with the last 0 to 3). Each string is a
+        /// 7-bit length and its bytes with 13 added.
+        /// </summary>
+        private static byte[] Tuning(List<(string Name, List<(string, string)> Values)> entries)
+        {
+            using var body = new MemoryStream();
+            using (var writer = new BinaryWriter(body, System.Text.Encoding.ASCII, leaveOpen: true))
+            {
+                void Text(string text)
+                {
+                    var data = System.Text.Encoding.ASCII.GetBytes(text);
+                    writer.Write7BitEncodedInt(data.Length);
+                    writer.Write(data.Select(b => (byte)(b + 13)).ToArray());
+                }
+                writer.Write((uint)entries.Count);
+                foreach (var (name, values) in entries)
+                {
+                    Text(name);
+                    writer.Write((uint)values.Count);
+                    foreach (var (key, value) in values) { Text(key); Text(value); }
+                }
+            }
+            var plain = body.ToArray();
+            var compressed = new List<byte>();
+            var index = 0;
+            while (plain.Length - index >= 4)
+            {
+                var run = Math.Min(112, (plain.Length - index) / 4 * 4);
+                compressed.Add((byte)(0xE0 + run / 4 - 1));
+                compressed.AddRange(plain.Skip(index).Take(run));
+                index += run;
+            }
+            compressed.Add((byte)(0xFC + (plain.Length - index)));
+            compressed.AddRange(plain.Skip(index));
+
+            using var stream = new MemoryStream();
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write((byte)1);                    // body type
+                writer.Write((uint)plain.Length);         // decompressed size
+                writer.Write((uint)compressed.Count);     // compressed size
+                writer.Write((uint)compressed.Count);     // stream body size
+                writer.Write((ushort)0xFB10);             // RefPack
+                writer.Write(new byte[] { (byte)(plain.Length >> 16), (byte)(plain.Length >> 8), (byte)plain.Length });
+                writer.Write(compressed.ToArray());
+            }
+            return stream.ToArray();
         }
 
         /// <summary>

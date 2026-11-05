@@ -36,6 +36,11 @@ struct RealInstallTests {
         #expect(global.tuning != nil)
     }
 
+    /// 1.1097.1.0's tuning has every motive key, so nothing comes from Simburbia's defaults.
+    @Test func takesNoMotiveTuningFromTheDefaults() throws {
+        #expect(try content.globalTuning().defaultedKeys.isEmpty)
+    }
+
     /// Every registered object loads with its semi-global. Objects whose IFF the install
     /// lacks are allowed (the 2002 beta lists `skillcheater` without shipping it); any
     /// other failure isn't.

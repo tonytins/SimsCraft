@@ -317,15 +317,25 @@ extension Entity {
 
     // MARK: A Sim's tick
 
-    /// What a Sim does each tick after its thread (`VMAvatar.Tick`), so far: the online job status
-    /// flag that FreeSO sets to 1 whenever it's 0 (stored, though reading it goes to the job), and
-    /// the tick counter. Motives, animations, and leaving the lot come with later phases.
+    /// What a Sim does each tick after its thread (`VMAvatar.Tick`), in FreeSO's order: the online
+    /// job status flag that FreeSO sets to 1 whenever it's 0 (stored, though reading it goes to
+    /// the job); motive decay (``decayMotives()``); a Sim out of the world tries again to find a
+    /// place by the first mailbox part, in object ID order; each motive's change
+    /// (``tickMotiveChange(_:)``); and the tick counter. Animations, the debugger's pause, and
+    /// leaving the lot come with later phases.
     ///
-    /// Until motive decay is ported, a Sim's first tick reports it as unsupported (once), since the
-    /// Sim's motives can't match FreeSO's over time without it.
+    /// Where FreeSO's retry would fail and stop the lot, Simburbia reports it against the Sim.
     func tickSim() {
         if personData[PersonData.onlineJobStatusFlags] == 0 { personData[PersonData.onlineJobStatusFlags] = 1 }
+        decayMotives()
+        if position.isOutOfWorld, let mailbox = vm.entities.first(where: { VM.mailboxGUIDs.contains($0.object.guid) }) {
+            do {
+                _ = try vm.findLocation(for: self, near: mailbox, flags: [])
+            } catch {
+                vm.report(error, by: self)
+            }
+        }
+        for index in sim.motiveChanges.indices { tickMotiveChange(index) }
         personData[PersonData.tickCounter] &+= 1
-        if personData[PersonData.tickCounter] == 1 { vm.report(.unsupported(VM.motiveDecayGap), by: self) }
     }
 }

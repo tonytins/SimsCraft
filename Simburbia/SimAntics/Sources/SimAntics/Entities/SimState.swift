@@ -57,6 +57,28 @@ public struct SimState: Sendable, Equatable {
     /// This Sim's relationships to others by their persist ID (`MeToPersist`), each a list of values.
     public var relationships: [UInt32: [Int16]] = [:]
 
+    /// A motive's change over time (FreeSO's `VMMotiveChange`), which Set Motive Deltas sets.
+    public struct MotiveChange: Sendable, Equatable {
+        /// Points an hour; 0 is no change.
+        public var perHourChange: Int16 = 0
+        /// Where the change stops (0 until something sets it, as a C# field starts).
+        public var maxValue: Int16 = 0
+        /// Points gathered toward the next whole one.
+        public var fractional: Double = 0
+        /// Whether the change has ticked since it was last set; only then can it be set again.
+        public var ticked = false
+
+        public init() {}
+    }
+
+    /// The change on each of the 16 motives (`MotiveChanges`).
+    public var motiveChanges = [MotiveChange](repeating: MotiveChange(), count: 16)
+    /// Motive decay's thousandths toward the next lost point, for the seven decaying motives
+    /// (`VMAvatarMotiveDecay.MotiveFractions`).
+    public var motiveFractions = [Int16](repeating: 0, count: 7)
+    /// The game minute motive decay last ran in (`LastMinute`).
+    public var lastMinute: Int32 = 0
+
     /// How many walk and swim animations a Sim has room for.
     public static let animationSlots = 50
 

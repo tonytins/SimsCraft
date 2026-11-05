@@ -44,6 +44,42 @@ let mockInstall = URL(fileURLWithPath: #filePath)
         #expect(try content.global().chunk(BHAV.self, id: 256) != nil)
     }
 
+    /// The mock's own made-up motive tuning has every key the defaults have, so none come from them.
+    @Test func readsTheMadeUpMotiveTuning() throws {
+        let global = try content.globalTuning()
+        #expect(global.tuning.entry(named: "simmotives")?.number(forKey: "WakeHours") == 16)
+        #expect(global.tuning.entry(named: "lotmotives")?.values.count == 77)
+        #expect(global.defaultedKeys.isEmpty)
+    }
+
+    /// An unpatched disc's `tuning.dat` has other entries but no motive tuning: every motive key
+    /// comes from Simburbia's defaults, and the install's own entries stay.
+    @Test func takesWhatTheInstallLacksFromTheDefaults() throws {
+        let install = try FakeInstall()
+        try install.write("<ObjectInfoTable></ObjectInfoTable>", to: "packingslips/objecttable.xml")
+        try install.write(makeFAR1([]), to: "objectdata/objects/objiff.far")
+        try install.write(tuningDat([("SimMotives", [("WakeHours", "12")]), ("Roommates", [("Max", "8")])]), to: "tuning.dat")
+        let global = try GameContent(.init(gameDirectory: install.root)).globalTuning()
+        #expect(global.tuning.entry(named: "SimMotives")?.number(forKey: "WakeHours") == 12)
+        #expect(global.tuning.entry(named: "Roommates")?.value(forKey: "Max") == "8")
+        #expect(global.defaultedKeys.count == 88 && !global.defaultedKeys.contains("SimMotives/WakeHours"))
+        #expect(global.defaultedKeys.first == "SimMotives/HungerDecrementRatio")
+    }
+
+    @Test func aMissingOrBrokenTuningFileIsAnError() throws {
+        let install = try FakeInstall()
+        try install.write("<ObjectInfoTable></ObjectInfoTable>", to: "packingslips/objecttable.xml")
+        try install.write(makeFAR1([]), to: "objectdata/objects/objiff.far")
+        let content = try GameContent(.init(gameDirectory: install.root))
+        #expect(throws: ContentError.missingFile("tuning.dat")) { try content.globalTuning() }
+        let url = try install.write(Data([2, 0, 0, 0]), to: "tuning.dat")
+        // The file index is taken when the content loads, so a fresh one sees the new file.
+        let reloaded = try GameContent(.init(gameDirectory: install.root))
+        #expect(throws: ContentError.invalidFile(path: url.path, reason: String(describing: TuningError.notATuningFile))) {
+            try reloaded.globalTuning()
+        }
+    }
+
     @Test func readsTheMadeUpWallsAndFloors() throws {
         let floors = try FloorProvider(files: content.files)
         #expect(floors.entries.map(\.id) == [1, 2, 256, 257, 65534, 65535])

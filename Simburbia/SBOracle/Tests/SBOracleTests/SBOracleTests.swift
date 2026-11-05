@@ -417,13 +417,14 @@ extension ComparisonTests {
         #expect(Answers.firstGap(in: [(1, .infiniteLoop)]) { _ in 1 } == nil)
     }
 
-    /// The mock Sim joins its lot and is set up as FreeSO sets it up; its first tick reports motive
-    /// decay, not ported yet, so the run names it and stops there.
-    @Test func theMockSimsLotStopsAtMotiveDecay() throws {
+    /// The mock Sim joins its lot and is set up as FreeSO sets it up, then runs with its motives
+    /// decaying: nothing on the lot is unsupported any more.
+    @Test func theMockSimsLotRunsWithItsSim() throws {
         let mock = repository.appendingPathComponent("Simburbia/MockInstall")
         let content = try GameContent(.init(gameDirectory: mock.appendingPathComponent("TSOClient")))
         let lot = try Blueprint(xml: try Data(contentsOf: mock.appendingPathComponent("Lots/mock-lot-sim.xml")))
         let lines = Answers(content: content).lotRun(lot, ticks: 30, every: 10, sims: Answers.Sims(count: 1, template: 0x4D4F_4307))
-        #expect(lines.last == "unsupported at tick 0 by 0x4D4F4307: \(VM.motiveDecayGap)", "\(lines.suffix(2))")
+        #expect(lines.map { $0.split(separator: " ").prefix(2).joined(separator: " ") } == ["tick 0", "tick 10", "tick 20", "tick 30"],
+                "\(lines.suffix(2))")
     }
 }

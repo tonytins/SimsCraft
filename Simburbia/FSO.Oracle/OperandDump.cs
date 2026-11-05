@@ -27,7 +27,7 @@ namespace FSO.Oracle
         /// <summary>Opcodes Simburbia decodes without running (its <c>PrimitiveTable.unportedOperands</c>).</summary>
         private static readonly HashSet<ushort> Opcodes = new HashSet<ushort>
         {
-            1, 4, 5, 6, 9, 13, 14, 20, 22, 24, 26, 27, 29, 30, 36, 37, 38, 39, 40, 43, 44, 45, 46, 47, 50, 62, 65, 67,
+            1, 4, 5, 6, 9, 13, 14, 20, 22, 24, 26, 27, 30, 36, 37, 38, 39, 40, 43, 44, 45, 46, 47, 50, 62, 65, 67,
         };
 
         public static void Run(string gameDirectory, TextWriter results)

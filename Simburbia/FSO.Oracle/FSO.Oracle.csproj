@@ -40,6 +40,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Simburbia's default tuning, which GameOverlay lays under an older install's tuning.dat. -->
+    <None Include="../Tuning/tuning.xml" Link="tuning.xml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Stock MonoGame supplies the XNA types FreeSO's code uses; no window or device is created. -->
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.2.1105" />
     <!-- FSO.Common's Log writes to the Windows event log; the package compiles everywhere. -->

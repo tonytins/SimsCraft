@@ -48,6 +48,7 @@ public struct PrimitiveTable: Sendable {
         var table = PrimitiveTable()
         table.register(Primitives.Sleep.self)
         table.register(Primitives.Refresh.self)
+        table.register(Primitives.SetMotiveChange.self)
         table.register(Primitives.RandomNumber.self)
         table.register(Primitives.PlaySound.self)
         table.register(Primitives.SetToNext.self)

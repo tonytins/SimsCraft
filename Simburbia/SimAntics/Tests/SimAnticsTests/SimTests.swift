@@ -148,8 +148,8 @@ private func withSim(_ strings: [String]?, ownWalks: [String]? = nil,
             sim.tickSim()
             sim.tickSim()
             #expect(sim.personData[PersonData.tickCounter] == 2)
-            // Motive decay isn't ported: the first tick says so, once.
-            #expect(vm.reportedErrors.map(\.error) == [.unsupported(VM.motiveDecayGap)])
+            // This install has no tuning.dat, so there's no motive decay: the first tick says so, once.
+            #expect(vm.reportedErrors.map(\.error) == [.content(.missingFile("tuning.dat"))])
             // Stored as 1, but read through the (absent) job as 0, as FreeSO's digest reads it.
             #expect(try sim.personData[PersonData.onlineJobStatusFlags] == 1 && sim.personDatum(PersonData.onlineJobStatusFlags) == 0)
         }

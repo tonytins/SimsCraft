@@ -7,6 +7,9 @@ import FoundationXML
 /// `tuning.dat` (``TuningFile``), in a file people can read and edit. Simburbia's defaults use it,
 /// and ``TuningFile/merging(_:)`` lays an install's `tuning.dat` over them.
 ///
+/// NOTE: That merge goes key by key for now, and may become whole entry replacement depending
+/// on how things go (see ``TuningFile/merging(_:)``).
+///
 /// ```xml
 /// <Tuning version="1">
 ///   <Entry name="SimMotives">
@@ -173,6 +176,10 @@ extension TuningFile {
     /// This tuning with another's values over it, key by key: an entry in both (matched without
     /// case) keeps this one's keys in order, each replaced where the other has it, then the
     /// other's new keys; entries only the other has come after, in its order.
+    ///
+    /// NOTE: Key-by-key merging is a trial. Depending on how it goes, it may be replaced by whole
+    /// entry replacement (as The Sims 4's tuning overrides work), where an entry in the other
+    /// tuning replaces this one's entirely.
     public func merging(_ other: TuningFile) -> TuningFile {
         var merged = entries
         for top in other.entries {

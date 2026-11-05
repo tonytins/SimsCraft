@@ -1,8 +1,4 @@
 extension VM {
-    /// What a Sim's tick doesn't do yet, reported as unsupported on its first tick
-    /// (``Entity/tickSim()``): FreeSO's motive decay and motive changes.
-    public static let motiveDecayGap = "a Sim's motive decay (FreeSO's VMAvatarMotiveDecay)"
-
     /// The person template every player's Sim is made from (`VMAvatar.TEMPLATE_PERSON`).
     public static let templatePerson: UInt32 = 0x7FD9_6B54
 

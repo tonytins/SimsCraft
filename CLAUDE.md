@@ -20,6 +20,7 @@ Key entrypoints:
   - ``MockInstall/`` - a tiny made-up TSO install for tests and CI
   - ``Interface/`` - the client's top bar and windows, in Hudini's UIScript XML
   - ``Lots/`` - the owner's lots as blueprint XML
+  - ``Tuning/`` - Simburbia's default global tuning (``tuning.xml``), laid under an install's ``tuning.dat``
   - ``packaging/`` - the scripts that build the client into packages players download
 - ``TSOClient/`` - FreeSO's source, frozen at a snapshot (read-only)
 - ``docs/`` - the documentation and development progress:
@@ -56,9 +57,17 @@ The self-hosted infrastructure is designed to scale upward for massively multipl
 
 Because TSO's servers shutdown decades ago now, FSO's code provides the only ground truth on how the game worked. Even though FSO took some creative liberties (as will SB), the underlining game remains the same.
 
-Learn from everything available: FSO's code, [FreeSims](https://github.com/francot514/FreeSims), the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game's AI extends SimAntics), [Don Hopkins](https://github.com/SimHacker), [SimObliterator Suite](https://github.com/DnfJeff/SimObliterator_Suite), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), and [The Modding Guide](https://cyndersanity.github.io/sims-legacy-mod-guide/index.html). Additionally, [TSO Mania](https://www.tsomania.net/) provides resources on how the game plays. 
+Learn from everything available: FSO's code, [FreeSims](https://github.com/francot514/FreeSims), the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game's AI extends SimAntics), [Don Hopkins](https://github.com/SimHacker), [SimObliterator Suite](https://github.com/DnfJeff/SimObliterator_Suite), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), and [The Modding Guide](https://cyndersanity.github.io/sims-legacy-mod-guide/index.html).
 
 Treat them as leads to verify against the code or the oracles.
+
+### Gameplay: check TSO Mania
+
+[TSO Mania](https://www.tsomania.net/) was the players' guide to TSO in its heyday: property categories, skills, jobs, pets, objects, and how each felt to play. Code tells you how something works; TSO Mania tells you how it played. Search it whenever a change touches gameplay or balance, and especially where FreeSO's data is missing or the installs disagree, as with the motive tuning the unpatched discs lack.
+
+- **Cite it** where it informs a number or a behavior (a doc comment, the scorecard, a tuning file's comments), as the default tuning cites its category difficulties.
+- **Mind the era.** Its guides span TSO, New & Improved, EA-Land, and FreeSO; say which a claim is from when it matters, and mark it **Unverified** when the page doesn't.
+- **It describes, it doesn't specify.** "Easy" or "50% overfill" is a target to match, not a value to copy; Simburbia's own numbers meet it.
 
 ## Common Commands
 

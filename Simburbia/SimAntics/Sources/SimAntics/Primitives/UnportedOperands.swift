@@ -25,7 +25,6 @@ extension PrimitiveTable {
         24: Primitives.OldRelationship.Operand.self,
         26: Primitives.Relationship.Operand.self,
         27: Primitives.GotoRelativePosition.Operand.self,
-        29: Primitives.SetMotiveChange.Operand.self,
         30: Primitives.EmptyOperand.self,
         36: Primitives.Dialog.Operand.self,
         37: Primitives.EmptyOperand.self,
@@ -123,43 +122,6 @@ extension Primitives {
 
             public var fsoCompatFields: [(name: String, value: Int64)] {
                 [("SuitData", Int64(suitData)), ("SuitScope", Int64(suitScope)), ("Flags", Int64(flags))]
-            }
-        }
-    }
-
-    /// Set Motive Deltas (opcode 29). FreeSO's `VMSetMotiveChangeOperand`; its owner and data
-    /// pairs are ``Variable``s here.
-    public enum SetMotiveChange {
-        public struct Operand: FSOCompatOperand, Equatable {
-            public var delta: Variable
-            public var max: Variable
-            /// The motive (`VMMotive`).
-            public var motive: UInt8
-            public var flags: UInt8
-
-            public init(bytes: [UInt8]) {
-                var reader = OperandReader(bytes)
-                let deltaOwner = reader.uint8(), maxOwner = reader.uint8()
-                motive = reader.uint8()
-                flags = reader.uint8()
-                delta = Variable(rawScope: UInt16(deltaOwner), data: reader.int16())
-                max = Variable(rawScope: UInt16(maxOwner), data: reader.int16())
-            }
-
-            public func encoded() -> [UInt8] {
-                OperandWriter.bytes { writer in
-                    writer.uint8(UInt8(truncatingIfNeeded: delta.rawScope))
-                    writer.uint8(UInt8(truncatingIfNeeded: max.rawScope))
-                    writer.uint8(motive)
-                    writer.uint8(flags)
-                    writer.int16(delta.data)
-                    writer.int16(max.data)
-                }
-            }
-
-            public var fsoCompatFields: [(name: String, value: Int64)] {
-                [("DeltaOwner", Int64(delta.rawScope)), ("DeltaData", Int64(delta.data)), ("MaxOwner", Int64(max.rawScope)),
-                 ("MaxData", Int64(max.data)), ("Motive", Int64(motive)), ("Flags", Int64(flags))]
             }
         }
     }
