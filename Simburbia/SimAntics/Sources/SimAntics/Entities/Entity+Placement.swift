@@ -9,7 +9,15 @@ extension Entity {
     /// The rectangle the entity would take up at a position and facing, or `nil` if it takes up
     /// none (`VMGameObject.GetObstacle`): the definition's footprint mask, rotated a quarter turn
     /// per compass point, trims each side of a square half the tile width (8 by default) wide.
+    ///
+    /// A Sim's is a square 3 sixteenths of a tile each way around its position, whatever its
+    /// facing or flags (`VMAvatar.GetObstacle`). FreeSO gives a Sim that's being removed from the
+    /// lot no obstacle, unless it has zero extent; Sims leaving the lot aren't ported yet.
     public func obstacle(at position: LotPosition, facing direction: Direction) -> Obstacle? {
+        if isAvatar {
+            let x = Int(position.x), y = Int(position.y)
+            return Obstacle(x - 3, y - 3, x + 3, y + 3)
+        }
         guard data(.flags) & EntityFlag.hasZeroExtent == 0 else { return nil }
         let shift = direction.wallOffset * 4
         var mask = UInt32(object.definition.footprintMask) << shift
@@ -24,7 +32,8 @@ extension Entity {
     /// Whether the entity may go to a position (`VMEntity.PositionValid`): on the lot, against the
     /// walls it needs and clear of those it can't have, on a floor it allows, and clear of other
     /// objects, unless `flags` allow overlapping. With `userBuildableLimit`, it must also be in the
-    /// buildable area. The lot is flat, so slopes never fail.
+    /// buildable area. The lot is flat, so slopes never fail. A Sim isn't checked against walls,
+    /// and other objects are in its way as ``avatarPlacement(at:facing:)`` decides.
     ///
     /// - Throws: any error an "allow intersection" entry point throws.
     public func placement(at position: LotPosition, facing direction: Direction,
@@ -35,14 +44,16 @@ extension Entity {
             return PlacementResult(.locationOutOfBounds)
         }
 
-        let wall = try architecture.wall(atX: Int(position.tileX), y: Int(position.tileY), level: Int(position.level))
-        let wallStatus = wallChangeValid(wall, facing: direction, checkUnused: true)
-        guard wallStatus == .success else { return PlacementResult(wallStatus) }
+        if !isAvatar {
+            let wall = try architecture.wall(atX: Int(position.tileX), y: Int(position.tileY), level: Int(position.level))
+            let wallStatus = wallChangeValid(wall, facing: direction, checkUnused: true)
+            guard wallStatus == .success else { return PlacementResult(wallStatus) }
+        }
         let floorStatus = floorChangeValid(try architecture.preciseFloor(at: position), level: position.level)
         guard floorStatus == .success else { return PlacementResult(floorStatus) }
 
         if flags.contains(.allowIntersection) { return PlacementResult() }
-        var result = try objectPlacement(at: position, facing: direction)
+        var result = try isAvatar ? avatarPlacement(at: position, facing: direction) : objectPlacement(at: position, facing: direction)
         if result.object != nil && !flags.contains(.acceptSlots) { result.status = .cantIntersectOtherObjects }
         return result
     }
@@ -131,6 +142,34 @@ extension Entity {
                     result.status = other.slotHeight(0) == 8 ? .cannotPlaceComputerOnEndTable : .heightNotAllowed
                 }
             }
+        }
+        return result
+    }
+
+    /// `VMContext.GetAvatarPlace`: whether something in the room is in a Sim's way. Each entity
+    /// whose footprint overlaps the Sim's is asked through "allow intersection" (entry point 5),
+    /// the Sim first; if neither allows it, it's in the way unless it lets people through: another
+    /// Sim when this one has "allow person intersection", or anything, Sims included, with "allow
+    /// person intersection" and not "disallow person intersection". The search stops at the first one in
+    /// the way that has a chair's entry point (26); otherwise the last one in the way is named.
+    /// A Sim never stacks or sits in a slot here.
+    func avatarPlacement(at position: LotPosition, facing direction: Direction) throws(SimAnticsError) -> PlacementResult {
+        var result = PlacementResult()
+        guard let footprint = obstacle(at: position, facing: direction), position.level >= 1 else { return result }
+        let letsPeopleThrough = data(.flags) & EntityFlag.allowPersonIntersection != 0
+        for other in vm.entities(inRoom: vm.architecture.room(at: position)) {
+            if other.group === group { continue }
+            guard let otherFootprint = other.footprint, otherFootprint.intersects(footprint) else { continue }
+            if try executeEntryPoint(.allowIntersection, runImmediately: true, stackObject: other,
+                                     arguments: [other.objectID, 0, 0, 0]) { continue }
+            if try other.executeEntryPoint(.allowIntersection, runImmediately: true, stackObject: self,
+                                           arguments: [objectID, 0, 0, 0]) { continue }
+            let flags = other.objectData[Int(ObjectVariable.flags.rawValue)]
+            let allowed = (other.isAvatar && letsPeopleThrough)
+                || (flags & EntityFlag.disallowPersonIntersection == 0 && flags & EntityFlag.allowPersonIntersection != 0)
+            guard !allowed else { continue }
+            result = PlacementResult(.cantIntersectOtherObjects, object: other)
+            if let table = other.entryPoints, table.count > 26, table[26].actionFunction != 0 { break }
         }
         return result
     }

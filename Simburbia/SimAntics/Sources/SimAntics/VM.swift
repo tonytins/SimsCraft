@@ -547,7 +547,8 @@ public final class VM {
 
     /// `VMGameObject.PrePositionChange`: the entity leaves its place. Its footprint goes, it leaves
     /// its room and tile, and its container's slot if it's in one; otherwise, in the world, a door
-    /// or window takes its style off the walls and the object stops using them.
+    /// or window takes its style off the walls and the object stops using them. A Sim does the
+    /// first part only (`VMAvatar.PrePositionChange`).
     func leavePosition(_ entity: Entity) {
         entity.footprint = nil
         unregisterPosition(entity)
@@ -555,6 +556,8 @@ public final class VM {
             container.clearSlot(Int(entity.containerSlot))
             return
         }
+        // A Sim has no walls to give back (`VMAvatar.PrePositionChange`).
+        guard !entity.isAvatar else { return }
         guard !entity.position.isOutOfWorld, !architecture.isOutOfBounds(entity.position) else { return }
         try? entity.setArchitecturalWallStyles(to: 0)          // in range, so these can't fail
         try? entity.setWallUse(occupied: false, exclusive: entity.objectData[Int(ObjectVariable.exclusivePlacementFlags.rawValue)] & 2 != 0)
@@ -575,6 +578,14 @@ public final class VM {
         }
         registerPosition(entity)
         guard entity.container == nil else { return }
+        // A Sim uses no walls and joins no neighbors, and only out of the world goes without a
+        // footprint (`VMAvatar.PositionChange`).
+        if entity.isAvatar {
+            guard !entity.position.isOutOfWorld else { return }
+            entity.footprint = entity.obstacle(at: entity.position, facing: entity.direction)
+            if runsPlacementEntryPoint { try entity.executeEntryPoint(.place, runImmediately: true) }
+            return
+        }
         guard !entity.position.isOutOfWorld, !architecture.isOutOfBounds(entity.position) else { return }
         try entity.setArchitecturalWallStyles(to: entity.object.definition.wallStyle)
         try entity.setWallUse(occupied: true, exclusive: entity.objectData[Int(ObjectVariable.exclusivePlacementFlags.rawValue)] & 2 != 0)

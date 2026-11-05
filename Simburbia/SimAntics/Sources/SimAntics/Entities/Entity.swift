@@ -239,7 +239,8 @@ public final class Entity {
     /// Starts the entity, as `VMGameObject.Init` does: schedules it, runs init to completion,
     /// pushes main (with ``mainParameter`` and ``mainStackObjectID``), then disables it if the lot's category isn't one its definition allows.
     public func initialize() throws(SimAnticsError) {
-        contained = Array(repeating: nil, count: containerSlots.count)
+        // A Sim's one slot is its hand (`VMAvatar.TotalSlots`), whatever its definition has.
+        contained = Array(repeating: nil, count: isAvatar ? 1 : containerSlots.count)
         vm.scheduler.scheduleTick(for: self, in: 1)
         try executeEntryPoint(.initialize, runImmediately: true)
         var arguments: [Int16]?

@@ -66,7 +66,7 @@ lot_ticks=216000
 lot_every=9000
 sim_primitive_sims=1
 # Primitives whose cases need a Sim, run on the Sim lot (sim-primitives.lot).
-sim_primitives=()  # set_motive_deltas joins once Sims are placed as VMAvatar places them (B4b)
+sim_primitives=(set_motive_deltas)
 primitives=(expression sleep test_object_type refresh set_to_next random_number play_sound create_object_instance find_location_for run_tree_by_name stackobj_notify_out_of_idle get_distance_to get_direction_to transfer_funds remove_object_instance set_balloon_headline idle_for_input breakpoint special_effect stop_all_sounds get_terrain_info)
 
 mkdir -p "$output"
