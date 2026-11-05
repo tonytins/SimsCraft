@@ -8,6 +8,9 @@ script reads from
 the oracle. Every value a case reads is set by the request, so the Swift tests can build the
 same state.
 
+Primitives that need a Sim (SIM_GENERATORS) run on a lot with one, and take its object ID from
+ORACLE_SIM.
+
     ORACLE_GUIDS=534564d5,6271eff3,... ORACLE_MASTERS=39ccf441 python3 -I Simburbia/SimAntics/OracleCases/make_cases.py PRIMITIVE OUTPUT
 """
 
@@ -489,16 +492,52 @@ GENERATORS = {
 }
 
 
+# MARK: Primitives that need a Sim
+
+# Motives, as FreeSO's VMMotive numbers them.
+MOOD, ENERGY, COMFORT, HUNGER, HYGIENE, BLADDER, SLEEP_STATE, ROOM, SOCIAL, FUN = 3, 5, 6, 7, 8, 9, 11, 13, 14, 15
+CLEAR_ALL, ONCE = 1, 2
+
+
+def set_motive_deltas_operand(motive, flags, delta_scope, delta_data, max_scope, max_data):
+    return struct.pack("<BBBBhh", delta_scope, max_scope, motive, flags, delta_data, max_data).hex()
+
+
+def set_motive_deltas_cases(lot_guids, sim):
+    """The Sim calls it: once, as a change an hour, and clearing every change."""
+    ticked = {str(motive): [0, 0, True] for motive in range(16)}
+    yield "once hunger +10 to 55", {"caller": sim, "operand": set_motive_deltas_operand(HUNGER, ONCE, LITERAL, 10, LITERAL, 55),
+                                    "objects": {str(sim): {"motives": {str(HUNGER): 50}}}}
+    yield "per hour fun +900 to 80", {"caller": sim, "operand": set_motive_deltas_operand(FUN, 0, LITERAL, 900, LITERAL, 80),
+                                      "objects": {str(sim): {"motiveChanges": ticked}}}
+    yield "clear all", {"caller": sim, "operand": set_motive_deltas_operand(0, CLEAR_ALL, LITERAL, 0, LITERAL, 0),
+                        "objects": {str(sim): {"motiveChanges": {str(FUN): [900, 80, False]}}}}
+
+
+# Each needs a Sim: (opcode, generator of (lot GUIDs, the Sim's object ID)).
+SIM_GENERATORS = {
+    "set_motive_deltas": (29, set_motive_deltas_cases),
+}
+
+
 def main():
-    if len(sys.argv) != 3 or sys.argv[1] not in GENERATORS:
-        print(__doc__ + "\nPRIMITIVE is one of: " + ", ".join(GENERATORS), file=sys.stderr)
+    if len(sys.argv) != 3 or (sys.argv[1] not in GENERATORS and sys.argv[1] not in SIM_GENERATORS):
+        print(__doc__ + "\nPRIMITIVE is one of: " + ", ".join(list(GENERATORS) + list(SIM_GENERATORS)), file=sys.stderr)
         return 2
     guids = None
     if "ORACLE_GUIDS" in os.environ:
         guids = tuple(int(value, 16) for value in os.environ["ORACLE_GUIDS"].split(","))
         masters = tuple(int(value, 16) for value in os.environ.get("ORACLE_MASTERS", "").split(",") if value)
         guids = (guids, masters)
-    opcode, needs_guids, generate = GENERATORS[sys.argv[1]]
+    if sys.argv[1] in SIM_GENERATORS:
+        if guids is None or "ORACLE_SIM" not in os.environ:
+            print(f"{sys.argv[1]} cases need a Sim: ORACLE_GUIDS and ORACLE_SIM", file=sys.stderr)
+            return 2
+        opcode, sim_generate = SIM_GENERATORS[sys.argv[1]]
+        sim = int(os.environ["ORACLE_SIM"])
+        needs_guids, generate = True, lambda guids: sim_generate(guids[0], sim)
+    else:
+        opcode, needs_guids, generate = GENERATORS[sys.argv[1]]
     if needs_guids and guids is None:
         print(f"{sys.argv[1]} cases name real objects and need ORACLE_GUIDS", file=sys.stderr)
         return 2

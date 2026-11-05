@@ -199,7 +199,8 @@ Request fields (only `opcode` is required; unknown fields are rejected):
 | `currentTick` | the scheduler's current tick | the loaded lot's |
 | `idleStart`, `interrupt` | the caller thread's idle start tick (`ScheduleIdleStart`) and interrupt flag | the loaded lot's |
 | `clock` | `{"hours": h, "minutes": m, "minuteFractions": f}` (0 to 149 fractions a minute) to set the game clock | the loaded lot's clock |
-| `objects` | `{"objectID": {"data": {"index": value}, "attributes": {"index": value}, "list": [values], "direction": d}}` to set before running; `list` replaces the whole list, and `direction` (0 north to 7, clockwise) sets the facing without snapping it to the rotation step | |
+| `objects` | `{"objectID": {"data": {"index": value}, "attributes": {"index": value}, "list": [values], "direction": d}}` to set before running; `list` replaces the whole list, and `direction` (0 north to 7, clockwise) sets the facing without snapping it to the rotation step. A Sim also takes `"person": {"index": value}` and `"motives": {"index": value}`, set through its accessors (`SetPersonData`, `SetMotiveData`, so their special cases and limits apply), and `"motiveChanges": {"motive": [perHour, max, ticked]}`, set exactly; giving any of them for an object that isn't a Sim is a request error | |
+| `propertyCategory` | the lot's category (`VMTSOLotState.PropertyCategory`), 0 to 255 | the loaded lot's |
 
 Response fields:
 
@@ -215,10 +216,11 @@ Response fields:
 | `lot` | every object on the lot before running, in object ID order: `[objectID, guid, category, registered, x, y, level, direction, objectData, attributes, footprint, slots]`, where `registered` says whether the object is listed under its category (FreeSO lists an object once its category is set), `direction` is FreeSO's compass flag, `objectData` all 80 values, `footprint` the object's rectangle `[x1, y1, x2, y2]` or `null`, and `slots` the ID in each container slot (0 for empty), so a test can rebuild the lot |
 | `groups` | the objects that share a group, or came from a multi-tile master, each `[multiTile, masterGUID, objectIDs]` in the group's own order; `masterGUID` is `null` without a master |
 | `lotSize` | the lot's width and height in tiles |
+| `sims` | every Sim before running, in object ID order: `[objectID, personData, motives, motiveChanges]`, with all 101 person data and 16 motives as the accessors read them, and each motive change as `[perHour, max, ticked]` (its fraction isn't compared) |
 | `callerGUID`, `stackObjectGUID` | the GUIDs (8 hex digits) of the caller and the requested stack object, so a test can build the same objects |
 | `frames` | stack frames from the request's frame up; more than 1 means the primitive pushed one |
 | `globals` | `{"index": value}` for each global the primitive changed |
-| `objects` | for each object the primitive changed: changed `data` and `attributes` entries, the whole `list` if it changed, and the new `position` (`[x, y, level]`) and `direction` |
+| `objects` | for each object the primitive changed: changed `data` and `attributes` entries, the whole `list` if it changed, and the new `position` (`[x, y, level]`) and `direction`; for a Sim, also changed `person` and `motives` entries and each changed motive change, as `"motiveChanges": {"motive": [perHour, max, ticked]}` |
 | `created`, `removed` | object IDs added to or taken off the lot |
 | `requestError` | instead of all of the above, if the request couldn't be run, such as malformed JSON or an object not on the lot |
 

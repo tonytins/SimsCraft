@@ -105,6 +105,7 @@ public struct PrimitiveRunner {
             vm.clock.minutes = Int32(clock.minutes)
             vm.clock.minuteFractions = Int32(clock.minuteFractions)
         }
+        if let category = request.propertyCategory { vm.propertyCategory = category }
         for (index, value) in request.globals {
             guard index < vm.globalState.count else {
                 throw RequestError("global \(index) is out of range (0 to \(vm.globalState.count - 1))")
@@ -122,6 +123,25 @@ public struct PrimitiveRunner {
             }
             for (index, value) in state.attributes { entity.setAttribute(value, at: UInt16(index)) }
             if let list = state.list { entity.list = list }
+            if !state.person.isEmpty || !state.motives.isEmpty || !state.motiveChanges.isEmpty {
+                guard entity.isAvatar else {
+                    throw RequestError("object \(objectID) isn't a Sim, so it has no person data, motives, or motive changes")
+                }
+                for (index, value) in state.person {
+                    guard index <= PersonData.last else { throw RequestError("person data \(index) is out of range (0 to \(PersonData.last))") }
+                    _ = try entity.setPersonDatum(index, to: value)
+                }
+                for (index, value) in state.motives {
+                    guard index <= Motive.last else { throw RequestError("motive \(index) is out of range (0 to \(Motive.last))") }
+                    try entity.setMotive(index, to: value)
+                }
+                for (index, change) in state.motiveChanges {
+                    guard index <= Motive.last else { throw RequestError("motive change \(index) is out of range (0 to \(Motive.last))") }
+                    entity.sim.motiveChanges[index].perHourChange = change.perHour
+                    entity.sim.motiveChanges[index].maxValue = change.max
+                    entity.sim.motiveChanges[index].ticked = change.ticked
+                }
+            }
         }
         let thread = caller.thread
         if let tick = request.currentTick { vm.scheduler.currentTick = tick }
@@ -141,7 +161,7 @@ public struct PrimitiveRunner {
         frame.stackObjectID = request.stackObject
         thread.stack.append(frame)
 
-        let before = Snapshot(vm)
+        let before = try Snapshot(vm)
         let threadBefore = (thread.idleStartTick, thread.isInterrupted, thread.scheduledTick)
         var response = Self.response(id, nil, nil)
         response["lot"] = vm.entities.sorted { $0.objectID < $1.objectID }.map { entity -> [Any] in
@@ -154,6 +174,11 @@ public struct PrimitiveRunner {
                     (0..<entity.totalSlots).map { Int(entity.slot($0)?.objectID ?? 0) }]
         }
         response["lotSize"] = [vm.lotSize.width, vm.lotSize.height]
+        // Each Sim as the primitive finds it: [object ID, person data, motives, motive changes].
+        response["sims"] = try vm.entities.filter(\.isAvatar).sorted { $0.objectID < $1.objectID }.map { sim -> [Any] in
+            let state = try Snapshot.SimFields(sim)
+            return [Int(sim.objectID), state.person.map(Int.init), state.motives.map(Int.init), state.changes.map(\.json)]
+        }
         response["groups"] = Self.groups(of: vm)
 
         switch decoded {
@@ -192,7 +217,7 @@ public struct PrimitiveRunner {
         response["thread"] = threadChanges
         // More than 1: the primitive pushed frames.
         response["frames"] = thread.stack.count - (thread.stack.firstIndex { $0 === frame } ?? thread.stack.count)
-        Snapshot(vm).describe(since: before, into: &response)
+        try Snapshot(vm).describe(since: before, into: &response)
         return response
     }
 
@@ -238,6 +263,11 @@ struct Request {
         var list: [Int16]?
         /// The facing, 0 (north) to 7 clockwise, or `nil` to leave it.
         var direction: Int?
+        /// A Sim's person data and motives, set through its accessors.
+        var person: [(Int, Int16)] = []
+        var motives: [(Int, Int16)] = []
+        /// Motive changes set exactly.
+        var motiveChanges: [(Int, (perHour: Int16, max: Int16, ticked: Bool))] = []
     }
 
     var opcode: UInt8
@@ -255,9 +285,11 @@ struct Request {
     var currentTick: UInt32?
     var idleStart: UInt32?
     var interrupt: Bool?
+    var propertyCategory: UInt8?
 
     private static let known: Set<String> = ["id", "opcode", "operand", "caller", "stackObject", "seed", "temps", "tempXL",
-                                             "locals", "args", "globals", "objects", "clock", "currentTick", "idleStart", "interrupt"]
+                                             "locals", "args", "globals", "objects", "clock", "currentTick", "idleStart", "interrupt",
+                                             "propertyCategory"]
 
     init(_ json: [String: JSONValue], keys: [String], defaultSeed: UInt64) throws {
         if let unknown = keys.first(where: { !Self.known.contains($0) }) { throw RequestError("unknown field \"\(unknown)\"") }
@@ -281,6 +313,7 @@ struct Request {
         case .bool(let flag): interrupt = flag
         default: throw RequestError("\"interrupt\" must be true or false")
         }
+        propertyCategory = try json["propertyCategory"].map { UInt8(try Self.integer($0, "propertyCategory", 0, 255)) }
     }
 
     private static func integer(_ value: JSONValue, _ name: String, _ minimum: Int64, _ maximum: Int64) throws -> Int64 {
@@ -346,6 +379,26 @@ struct Request {
         }
     }
 
+    private static let objectStateKeys = ["data", "attributes", "list", "direction", "person", "motives", "motiveChanges"]
+
+    /// `{"7": [perHour, max, ticked]}`.
+    private static func motiveChangeStates(_ value: JSONValue?) throws -> [(Int, (perHour: Int16, max: Int16, ticked: Bool))] {
+        guard let value else { return [] }
+        guard case .object(let fields, let keys) = value else {
+            throw RequestError("\"motiveChanges\" must be an object of motive to [perHour, max, ticked]")
+        }
+        return try keys.map { key in
+            guard key.allSatisfy(\.isASCII), key.allSatisfy(\.isNumber), let index = Int(key), index <= 0xFFFF else {
+                throw RequestError("\"motiveChanges\" key \"\(key)\" is not an index")
+            }
+            guard case .array(let items) = fields[key], items.count == 3, case .bool(let ticked) = items[2] else {
+                throw RequestError("a motive change must be [perHour, max, ticked]")
+            }
+            return (index, (Int16(try integer(items[0], "perHour", Int64(Int16.min), Int64(Int16.max))),
+                            Int16(try integer(items[1], "max", Int64(Int16.min), Int64(Int16.max))), ticked))
+        }
+    }
+
     private static func objectStates(_ value: JSONValue?) throws -> [(Int16, ObjectState)] {
         guard let value else { return [] }
         guard case .object(let fields, let keys) = value else { throw RequestError("\"objects\" must be an object of object ID to state") }
@@ -354,14 +407,17 @@ struct Request {
                 throw RequestError("\"objects\" key \"\(key)\" is not an object ID")
             }
             guard case .object(let state, let stateKeys) = fields[key],
-                  stateKeys.allSatisfy({ ["data", "attributes", "list", "direction"].contains($0) }) else {
-                throw RequestError("object \(key) state must be an object with \"data\", \"attributes\", and \"list\"")
+                  stateKeys.allSatisfy({ objectStateKeys.contains($0) }) else {
+                throw RequestError("object \(key) state must be an object with \(objectStateKeys.map { "\"\($0)\"" }.joined(separator: ", "))")
             }
             var result = ObjectState()
             result.data = try sparse(state["data"], "data")
             result.attributes = try sparse(state["attributes"], "attributes")
             result.list = try state["list"].map { try shorts($0, "list", maximumCount: Int(Int16.max), defaultCount: 0) }
             result.direction = try state["direction"].map { Int(try integer($0, "direction", 0, 7)) }
+            result.person = try sparse(state["person"], "person")
+            result.motives = try sparse(state["motives"], "motives")
+            result.motiveChanges = try motiveChangeStates(state["motiveChanges"])
             return (objectID, result)
         }
     }
@@ -386,17 +442,37 @@ struct Request {
 struct Snapshot {
     struct EntityState {
         var data: [Int16], attributes: [Int16], list: [Int16], direction: Direction, position: LotPosition
+        /// For a Sim, else `nil`.
+        var sim: SimFields?
+    }
+
+    /// A Sim's person data and motives as its accessors read them, and each motive change's change
+    /// an hour, limit, and whether it has ticked.
+    struct SimFields: Equatable {
+        struct Change: Equatable {
+            var perHour: Int16, max: Int16, ticked: Bool
+            var json: [Any] { [Int(perHour), Int(max), ticked] }
+        }
+
+        var person: [Int16], motives: [Int16], changes: [Change]
+
+        init(_ sim: Entity) throws {
+            person = try (0...PersonData.last).map { try sim.personDatum($0) }
+            motives = try (0...Motive.last).map { try sim.motive($0) }
+            changes = sim.sim.motiveChanges.map { Change(perHour: $0.perHourChange, max: $0.maxValue, ticked: $0.ticked) }
+        }
     }
 
     let globals: [Int16]
     let entities: [Int16: EntityState]
 
-    init(_ vm: VM) {
+    init(_ vm: VM) throws {
         globals = vm.globalState
         var entities: [Int16: EntityState] = [:]
         for entity in vm.entities {
             entities[entity.objectID] = EntityState(data: entity.objectData, attributes: entity.attributes, list: entity.list,
-                                                    direction: entity.direction, position: entity.position)
+                                                    direction: entity.direction, position: entity.position,
+                                                    sim: entity.isAvatar ? try SimFields(entity) : nil)
         }
         self.entities = entities
     }
@@ -417,6 +493,14 @@ struct Snapshot {
                 changes["position"] = [Int(state.position.x), Int(state.position.y), Int(state.position.level)]
             }
             if old.direction != state.direction { changes["direction"] = Int(state.direction.rawValue) }
+            if let oldSim = old.sim, let sim = state.sim {
+                let person = Self.changes(oldSim.person, sim.person), motives = Self.changes(oldSim.motives, sim.motives)
+                if !person.isEmpty { changes["person"] = person }
+                if !motives.isEmpty { changes["motives"] = motives }
+                var changed: [String: Any] = [:]
+                for (index, change) in sim.changes.enumerated() where change != oldSim.changes[index] { changed[String(index)] = change.json }
+                if !changed.isEmpty { changes["motiveChanges"] = changed }
+            }
             if !changes.isEmpty { objects[String(id)] = changes }
         }
         fields["objects"] = objects

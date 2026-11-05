@@ -561,7 +561,7 @@ options:
         }
 
         /// <summary>FreeSO's person data and motive arrays, as <c>VMAvatar</c> sizes them.</summary>
-        private const int PersonDataCount = 101, MotiveCount = 16;
+        internal const int PersonDataCount = 101, MotiveCount = 16;
 
         private sealed class Options
         {

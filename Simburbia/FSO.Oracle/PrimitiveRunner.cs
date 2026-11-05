@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using FSO.SimAntics;
 using FSO.SimAntics.Engine;
+using FSO.SimAntics.Model;
 
 namespace FSO.Oracle
 {
@@ -37,6 +38,19 @@ namespace FSO.Oracle
         private static readonly FieldInfo AttributesField =
             typeof(VMEntity).GetField("Attributes", BindingFlags.Instance | BindingFlags.NonPublic)
             ?? throw new InvalidOperationException("VMEntity.Attributes not found; the snapshot's sources changed");
+
+        /// <summary>A Sim's 16 motive changes (<c>VMAvatar.MotiveChanges</c>), which FreeSO keeps private.</summary>
+        private static readonly FieldInfo MotiveChangesField =
+            typeof(VMAvatar).GetField("MotiveChanges", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("VMAvatar.MotiveChanges not found; the snapshot's sources changed");
+
+        private static VMMotiveChange[] MotiveChanges(VMAvatar avatar) => (VMMotiveChange[])MotiveChangesField.GetValue(avatar);
+
+        /// <summary>A Sim's person data and motives as its accessors read them, and each motive change's change an hour, limit, and whether it has ticked.</summary>
+        private static (short[] Person, short[] Motives, (short, short, bool)[] Changes) SimState(VMAvatar avatar) => (
+            Enumerable.Range(0, Program.PersonDataCount).Select(i => avatar.GetPersonData((FSO.SimAntics.Model.VMPersonDataVariable)i)).ToArray(),
+            Enumerable.Range(0, Program.MotiveCount).Select(i => avatar.GetMotiveData((FSO.SimAntics.Model.VMMotive)i)).ToArray(),
+            MotiveChanges(avatar).Select(change => (change.PerHourChange, change.MaxValue, change.Ticked)).ToArray());
 
         /// <summary>Readable output: quotes and apostrophes in messages aren't escaped as \u0022.</summary>
         private static readonly JsonSerializerOptions JsonOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
@@ -110,6 +124,7 @@ namespace FSO.Oracle
                 vm.Context.Clock.Minutes = request.Clock.Value.Minutes;
                 vm.Context.Clock.MinuteFractions = request.Clock.Value.MinuteFractions;
             }
+            if (request.PropertyCategory is byte category) vm.TSOState.PropertyCategory = category;
             foreach (var (index, value) in request.Globals)
             {
                 if (index >= vm.GlobalState.Length) throw new RequestException($"global {index} is out of range (0 to {vm.GlobalState.Length - 1})");
@@ -134,6 +149,26 @@ namespace FSO.Oracle
                 }
                 foreach (var (index, value) in state.Attributes) entity.SetAttribute(index, value);
                 if (state.List != null) entity.MyList = new LinkedList<short>(state.List);
+                if (state.Person.Count + state.Motives.Count + state.MotiveChanges.Count > 0)
+                {
+                    if (entity is not VMAvatar avatar) throw new RequestException($"object {objectID} isn't a Sim, so it has no person data, motives, or motive changes");
+                    foreach (var (index, value) in state.Person)
+                    {
+                        if (index >= Program.PersonDataCount) throw new RequestException($"person data {index} is out of range (0 to {Program.PersonDataCount - 1})");
+                        avatar.SetPersonData((FSO.SimAntics.Model.VMPersonDataVariable)index, value);
+                    }
+                    foreach (var (index, value) in state.Motives)
+                    {
+                        if (index >= Program.MotiveCount) throw new RequestException($"motive {index} is out of range (0 to {Program.MotiveCount - 1})");
+                        avatar.SetMotiveData((FSO.SimAntics.Model.VMMotive)index, value);
+                    }
+                    foreach (var (index, perHour, max, ticked) in state.MotiveChanges)
+                    {
+                        if (index >= Program.MotiveCount) throw new RequestException($"motive change {index} is out of range (0 to {Program.MotiveCount - 1})");
+                        var change = MotiveChanges(avatar)[index];
+                        (change.PerHourChange, change.MaxValue, change.Ticked) = (perHour, max, ticked);
+                    }
+                }
             }
             var thread = caller.Thread;
             if (request.CurrentTick is uint currentTick) vm.Scheduler.CurrentTickID = currentTick;
@@ -188,6 +223,12 @@ namespace FSO.Oracle
             var response = Response(id, null, null);
             response["lot"] = lotObjects;
             response["lotSize"] = new JsonArray(vm.Context.Architecture.Width, vm.Context.Architecture.Height);
+            // Each Sim as the primitive finds it: [object ID, person data, motives, motive changes].
+            response["sims"] = new JsonArray(vm.Entities.OfType<VMAvatar>().OrderBy(avatar => avatar.ObjectID).Select(avatar =>
+            {
+                var (person, motives, changes) = SimState(avatar);
+                return (JsonNode)new JsonArray(avatar.ObjectID, Values(person), Values(motives), MotiveChangeValues(changes));
+            }).ToArray());
             // Objects that share a group with others, or were made from a multi-tile master, by group.
             var groups = new JsonArray();
             foreach (var group in vm.Entities.Select(entity => entity.MultitileGroup).Distinct()
@@ -250,6 +291,10 @@ namespace FSO.Oracle
 
         private static JsonArray Values(IEnumerable<int> values) => new JsonArray(values.Select(value => (JsonNode)value).ToArray());
 
+        /// <summary>Motive changes as <c>[perHour, max, ticked]</c> each.</summary>
+        private static JsonArray MotiveChangeValues(IEnumerable<(short PerHour, short Max, bool Ticked)> changes) =>
+            new JsonArray(changes.Select(change => (JsonNode)new JsonArray(change.PerHour, change.Max, change.Ticked)).ToArray());
+
         /// <summary>A request the oracle can't run, reported to the caller instead of crashing.</summary>
         private sealed class RequestException : Exception
         {
@@ -274,6 +319,7 @@ namespace FSO.Oracle
             public uint? CurrentTick;
             public uint? IdleStart;
             public bool? Interrupt;
+            public byte? PropertyCategory;
 
             public sealed class ObjectState
             {
@@ -283,11 +329,16 @@ namespace FSO.Oracle
                 public short[] List;
                 /// <summary>The facing, 0 (north) to 7 clockwise, or null to leave it.</summary>
                 public int? Direction;
+                /// <summary>A Sim's person data and motives, set through its accessors (<c>SetPersonData</c>, <c>SetMotiveData</c>).</summary>
+                public List<(int Index, short Value)> Person;
+                public List<(int Index, short Value)> Motives;
+                /// <summary>Motive changes set exactly: <c>{"7": [perHour, max, ticked]}</c>.</summary>
+                public List<(int Index, short PerHour, short Max, bool Ticked)> MotiveChanges;
             }
 
             public static Request Parse(JsonObject json, ulong defaultSeed)
             {
-                var known = new HashSet<string> { "id", "opcode", "operand", "caller", "stackObject", "seed", "temps", "tempXL", "locals", "args", "globals", "objects", "clock", "currentTick", "idleStart", "interrupt" };
+                var known = new HashSet<string> { "id", "opcode", "operand", "caller", "stackObject", "seed", "temps", "tempXL", "locals", "args", "globals", "objects", "clock", "currentTick", "idleStart", "interrupt", "propertyCategory" };
                 foreach (var (key, _) in json)
                 {
                     if (!known.Contains(key)) throw new RequestException($"unknown field \"{key}\"");
@@ -312,6 +363,7 @@ namespace FSO.Oracle
                     IdleStart = json["idleStart"] is JsonNode start ? (uint)Integer(start, "idleStart", 0, uint.MaxValue) : null,
                     Interrupt = json["interrupt"] is JsonValue flag && flag.TryGetValue(out bool value) ? value
                         : json["interrupt"] == null ? null : throw new RequestException("\"interrupt\" must be true or false"),
+                    PropertyCategory = json["propertyCategory"] is JsonNode category ? (byte)Integer(category, "propertyCategory", 0, 255) : null,
                 };
             }
 
@@ -379,6 +431,24 @@ namespace FSO.Oracle
                     .ToList();
             }
 
+            private static readonly string[] ObjectStateKeys = { "data", "attributes", "list", "direction", "person", "motives", "motiveChanges" };
+
+            /// <summary><c>{"7": [perHour, max, ticked]}</c>.</summary>
+            private static List<(int, short, short, bool)> MotiveChangeStates(JsonNode node)
+            {
+                if (node == null) return new List<(int, short, short, bool)>();
+                if (node is not JsonObject json) throw new RequestException("\"motiveChanges\" must be an object of motive to [perHour, max, ticked]");
+                return json.Select(pair =>
+                {
+                    if (!int.TryParse(pair.Key, NumberStyles.None, CultureInfo.InvariantCulture, out var index) || index > 0xFFFF)
+                        throw new RequestException($"\"motiveChanges\" key \"{pair.Key}\" is not an index");
+                    if (pair.Value is not JsonArray change || change.Count != 3 || change[2] is not JsonValue flag || !flag.TryGetValue(out bool ticked))
+                        throw new RequestException("a motive change must be [perHour, max, ticked]");
+                    return (index, (short)Integer(change[0], "perHour", short.MinValue, short.MaxValue),
+                        (short)Integer(change[1], "max", short.MinValue, short.MaxValue), ticked);
+                }).ToList();
+            }
+
             private static List<(short, ObjectState)> ObjectStates(JsonNode node)
             {
                 if (node == null) return new List<(short, ObjectState)>();
@@ -388,11 +458,13 @@ namespace FSO.Oracle
                 {
                     if (!short.TryParse(key, NumberStyles.None, CultureInfo.InvariantCulture, out var objectID) || objectID == 0)
                         throw new RequestException($"\"objects\" key \"{key}\" is not an object ID");
-                    if (value is not JsonObject state || state.Any(pair => pair.Key != "data" && pair.Key != "attributes" && pair.Key != "list" && pair.Key != "direction"))
-                        throw new RequestException($"object {key} state must be an object with \"data\", \"attributes\", and \"list\"");
+                    if (value is not JsonObject state || state.Any(pair => !ObjectStateKeys.Contains(pair.Key)))
+                        throw new RequestException($"object {key} state must be an object with {string.Join(", ", ObjectStateKeys.Select(name => $"\"{name}\""))}");
                     states.Add((objectID, new ObjectState { Data = Sparse(state["data"], "data"), Attributes = Sparse(state["attributes"], "attributes"),
                         List = state["list"] == null ? null : Shorts(state["list"], "list", short.MaxValue, 0),
-                        Direction = state["direction"] == null ? null : (int)Integer(state["direction"], "direction", 0, 7) }));
+                        Direction = state["direction"] == null ? null : (int)Integer(state["direction"], "direction", 0, 7),
+                        Person = Sparse(state["person"], "person"), Motives = Sparse(state["motives"], "motives"),
+                        MotiveChanges = MotiveChangeStates(state["motiveChanges"]) }));
                 }
                 return states;
             }
@@ -412,6 +484,8 @@ namespace FSO.Oracle
                 public short X, Y;
                 public sbyte Level;
                 public byte Direction;
+                /// <summary>For a Sim (else null): person data, motives, and motive changes.</summary>
+                public (short[] Person, short[] Motives, (short, short, bool)[] Changes)? Sim;
             }
 
             public static Snapshot Take(VM vm) => new Snapshot
@@ -426,6 +500,7 @@ namespace FSO.Oracle
                     Y = entity.Position.y,
                     Level = entity.Position.Level,
                     Direction = (byte)entity.Direction,
+                    Sim = entity is VMAvatar avatar ? SimState(avatar) : null,
                 }),
             };
 
@@ -446,6 +521,20 @@ namespace FSO.Oracle
                     if (old.X != state.X || old.Y != state.Y || old.Level != state.Level)
                         changes["position"] = new JsonArray(state.X, state.Y, state.Level);
                     if (old.Direction != state.Direction) changes["direction"] = state.Direction;
+                    if (old.Sim is var (oldPerson, oldMotives, oldChanges) && state.Sim is var (person, motives, motiveChanges))
+                    {
+                        var personChanges = Changes(oldPerson, person);
+                        if (personChanges.Count > 0) changes["person"] = personChanges;
+                        var motiveChangesOfValue = Changes(oldMotives, motives);
+                        if (motiveChangesOfValue.Count > 0) changes["motives"] = motiveChangesOfValue;
+                        var changed = new JsonObject();
+                        for (var i = 0; i < motiveChanges.Length; i++)
+                        {
+                            if (!motiveChanges[i].Equals(oldChanges[i]))
+                                changed[i.ToString(CultureInfo.InvariantCulture)] = new JsonArray(motiveChanges[i].Item1, motiveChanges[i].Item2, motiveChanges[i].Item3);
+                        }
+                        if (changed.Count > 0) changes["motiveChanges"] = changed;
+                    }
                     if (changes.Count > 0) objects[objectID.ToString(CultureInfo.InvariantCulture)] = changes;
                 }
                 response["objects"] = objects;

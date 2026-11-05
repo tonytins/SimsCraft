@@ -109,6 +109,30 @@ struct FixtureComparisonTests {
         #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
     }
 
+    /// The cases of primitives that need a Sim, on the lot in `sim-primitives.lot` with its Sims
+    /// joined. A fixture folder with none (FreeSO couldn't join a Sim on that install) has nothing
+    /// to check.
+    @Test(arguments: ["set_motive_deltas"])
+    func primitivesWithASimMatchFreeSO(primitive: String) throws {
+        let directory = try required(oracleDirectory)
+        let requestsFile = directory.appendingPathComponent("\(primitive).sim-requests.jsonl")
+        guard FileManager.default.fileExists(atPath: requestsFile.path) else { return }
+        let fields = try lines("sim-primitives.lot").first?.split(separator: "\t").map(String.init) ?? []
+        try #require(fields.count == 3, "sim-primitives.lot should be LOT, COUNT, TEMPLATE")
+        var lot = try Blueprint(xml: try Data(contentsOf: try blueprintFile(URL(fileURLWithPath: fields[0]).lastPathComponent)))
+        let leftOut = Set(((try? lines("sim-primitives.leftout")) ?? []).compactMap { UInt32($0.dropFirst(2), radix: 16) })
+        lot.objects.removeAll { leftOut.contains($0.guid) }
+        let template = fields[2] == "-" ? VM.templatePerson : try #require(UInt32(fields[2], radix: 16))
+        let runner = PrimitiveRunner(answers: try answers(), lot: lot,
+                                     sims: Answers.Sims(count: try #require(Int(fields[1])), template: template))
+        let requests = try String(contentsOf: requestsFile, encoding: .utf8).split(separator: "\n").map(String.init)
+        let comparison = Comparison.primitives(primitive, fso: try lines("\(primitive).responses.jsonl"),
+                                               nso: requests.compactMap(runner.answerLine))
+        print(comparison.summary, comparison.skipsByCount.prefix(4))
+        #expect(comparison.matched > 0)
+        #expect(comparison.mismatches.isEmpty, "\(comparison.mismatches.prefix(5))")
+    }
+
     @Test func roomMapsMatchFreeSO() throws {
         let fso = try lines("rooms.jsonl")
         let answers = try answers()

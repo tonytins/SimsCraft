@@ -101,6 +101,19 @@ for install in "${installs[@]}"; do
             --blueprint "$(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/primitives.lot")" "${leave[@]}" \
             <"$requests" >"$folder/$primitive.responses.jsonl"
     done
+    # Primitives that need a Sim, on their own lot with its Sims (see oracle-fixtures.sh).
+    if [[ -f "$fso_folder/sim-primitives.lot" ]]; then
+        IFS=$'\t' read -r sim_lot sim_count sim_template <"$fso_folder/sim-primitives.lot"
+        mapfile -t sim_joining < <(sims_options "$sim_count" "$sim_template")
+        mapfile -t sim_leave < <(awk '{ print "--leave-out"; print $1 }' "$fso_folder/sim-primitives.leftout" 2>/dev/null || true)
+        for requests in "$fso_folder"/*.sim-requests.jsonl; do
+            [[ -f "$requests" ]] || continue
+            primitive="$(basename "$requests" .sim-requests.jsonl)"
+            timed "run-primitive $primitive" nso run-primitive \
+                --blueprint "$(echo "$sim_lot" | resolve_lots "$fso_folder" "$game" "$repository")" "${sim_leave[@]}" "${sim_joining[@]}" \
+                <"$requests" >"$folder/$primitive.responses.jsonl"
+        done
+    fi
     timed room-maps nso room-maps < <(resolve_lots "$fso_folder" "$game" "$repository" <"$fso_folder/rooms.lots") \
         >"$folder/rooms.jsonl"
     timed sprites nso sprites >"$folder/sprites.tsv"

@@ -18,6 +18,8 @@
 #   PRIMITIVE.requests.jsonl      generated cases for each ported primitive (OracleCases/make_cases.py)
 #   PRIMITIVE.responses.jsonl     run-primitive responses to them
 #   primitives.lot, primitives.leftout   the lot run-primitive loads, and the objects it left out
+#   PRIMITIVE.sim-requests.jsonl  cases for primitives that need a Sim, run on the lot in sim-primitives.lot
+#                                 (LOT, Sim count, template), with its left-out objects in sim-primitives.leftout
 #   blueprints/, rooms.lots       synthetic lots (OracleCases/make_blueprints.py), and every lot
 #                                 room-maps reads
 #   rooms.jsonl                   room-maps for them
@@ -39,10 +41,14 @@ if $mock; then
     game="$repository/Simburbia/MockInstall/TSOClient"
     lots_folder="Simburbia/MockInstall/Lots"
     primitive_lot="repository/Simburbia/MockInstall/Lots/mock-lot.xml"
+    sim_primitive_lot="repository/Simburbia/MockInstall/Lots/mock-lot-sim.xml"
+    sim_primitive_template=4D4F4307
 else
     game="${TSO_GAME_DIR:?set TSO_GAME_DIR to your TSO install, or pass --mock}"
     lots_folder="Simburbia/Lots"
     primitive_lot="freeso/Blueprints/empty_lot_fso.xml"
+    sim_primitive_lot="freeso/Blueprints/empty_lot_fso.xml"
+    sim_primitive_template=-
 fi
 lots=()
 for lot in "$repository/$lots_folder"/*.xml; do lots+=("repository/$lots_folder/$(basename "$lot")"); done
@@ -58,6 +64,9 @@ empty_lot="freeso/Blueprints/empty_lot_fso.xml"
 # A full in-game day (150 ticks a game minute), compared every game hour.
 lot_ticks=216000
 lot_every=9000
+sim_primitive_sims=1
+# Primitives whose cases need a Sim, run on the Sim lot (sim-primitives.lot).
+sim_primitives=()  # set_motive_deltas joins once Sims are placed as VMAvatar places them (B4b)
 primitives=(expression sleep test_object_type refresh set_to_next random_number play_sound create_object_instance find_location_for run_tree_by_name stackobj_notify_out_of_idle get_distance_to get_direction_to transfer_funds remove_object_instance set_balloon_headline idle_for_input breakpoint special_effect stop_all_sounds get_terrain_info)
 
 mkdir -p "$output"
@@ -118,6 +127,29 @@ for primitive in "${primitives[@]}"; do
     timed "run-primitive $primitive" oracle run-primitive --blueprint "$primitive_lot_path" \
         <"$output/$primitive.requests.jsonl" >"$output/$primitive.responses.jsonl" 2>"$output/$primitive.log"
 done
+
+# Primitives that need a Sim run on their own lot, so the cases above keep theirs: the mock Sim on
+# MockInstall's Sim lot, or FreeSO's template person joining the empty lot on a real install. The
+# lot and its Sims are recorded as "LOT<tab>COUNT<tab>TEMPLATE"; the cases learn the Sim's object
+# ID (ORACLE_SIM) from the lot as loaded.
+printf '%s\t%s\t%s\n' "$sim_primitive_lot" "$sim_primitive_sims" "$sim_primitive_template" >"$output/sim-primitives.lot"
+sim_lot_path="$(echo "$sim_primitive_lot" | resolve_lots "$output" "$game" "$repository")"
+mapfile -t sim_joining < <(sims_options "$sim_primitive_sims" "$sim_primitive_template")
+sim_lot=$(echo '{"opcode":2}' | oracle run-primitive --blueprint "$sim_lot_path" "${sim_joining[@]}" 2>"$output/sim-primitives.log" || true)
+left_out "$output/sim-primitives.log" >"$output/sim-primitives.leftout"
+if ORACLE_SIM=$(echo "$sim_lot" | python3 -I -c 'import json, sys; print(json.load(sys.stdin)["sims"][0][0])' 2>/dev/null); then
+    ORACLE_GUIDS=$(echo "$sim_lot" | python3 -I -c 'import json, sys; print(",".join(entry[1] for entry in json.load(sys.stdin)["lot"]))')
+    export ORACLE_GUIDS ORACLE_SIM
+    for primitive in "${sim_primitives[@]}"; do
+        echo "Running $primitive cases with a Sim..."
+        python3 -I "$repository/Simburbia/SimAntics/OracleCases/make_cases.py" "$primitive" "$output/$primitive.sim-requests.jsonl"
+        timed "run-primitive $primitive" oracle run-primitive --blueprint "$sim_lot_path" "${sim_joining[@]}" \
+            <"$output/$primitive.sim-requests.jsonl" >"$output/$primitive.responses.jsonl" 2>"$output/$primitive.log"
+    done
+else
+    # FreeSO couldn't join a Sim here (the unpatched discs lack its skeleton): no Sim cases.
+    echo "FreeSO couldn't join a Sim to $sim_primitive_lot; skipping the Sim primitives (see sim-primitives.log)"
+fi
 
 echo "Room maps..."
 python3 -I "$repository/Simburbia/SimAntics/OracleCases/make_blueprints.py" "$output/blueprints" >/dev/null

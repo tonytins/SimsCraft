@@ -165,7 +165,7 @@ public struct Comparison: Sendable, Equatable {
     /// code (or, for an exception, only that there was one), and the state after.
     static let primitiveFields = ["primitive", "noPrimitive", "exit", "temps", "tempXL", "locals", "args", "stackObject",
                                   "seed", "thread", "frames", "globals", "objects", "created", "removed",
-                                  "lot", "lotSize", "groups", "callerGUID", "stackObjectGUID"]
+                                  "lot", "lotSize", "sims", "groups", "callerGUID", "stackObjectGUID"]
 
     /// `run-primitive`: each response by its `id`. Requests FreeSO couldn't run are inconclusive,
     /// and so are those Simburbia answered with `unsupported`, by what. A disagreement names the
