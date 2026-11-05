@@ -33,9 +33,14 @@ private func withMockSim(_ body: (VM, Entity) throws -> Void) throws {
         #expect(tuning.energyPerMinute == 104)
         #expect(tuning.weights.count == 11 && tuning.weights.allSatisfy { $0 == [Int32](repeating: 1000, count: 7) })
         #expect(throws: SimAnticsError.indexOutOfRange("property category 11")) { try tuning.weights(category: 11) }
-        // A VM reads the same from the mock's tuning.dat, once.
+        // A VM reads the mock's tuning.dat once: the same rates, None's weights at 1, and the other
+        // categories' made-up weights (generators/mock_tuning.py), which don't divide 1000 evenly.
         let vm = try VM(content: try GameContent(.init(gameDirectory: mockInstall)), seed: 1)
-        #expect(try vm.motiveTuning().tuning.get() == tuning && vm.motiveTuning().isNew == false)
+        let mock = try vm.motiveTuning().tuning.get()
+        #expect(vm.motiveTuning().isNew == false)
+        #expect(mock.hungerDecrementRatio == tuning.hungerDecrementRatio && mock.energyPerMinute == tuning.energyPerMinute)
+        #expect(try mock.weights(category: 0) == tuning.weights(category: 0))
+        #expect(try mock.weights(category: 1) == [1375, 875, 1625, 1125, 2125, 750, 2375])  // Money: the bases times 1.25
     }
 
     /// Simburbia's defaults (`Simburbia/Tuning/tuning.xml`), which the unpatched discs run on, make

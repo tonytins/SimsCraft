@@ -504,14 +504,54 @@ def set_motive_deltas_operand(motive, flags, delta_scope, delta_data, max_scope,
 
 
 def set_motive_deltas_cases(lot_guids, sim):
-    """The Sim calls it: once, as a change an hour, and clearing every change."""
-    ticked = {str(motive): [0, 0, True] for motive in range(16)}
-    yield "once hunger +10 to 55", {"caller": sim, "operand": set_motive_deltas_operand(HUNGER, ONCE, LITERAL, 10, LITERAL, 55),
-                                    "objects": {str(sim): {"motives": {str(HUNGER): 50}}}}
-    yield "per hour fun +900 to 80", {"caller": sim, "operand": set_motive_deltas_operand(FUN, 0, LITERAL, 900, LITERAL, 80),
-                                      "objects": {str(sim): {"motiveChanges": ticked}}}
-    yield "clear all", {"caller": sim, "operand": set_motive_deltas_operand(0, CLEAR_ALL, LITERAL, 0, LITERAL, 0),
-                        "objects": {str(sim): {"motiveChanges": {str(FUN): [900, 80, False]}}}}
+    """The Sim calls it: once, as a change an hour, and clearing every change, on each motive (and
+    past the last), under several lot categories (unset, None, Money, Services' half again, Residence,
+    and one past the last), with the delta and limit from several scopes, and from an object."""
+    PARAMETERS = 9
+    every_change_ticked = {str(motive): [0, 0, True] for motive in range(16)}
+    motives = list(range(16)) + [16, 255]
+    for category in [None, 0, 1, 4, 10, 11]:
+        where = {} if category is None else {"propertyCategory": category}
+        tag = "unset" if category is None else f"category {category}"
+        for motive in motives:
+            preset = lambda value: {"objects": {str(sim): {"motives": {str(motive): value}}}} if motive < 16 else {}
+            # Once: inside the limit, reaching it, past it, both ways; nothing; a short's wrap.
+            for delta, current, limit in [(10, 0, 50), (10, 45, 50), (10, 60, 50), (-10, 0, -50), (-10, -45, -50),
+                                          (-10, -60, -50), (0, 20, 0), (32767, 100, 32767), (-32768, -100, -32768)]:
+                yield (f"{tag} motive {motive} once {delta} from {current} to {limit}",
+                       {"caller": sim, **where, **preset(current),
+                        "operand": set_motive_deltas_operand(motive, ONCE, LITERAL, delta, LITERAL, limit)})
+            # An hour: each sign, nothing, the extremes; set only if the change has ticked.
+            for delta, limit in [(900, 80), (-900, -80), (0, 0), (32767, 100), (-32768, -100)]:
+                ticked = {"objects": {str(sim): {"motiveChanges": every_change_ticked}}}
+                yield (f"{tag} motive {motive} per hour {delta} to {limit}",
+                       {"caller": sim, **where, **ticked,
+                        "operand": set_motive_deltas_operand(motive, 0, LITERAL, delta, LITERAL, limit)})
+            yield (f"{tag} motive {motive} per hour, not ticked",
+                   {"caller": sim, **where, "operand": set_motive_deltas_operand(motive, 0, LITERAL, 900, LITERAL, 80)})
+        for flags in [CLEAR_ALL, CLEAR_ALL | ONCE]:
+            changes = {str(m): [100 + m, 50, m % 2 == 0] for m in range(16)}
+            yield (f"{tag} clear all flags {flags}",
+                   {"caller": sim, **where, "objects": {str(sim): {"motiveChanges": changes}},
+                    "operand": set_motive_deltas_operand(HUNGER, flags, LITERAL, 10, LITERAL, 50)})
+    # The delta and limit from other scopes.
+    for name, delta_scope, max_scope, extra in [
+            ("temps", TEMPS, TEMPS, {"temps": [25, 70]}),
+            ("locals", LOCAL, LOCAL, {"locals": [-25, -70]}),
+            ("parameters", PARAMETERS, PARAMETERS, {"args": [15, 30, 0, 0]})]:
+        for motive in [HUNGER, COMFORT, ENERGY]:
+            yield (f"{name} once motive {motive}",
+                   {"caller": sim, **extra, "objects": {str(sim): {"motives": {str(motive): 0}}},
+                    "operand": set_motive_deltas_operand(motive, ONCE, delta_scope, 0, max_scope, 1)})
+            yield (f"{name} per hour motive {motive}",
+                   {"caller": sim, **extra, "objects": {str(sim): {"motiveChanges": every_change_ticked}},
+                    "operand": set_motive_deltas_operand(motive, 0, delta_scope, 0, max_scope, 1)})
+    # An object calls it: FreeSO casts the caller to a Sim.
+    objects = [object_id for object_id, guid in enumerate(lot_guids, start=1) if object_id != sim]
+    if objects:
+        for flags in [ONCE, 0, CLEAR_ALL]:
+            yield (f"object caller flags {flags}",
+                   {"caller": objects[0], "operand": set_motive_deltas_operand(HUNGER, flags, LITERAL, 10, LITERAL, 50)})
 
 
 # Each needs a Sim: (opcode, generator of (lot GUIDs, the Sim's object ID)).

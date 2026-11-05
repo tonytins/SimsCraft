@@ -24,7 +24,7 @@ It follows the layout of a real install, with only what the content system needs
 | `objectdata/objects/objiff.far` | `mockchair.iff`, `mocktable.iff`, `mocklamp.iff`, `mockregister.iff`, and `mocksim.iff` |
 | `objectdata/objects/objspf.far` | `mockchair.spf`: made-up sprites for the `sprites` comparison (a palette, `SPR2` versions 1000 and 1001 using every run command, `SPR#` in both byte orders, and `DGRP` versions 20000, 20001, and 20004). DGRP 0 is the chairs' own (base graphic 0 plus graphic 0), with near images for north and east, so the client draws them. Two cover edge cases: `SPR#` #201 is big-endian version 1001, which FreeSO misreads (DIFF-26), and `SPR2` #102 has alpha 40, past the 5 bits the field holds, which FreeSO and Simburbia both wrap to 73 |
 | `objectdata/globals/global.iff` | One global routine (256) that returns true, and the Sim's walk (`STR#` 150) and swim (`STR#` 158) animation names, made up |
-| `tuning.dat` | The global tuning a Sim's motives read, made up: `lotmotives` (a weight of 1 for every lot category and motive) and `simmotives` (small decay rates, 16 waking hours) |
+| `tuning.dat` | The global tuning a Sim's motives read, made up by `generators/mock_tuning.py`: `simmotives` (small decay rates, 16 waking hours) and `lotmotives` (a weight of 1 for every motive in the None category, which the mock lots have, and made-up weights for the others that don't divide 1000 evenly, so Set Motive Deltas' scaling truncates as on a real install) |
 | `avatardata/` | The mock Sim's body, made from Kenney's character by `generators/mock_avatar.py`, in FAR3 archives laid out as 1.1097.1.0's are: `adult.skel` (TSO's 29 adult bone names and parents, placed on Kenney's joints and scaled to TSO's height), a body and a head mesh (Kenney's one mesh, cut at the head), female and male textures (JPEG; the clothes are painted on, so every skin tone wears the same), their bindings, appearances, and outfits, a hand group with no hand meshes (Kenney's hands are part of the body), and four placeholder animations (`mock-stand`, `mock-walk`, `mock-walk-fast`, `mock-swim`). File IDs are `0x4D4F....` |
 | `objectdata/globals/mockglobals.iff` | The objects' semi-global: one routine (8192) that returns true |
 | `objectdata/globals/build.iff` | The build catalog's strings: five wall styles (`STR#` 0x81), two floors (0x82), three wallpapers (0x83), and pool and water (0x85). There's one more wallpaper than floors, as in the real tables, since FreeSO counts the global floors from the wallpaper strings (DIFF-29) |
@@ -93,10 +93,11 @@ chunk type, a quirk to cover. Update the tables above when you do, and keep ever
 
 `generators/` keeps the scripts that made some of the files, to show how they were built:
 `mock_sim.py` gave the Sim its body strings, animation names, first skeleton, and tuning,
-`mock_build.py` wrote the walls and floors, and `mock_avatar.py` makes the Sim's body from
+`mock_build.py` wrote the walls and floors, `mock_tuning.py` writes `tuning.dat` (replacing
+`mock_sim.py`'s, whose weights were all 1), and `mock_avatar.py` makes the Sim's body from
 `GameData/` (replacing `mock_sim.py`'s one-bone skeleton and naming the outfits in the body strings).
 `mock_sim.py` ran once on the committed files and refuses to run again on files it has already
 patched; `mock_build.py` writes only the files that are missing, so deleting one remakes it; and
-`mock_avatar.py` rewrites everything it makes each run (`python3 generators/mock_avatar.py .` here,
-with ImageMagick for the textures), byte for byte the same. The script that
+`mock_tuning.py` and `mock_avatar.py` rewrite everything they make each run (`python3
+generators/mock_avatar.py .` here, with ImageMagick for the textures), byte for byte the same. The script that
 made `objspf.far` wasn't kept.

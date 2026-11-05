@@ -5,7 +5,7 @@
 - the walk (STR# 150) and swim (STR# 158) animation names, in global.iff;
 - a one-bone skeleton, adult.skel, in avatardata/skeletons/skeletons.dat (since replaced by
   mock_avatar.py's, which also names the outfits in the body strings);
-- the motive tuning, in tuning.dat.
+- the motive tuning, in tuning.dat (since replaced by mock_tuning.py's).
 
 It patches the files in place, once: it was run on 2026-10-29 to make what's committed, and it
 stops if the files are already patched. It's kept to show how they were made. Rewrites objiff.far
