@@ -20,8 +20,8 @@ nightclub, restaurant, and robot factory job lots, 2004) and the format's defini
 
 **FreeSO's dialect** is whatever FreeSO's `XmlHouseData` (`tso.world/model/XmlHouse.cs`) writes:
 only what it reads. Objects are GUIDs and coordinates, with no names, no `hidden`, no flags, no
-puddles, no revision, and no comments, plus XML Schema namespaces on the root. The owner's house
-(`Simburbia/Lots/tonys-house.xml`) is in it, which is why it's hard to read: knowing what's on the
+puddles, no revision, and no comments, plus XML Schema namespaces on the root. The community lot
+(`Simburbia/Lots/community-lot.xml`) is in it, which is why it's hard to read: knowing what's on the
 lot means looking up 211 GUIDs.
 
 TSO's files also say where Maxis meant to take the format. `housedata/default_house.xml`, which
@@ -94,7 +94,7 @@ line feeds rather than CRLF; and no `DOCTYPE`, which .NET since Core refuses, so
 builds can still open the file.
 
 `simburbia --rewrite-blueprint FILE` rewrites a lot in TSO's dialect, naming each object from its
-`OBJD`. The owner's house (`Simburbia/Lots/tonys-house.xml`) was rewritten this way on
+`OBJD`. The community lot (`Simburbia/Lots/community-lot.xml`) was rewritten this way on
 2026-10-29, from FreeSO's dialect; FreeSO saved its controllers at tile (-2048, -2048), its
 out-of-world place, which is kept.
 
@@ -125,14 +125,14 @@ start rather than added later:
   reports it. CityLimits drops one instead; Simburbia keeps it, as AGENTS.md's "keep what you don't
   understand" asks, and XML makes that cheap.
 - **No upgrade steps until one is needed.** The first breaking change brings the first. FreeSO skips elements and attributes it doesn't know, so it opens a Simburbia blueprint as a fresh
-lot: the owner's house, rewritten in TSO's dialect, gives FreeSO the same room maps and the same
+lot: the community lot, rewritten in TSO's dialect, gives FreeSO the same room maps and the same
 1,800-tick run as before (2026-10-29).
 
 ## Scenarios
 
 A blueprint with state is a scenario: a lot set up a particular way. Add expected results, as
 SimsScript's `@expect` does for objects, and it's a test case, after SimCity's scenarios as
-CityLimits uses them. The job lots, the owner's house, the made-up lots `make_blueprints.py`
+CityLimits uses them. The job lots, the owner's two lots, the made-up lots `make_blueprints.py`
 writes, and hand-made ones all become the same kind of file, and the oracles run them all.
 
 ## Settled (owner, 2026-10-29)

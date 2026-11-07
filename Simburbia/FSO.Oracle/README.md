@@ -140,11 +140,11 @@ TSO's own placing of players on 3,3 after a job is a memory of the game, **Unver
 
 **Repeatable:** checked 2026-11-04. FreeSO's Sim setup takes randomness only from the seeded
 context (the only other unseeded `Random`s are in EOD plugins an idle Sim doesn't reach), and two
-runs give the same digests at every point: the owner's house with one Sim over 1,800 ticks on
+runs give the same digests at every point: the community lot with one Sim over 1,800 ticks on
 1.1097.1.0, and `mock-lot.xml` with two over 900. To check again:
 
 ```sh
-for run in 1 2; do fso-oracle run-lot --blueprint Simburbia/Lots/tonys-house.xml --sims 1 --every 300 >/tmp/sims-$run.txt; done
+for run in 1 2; do fso-oracle run-lot --blueprint Simburbia/Lots/community-lot.xml --sims 1 --every 300 >/tmp/sims-$run.txt; done
 diff /tmp/sims-1.txt /tmp/sims-2.txt && echo repeatable
 ```
 

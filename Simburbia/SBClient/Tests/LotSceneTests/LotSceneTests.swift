@@ -26,7 +26,7 @@ private func mockSession() throws -> LotSession {
     let installs = InstallKind.installs(in: ["TSO_BETA_DIR": "/games/beta", "TSO_CLASSIC_DIR": "/games/classic"])
     let options = ClientOptions(installs: installs, simburbiaFolder: simburbiaFolder)
     #expect(options.gameDirectory.path == "/games/classic")
-    #expect(options.lot.lastPathComponent == "tonys-house.xml")
+    #expect(options.lot.lastPathComponent == "tonys-lot.xml")
     #expect(options.freeSOContent?.path.hasSuffix("TSOClient/tso.content/Content") == true)
     let chosen = ClientOptions(game: "/games/tso", lot: "/lots/a.xml",
                                installs: InstallKind.installs(in: ["TSO_GAME_DIR": "/elsewhere"]), simburbiaFolder: simburbiaFolder)

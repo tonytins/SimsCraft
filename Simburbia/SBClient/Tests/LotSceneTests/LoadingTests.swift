@@ -67,12 +67,12 @@ private final class Reports: @unchecked Sendable {
         try Data().write(to: user.appendingPathComponent("Lots/\(name)"))
     }
     let all = LotChoices.lots(simburbiaFolder: simburbiaFolder, includesMockLots: true, userFolder: user)
-    #expect(all.map(\.name) == ["tonys-house", "mock-lot", "mock-lot-sim", "apple", "Zebra"])
-    #expect(all.map(\.isPlayers) == [false, false, false, true, true])
+    #expect(all.map(\.name) == ["community-lot", "tonys-lot", "mock-lot", "mock-lot-sim", "apple", "Zebra"])
+    #expect(all.map(\.isPlayers) == [false, false, false, false, true, true])
     // Without the mock install or a user folder, Simburbia's own only.
-    #expect(LotChoices.lots(simburbiaFolder: simburbiaFolder, includesMockLots: false, userFolder: nil).map(\.name) == ["tonys-house"])
+    #expect(LotChoices.lots(simburbiaFolder: simburbiaFolder, includesMockLots: false, userFolder: nil).map(\.name) == ["community-lot", "tonys-lot"])
     // A user folder without lots adds none.
-    #expect(LotChoices.lots(simburbiaFolder: simburbiaFolder, includesMockLots: false, userFolder: user.appendingPathComponent("none")).count == 1)
+    #expect(LotChoices.lots(simburbiaFolder: simburbiaFolder, includesMockLots: false, userFolder: user.appendingPathComponent("none")).count == 2)
 }
 
 @Test func optionsKnowTheMockInstallWhetherNamedOrFallenBackTo() {

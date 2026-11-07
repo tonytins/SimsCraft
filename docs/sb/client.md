@@ -19,7 +19,7 @@ Without `--game`, the install is `TSO_GAME_DIR`, then `TSO_CLASSIC_DIR`, then `T
 so it runs anywhere. With `--lot`, the client goes straight to that lot. Without it, the client
 opens the login window (below), the start of the flow TSO's client takes: loading and login, then
 (when Sims and cities come) picking a Sim and entering a city, then entering a lot. Screenshots and
-headless runs without `--lot` use the owner's house ([`Simburbia/Lots`](../../Simburbia/Lots/)) on a
+headless runs without `--lot` use the owner's lot, `tonys-lot.xml` ([`Simburbia/Lots`](../../Simburbia/Lots/)) on a
 real install and the mock lot on MockInstall, so they never wait for a click. Objects the install
 doesn't have, or can't load, are left out and reported, as `fso-oracle` leaves them out.
 
@@ -163,9 +163,9 @@ arrives, a line each game hour, and a summary. Every line is stamped with the ti
 time, never the clock, so two runs of the same lot log alike:
 
 ```text
-info: tick 1, 0:00: lot tonys-house, install .../TSOClient (1.1097.1.0)
-info: tick 9000, 1:00: 319 entities, 6 errors so far
-info: tick 216001, 0:00: ran 216000 ticks, 1 day of game time; 319 entities, 8 errors
+info: tick 1, 0:00: lot tonys-lot, install .../TSOClient (1.1097.1.0)
+info: tick 9000, 1:00: 175 entities, 18 errors so far
+info: tick 216001, 0:00: ran 216000 ticks, 1 day of game time; 175 entities, 18 errors
 ```
 
 Options that need a window are refused with `--headless`, and `--ticks` is refused outside
@@ -175,7 +175,7 @@ Options that need a window are refused with `--headless`, and `--ticks` is refus
 
 TSO counts 150 ticks a game minute, as FreeSO sets it in TSO mode. At 30 ticks a second, a game
 minute lasts 5 real seconds, a game hour 5 minutes, and a game day 2 hours at normal speed. A
-headless run of the owner's house covers a game day in about 9 seconds.
+headless run of the community lot covers a game day in about 9 seconds.
 
 ## Versions
 

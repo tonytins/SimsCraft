@@ -42,7 +42,7 @@ public struct ClientOptions: Sendable, Equatable {
         // Named outright (as CI names it) or fallen back to, it's the mock install either way.
         usesMockInstall = gameDirectory.standardizedFileURL.path == mockInstall.standardizedFileURL.path
         self.lot = lot.map { URL(fileURLWithPath: $0) }
-            ?? simburbiaFolder.appendingPathComponent(usesMock ? "MockInstall/Lots/mock-lot.xml" : "Lots/tonys-house.xml")
+            ?? simburbiaFolder.appendingPathComponent(usesMock ? "MockInstall/Lots/mock-lot.xml" : "Lots/tonys-lot.xml")
         // FreeSO's patches target real installs; MockInstall is made up and has none.
         self.freeSOContent = usesMock ? nil
             : freeSOContent ?? simburbiaFolder.appendingPathComponent("../TSOClient/tso.content/Content", isDirectory: true).standardizedFileURL
