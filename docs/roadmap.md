@@ -96,7 +96,8 @@ In order:
        `Simburbia/Lots` and the player's folder, Play through the loading screen, and Join shown
        but disabled until networking.
 3. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
-   with FreeSO (the alpha gate's lot job). Each phase ends with the oracles' experiments agreeing.
+   with FreeSO (the alpha gate's lot job). Each phase ends with the oracles agreeing on what real
+   content reaches, with disagreements elsewhere triaged and logged.
    On the real installs, Sims come from the game's person template with a made-up identity defined
    in the oracle (no player or released city data); the mock install gains a made-up Sim, grown
    phase by phase, so every Sim experiment also runs on CI.
@@ -147,6 +148,16 @@ In order:
          for phase C).
        - [x] B4d. Set Motive Deltas cases.
        - [x] B4e. Person data and motive cases through Expression, then the review.
+     - [ ] B5. Cheaper experiments, so the randomized study leads and the hand-written cases stop
+       growing (FreeSO is one witness, not the answer key).
+       - [x] B5a. The project's rules relaxed: strict only on never crashing, determinism, older
+         builds reading newer saves, game data, and the snapshot.
+       - [ ] B5b. A content census: which primitives, operands, and scopes the buy-mode catalog's
+         scripts reach, per install, with the owner's two lots as real cases. No VM, no FreeSO.
+       - [ ] B5c. Rules checked every tick in Simburbia's runs (motives in range, slots and hands
+         consistent, nothing in two places), which catch mistakes both VMs share.
+       - [ ] B5d. A coverage-guided study with Sims: objects that reach new instructions picked
+         first, and visitor Sims joining with no owner on the lot.
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
      speed, and events; FreeSO's animation state; Animate Sim, Reach, Grab, Drop, and Change Suit
      Or Accessory (as state). Made-up animations in the mock. One idle Sim runs in step.
@@ -292,6 +303,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-07 | minor | Fourth pass, step B5a: the rules are relaxed. FreeSO is one fallible witness, so disagreements are triaged rather than each explained first, versions are ported as real files need them, and the hand-written oracle cases become a frozen regression set while the randomized study leads. Strict still: never crash, determinism, older builds reading newer saves, no game data, and never editing the snapshot. The owner's lots are renamed: `tonys-lot.xml`, a recreation of their original TSO lot and now the client's default, and `community-lot.xml`, formerly `tonys-house.xml`. |
 | 2026-11-05 | minor | Fourth pass, step B4e, which finishes phase B: 1,007 Expression cases on the mock Sim's motives and person data agree with FreeSO. They found two things. Simburbia's `setValue` dropped the person data setter's result, so a refused write (a job ID past 4) went true where FreeSO's goes false; fixed, with a regression test. And `sb-oracle` applied a case's presets in hash order (`JSONSerialization` keeps no key order) where `fso-oracle` used the written order, which mattered for a Sim's job values after its job ID; both oracles now apply presets in index order. |
 | 2026-11-04 | patch | Fourth pass, step B4d: 1,653 Set Motive Deltas cases with the mock Sim (once, an hour, clearing; every motive and two past the last; six lot categories; several scopes; an object caller) agree with FreeSO. The mock's `tuning.dat` is now written by `generators/mock_tuning.py`, with made-up weights outside the None category that don't divide 1000 evenly, so the scaling truncates on both sides; None stays at 1, so the mock lots' runs are unchanged. The same cases on 1.1097.1.0 are inconclusive until phase D: the template person reaches Push Interaction as it joins. |
 | 2026-11-04 | minor | Fourth pass, step B4c: Sims are placed as FreeSO's `VMAvatar` places them, with a 6-by-6 obstacle, `GetAvatarPlace`, a hand slot that carries what it holds, and position changes without walls. The Set Motive Deltas scaffold cases, which disagreed only on how the Sim sat on the lot, return to the fixtures. FreeSO's empty-hand `ClearSlot` crash does nothing here. |

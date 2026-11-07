@@ -13,6 +13,9 @@ For reviews, follow [REVIEW.md](REVIEW.md).
   not code. Open design choices go to the owner rather than being decided quietly.
 - Commit locally when a piece of work is ready, one commit per piece rather than per step, and
   wait for review. Never push, amend, or rewrite history unless asked.
+- The owner is relaxed about process. Use judgment, and keep strict only what CLAUDE.md marks
+  strict: never crash, determinism, older builds reading newer saves, no game data, and never
+  editing the snapshot.
 - The working tree often holds the owner's own unfinished edits. Leave files you didn't change
   alone, and stage only your own work.
 
