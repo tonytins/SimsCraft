@@ -38,6 +38,57 @@ public enum Study {
         return Array((untested + seen).prefix(max(0, count)))
     }
 
+    /// Picks up to `count` candidates for a lot by weight, in a seeded order: a weighted sample
+    /// without replacement (Efraimidis and Spirakis' exponential keys), so a heavier candidate is
+    /// likelier to be picked but any can be. The candidates' own order doesn't matter, and a
+    /// weight below 1 counts as 1.
+    ///
+    /// The study weighs each object by the instructions its code can reach that no run has
+    /// reached yet (``coverageWeight(uncovered:lots:)``), so coverage grows toward code nothing
+    /// has run, rather than only toward objects nothing has tried.
+    ///
+    /// The ones `tested` doesn't hold still come first, as in the unweighted sample: trying an
+    /// object nothing has tried reaches more than retrying one, so the weights choose among the
+    /// untested, and then among the rest.
+    public static func sample(_ candidates: [UInt32], count: Int, seed: UInt64, weights: [UInt32: Double],
+                              tested: Set<UInt32> = []) -> [UInt32] {
+        var generator = Generator(state: seed)
+        var keyed: [(key: Double, guid: UInt32)] = []
+        for guid in candidates.sorted() {
+            // A uniform draw in (0, 1], never 0, so its logarithm is finite.
+            let uniform = (Double(generator.next() >> 11) + 1) / 9_007_199_254_740_992
+            let weight: Double = max(1, weights[guid] ?? 1)
+            keyed.append((-Foundation.log(uniform) / weight, guid))
+        }
+        keyed.sort { $0.key < $1.key || ($0.key == $1.key && $0.guid < $1.guid) }
+        let untested = keyed.filter { !tested.contains($0.guid) }, seen = keyed.filter { tested.contains($0.guid) }
+        return (untested + seen).prefix(max(0, count)).map(\.guid)
+    }
+
+    /// An object's weight: 1, plus the instructions its code can reach that no run has reached
+    /// yet, shared out over the lots it has already been on, so an object whose code never runs
+    /// (it waits on something not ported) stops crowding out the rest.
+    public static func coverageWeight(uncovered: Int, lots: Int) -> Double {
+        1 + Double(max(0, uncovered)) / Double(1 + max(0, lots))
+    }
+
+    /// How many visitor Sims join a lot, 0 to `most`, picked by its seed (a stream of its own, so
+    /// adding Sims doesn't change which objects or facings an older seed picks).
+    public static func simCount(most: Int, seed: UInt64) -> Int {
+        guard most > 0 else { return 0 }
+        var generator = Generator(state: seed ^ 0x51A5_0F0A_1CE5_D00D)
+        return Int(generator.next() % UInt64(most + 1))
+    }
+
+    /// The stand-in IDs halving uses for a lot's Sims, so they can be taken out like objects:
+    /// above every GUID an object table uses.
+    public static func simTokens(_ count: Int) -> [UInt32] {
+        (0..<max(0, count)).map { 0xFFFF_FF00 | UInt32($0 & 0xFF) }
+    }
+
+    /// Whether an ID from ``simTokens(_:)`` stands for a Sim.
+    public static func isSimToken(_ id: UInt32) -> Bool { id & 0xFFFF_FF00 == 0xFFFF_FF00 }
+
     /// Which of `count` floor plans a lot is laid out on, picked by its seed (a different stream
     /// from the sample's and the facings').
     public static func floorPlan(of count: Int, seed: UInt64) -> Int {

@@ -148,7 +148,7 @@ In order:
          for phase C).
        - [x] B4d. Set Motive Deltas cases.
        - [x] B4e. Person data and motive cases through Expression, then the review.
-     - [ ] B5. Cheaper experiments, so the randomized study leads and the hand-written cases stop
+     - [x] B5. Cheaper experiments, so the randomized study leads and the hand-written cases stop
        growing (FreeSO is one witness, not the answer key).
        - [x] B5a. The project's rules relaxed: strict only on never crashing, determinism, older
          builds reading newer saves, game data, and the snapshot.
@@ -157,8 +157,10 @@ In order:
        - [x] B5c. Rules checked every game minute in Simburbia's runs (`LotRule`: motives within
          −100 to 200, slots and containers consistent, objects on the lot and indexed, groups
          whole), and every study lot run twice, which catch mistakes both VMs share.
-       - [ ] B5d. A coverage-guided study with Sims: objects that reach new instructions picked
-         first, and visitor Sims joining with no owner on the lot.
+       - [x] B5d. A coverage-guided study with Sims: Simburbia records the instructions it runs,
+         the sample is weighted toward objects whose behavior can reach code nothing has run, and
+         up to two visitor Sims join each lot with no owner. On 1.1097.1.0 Sims wait for phase D,
+         where the template person reaches Push Interaction; on MockInstall they run.
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
      speed, and events; FreeSO's animation state; Animate Sim, Reach, Grab, Drop, and Change Suit
      Or Accessory (as state). Made-up animations in the mock. One idle Sim runs in step.
@@ -304,6 +306,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-10 | minor | Fourth pass, step B5d, which finishes B5: a coverage-guided study with visitor Sims. SimAntics records the instructions a lot's threads run (`VM.recordsCoverage`, `InstructionSite`) without changing results, and `Census.reach` lists the routines each object's behavior can reach (interactions left out until phase D). The study weighs its sample toward code no run has reached, still trying untested objects first: from seed 100 over four minutes on 1.1097.1.0, it reached 10,981 of the candidates' 50,855 reachable instructions with 704 objects, against 10,089 with 869 unweighted. Up to two visitor Sims (`--sims`) join each lot with no owner; they must first run a game day alone on both sides, so on 1.1097.1.0, where the template person reaches Push Interaction, they wait for phase D, while on MockInstall two mock Sims join and agree with FreeSO. Halving takes Sims out as well as objects. The review script's floor plan path is fixed after the move to the root. |
 | 2026-11-10 | minor | Fourth pass, step B5c: the lot's rules. SimAntics' `VM.brokenRules()` checks eight rules a lot's state should always keep (motive range, online job ID, on the lot, the object and tile indexes, slots both ways, objects with their containers, multi-tile groups), on Simburbia alone, reporting rather than throwing. The motive rule allows up to 200, as TSO did; FreeSO and Simburbia still cap motives at 100. The study checks them every game minute and runs each lot twice; a broken rule or an unrepeatable run is a finding, halved on Simburbia alone, without FreeSO. `simburbia --headless --check` does the same for one lot. On 1.1097.1.0 both owner lots break no rule over a game day, and a three-minute study (seed 100) found nothing: 23 lots agree, 2 inconclusive. B5b, the content census, was done on 2026-11-10 in the move to the root. |
 | 2026-11-07 | minor | Fourth pass, step B5a: the rules are relaxed. FreeSO is one fallible witness, so disagreements are triaged rather than each explained first, versions are ported as real files need them, and the hand-written oracle cases become a frozen regression set while the randomized study leads. Strict still: never crash, determinism, older builds reading newer saves, no game data, and never editing the snapshot. The owner's lots are renamed: `tonys-lot.xml`, a recreation of their original TSO lot and now the client's default, and `community-lot.xml`, formerly `tonys-house.xml`. |
 | 2026-11-05 | minor | Fourth pass, step B4e, which finishes phase B: 1,007 Expression cases on the mock Sim's motives and person data agree with FreeSO. They found two things. Simburbia's `setValue` dropped the person data setter's result, so a refused write (a job ID past 4) went true where FreeSO's goes false; fixed, with a regression test. And `sb-oracle` applied a case's presets in hash order (`JSONSerialization` keeps no key order) where `fso-oracle` used the written order, which mattered for a Sim's job values after its job ID; both oracles now apply presets in index order. |

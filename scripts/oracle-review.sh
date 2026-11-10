@@ -128,13 +128,17 @@ for install in "${installs[@]}"; do
            --fso-oracle "$repository/FSO.Oracle/bin/Release/net10.0/fso-oracle")
     # On a real install, the samples also go on the floor plans of TSO's own job lots, emptied.
     if [[ "$name" != mock ]]; then
-        study+=(--floor-plan "$repository/TSOClient/tso.content/Content/Blueprints/empty_lot_fso.xml")
+        study+=(--floor-plan "$repository/FreeSO/TSOClient/tso.content/Content/Blueprints/empty_lot_fso.xml")
         for plan in "$game"/housedata/blueprints/*.xml; do
             if [[ -f "$plan" ]]; then study+=(--floor-plan "$plan"); fi
         done
     fi
+    # The instructions runs reached, which weigh the sample toward code nothing has run yet. It's
+    # kept with the run's output, not in docs/results: it's large and changes every run.
+    study+=(--coverage-file "$folder/coverage.tsv")
     if [[ "$name" == mock ]]; then
-        study+=(--seed 1 --minutes 1 --ledger "$folder/ledger.tsv")
+        # The mock install's visitor Sims are its made-up Sim; it has no FreeSO template person.
+        study+=(--seed 1 --minutes 1 --ledger "$folder/ledger.tsv" --sim-template 4D4F4307)
     elif $review; then
         study+=(--minutes "${ORACLE_STUDY_MINUTES:-5}" --ledger "$repository/docs/results/sb-study-$name.tsv")
     else

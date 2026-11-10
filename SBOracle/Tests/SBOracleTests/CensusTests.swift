@@ -78,4 +78,30 @@ import TSOContent
         #expect(lines.contains("shape\t2 expression: myObject,literal\t10\t8"))
         #expect(lines.contains("scope\tliteral\t18\t15"))
     }
+
+    /// Each object's reach matches what a lot run covers: the mock lot's objects run code from
+    /// their own files, and each site a run reaches in them is one the reach lists.
+    @Test func reachListsTheRoutinesARunReaches() throws {
+        let content = try GameContent(.init(gameDirectory: install))
+        let lot = try Blueprint(xml: try Data(contentsOf: mockLot))
+        let guids = Array(Set(lot.objects.map(\.guid))).sorted()
+        let reach = try Census.reach(content: content, guids: guids)
+        let behaviorOnly = try Census.reach(content: content, guids: guids, interactions: false)
+        #expect(!reach.byObject.isEmpty && reach.sizes.values.allSatisfy { $0 > 0 })
+        for (guid, routines) in behaviorOnly.byObject { #expect(Set(routines).isSubset(of: Set(reach.byObject[guid] ?? []))) }
+
+        let coverage = Coverage()
+        _ = Answers(content: content).lotRun(lot, ticks: 300, every: 300, coverage: coverage)
+        let reachable = Set(reach.byObject.values.joined())
+        let ownFiles = coverage.sites.filter { $0.file.hasPrefix("object ") }
+        #expect(!ownFiles.isEmpty)
+        #expect(ownFiles.allSatisfy { reachable.contains(Census.RoutineSite(file: $0.file, id: $0.routine)) })
+
+        // What's covered counts against each object's reach.
+        let counts = Census.Reach.coveredCounts(coverage.sites)
+        let guid = try #require(guids.first { reach.byObject[$0] != nil })
+        let total = (reach.byObject[guid] ?? []).reduce(0) { $0 + (reach.sizes[$1] ?? 0) }
+        #expect(reach.uncovered(guid, coveredCounts: [:]) == total)
+        #expect(reach.uncovered(guid, coveredCounts: counts) <= total)
+    }
 }

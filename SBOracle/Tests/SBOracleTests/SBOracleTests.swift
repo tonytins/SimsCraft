@@ -431,6 +431,44 @@ extension ComparisonTests {
         #expect(objects.skipped == ["unsupported: primitive 1 (generic_sims_online_call)": 1])
     }
 
+    @Test func theWeightedSampleRepeatsFromItsSeedAndFavorsHeavyObjects() {
+        let candidates = Array(UInt32(1)...200)
+        let weights = Dictionary(uniqueKeysWithValues: candidates.map { ($0, $0 <= 20 ? 50.0 : 1.0) })
+        let first = Study.sample(candidates, count: 20, seed: 7, weights: weights)
+        #expect(first == Study.sample(candidates.reversed(), count: 20, seed: 7, weights: weights))
+        #expect(first.count == 20 && Set(first).count == 20)
+        // The 20 heavy candidates are a tenth of them, but most of the picks.
+        var heavy = 0
+        for seed in UInt64(0)..<50 { heavy += Study.sample(candidates, count: 20, seed: seed, weights: weights).filter { $0 <= 20 }.count }
+        #expect(heavy > 50 * 20 / 2)
+        // Untested candidates still come first, whatever their weight.
+        let tested = Set(UInt32(1)...190)
+        #expect(Set(Study.sample(candidates, count: 10, seed: 7, weights: weights, tested: tested)) == Set(UInt32(191)...200))
+        #expect(Study.sample(candidates, count: 0, seed: 7, weights: weights).isEmpty)
+    }
+
+    @Test func coverageWeightsShrinkWithLotsAndNeverFallBelowOne() {
+        #expect(Study.coverageWeight(uncovered: 0, lots: 0) == 1)
+        #expect(Study.coverageWeight(uncovered: 100, lots: 0) == 101)
+        #expect(Study.coverageWeight(uncovered: 100, lots: 4) == 21)
+        #expect(Study.coverageWeight(uncovered: -5, lots: -1) == 1)
+    }
+
+    @Test func simsComeFromTheirOwnStreamAndStandInWhenHalving() {
+        let counts = (UInt64(0)..<100).map { Study.simCount(most: 3, seed: $0) }
+        #expect(counts.allSatisfy { (0...3).contains($0) } && Set(counts) == [0, 1, 2, 3])
+        #expect(Study.simCount(most: 0, seed: 9) == 0)
+        let tokens = Study.simTokens(3)
+        #expect(tokens.count == 3 && tokens.allSatisfy(Study.isSimToken) && !Study.isSimToken(0x7FD9_6B54))
+    }
+
+    @Test func coverageFilesReadBackAndSkipOtherLines() {
+        let coverage = Coverage(text: "global\t256\t0\nnot a site\nobject a.iff\t4096\t3\n")
+        #expect(coverage.sites == [InstructionSite(file: "global", routine: 256, index: 0),
+                                   InstructionSite(file: "object a.iff", routine: 4096, index: 3)])
+        #expect(Coverage(text: coverage.text).sites == coverage.sites)
+    }
+
     /// Findings on Simburbia alone, a broken rule or two runs that differ, count as disagreements.
     @Test func brokenRulesAndUnrepeatableRunsAreDisagreements() {
         let records = ["lot\t4\t32\tbroken\tbroken at tick 150 by 0x00000017: slots: detail",

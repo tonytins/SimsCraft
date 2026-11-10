@@ -93,8 +93,10 @@ public struct Answers {
     /// runs in, then the random seed set again, so the first digest starts from the seed. With
     /// `sims`, they join after the load (``SimAntics/VM/joinSim(template:)``), inside a tick of
     /// their own, and the seed is set again after it, as `fso-oracle run-lot --sims` does.
-    func loadedLot(_ blueprint: Blueprint, seed: UInt64, sims: Sims? = nil) throws(SimAnticsError) -> (VM, [VM.LeftOut]) {
+    func loadedLot(_ blueprint: Blueprint, seed: UInt64, sims: Sims? = nil,
+                   recordsCoverage: Bool = false) throws(SimAnticsError) -> (VM, [VM.LeftOut]) {
         let vm = try VM(content: content, seed: seed)
+        vm.recordsCoverage = recordsCoverage
         let leftOut = try vm.load(blueprint)
         vm.tick()
         vm.random = VMRandom(seed: seed)
@@ -180,12 +182,14 @@ public struct Answers {
     ///
     /// With `checksRules`, the lot's rules (`LotRule`) are checked after loading and every game
     /// minute; the first broken one stops the run with `broken at tick N by 0xGUID: rule: detail`.
-    /// Checking reads the state only, so the digests are the same either way.
+    /// Checking reads the state only, so the digests are the same either way. With `coverage`, the
+    /// instructions the run reached, loading included, are added to it, however the run ends.
     public func lotRun(_ lot: Blueprint, ticks: Int, every: Int, seed: UInt64 = Answers.defaultSeed, dump: Bool = false,
-                       sims: Sims? = nil, checksRules: Bool = false, leftOut: (VM.LeftOut) -> Void = { _ in }) -> [String] {
+                       sims: Sims? = nil, checksRules: Bool = false, coverage: Coverage? = nil,
+                       leftOut: (VM.LeftOut) -> Void = { _ in }) -> [String] {
         let vm: VM
         do {
-            let loaded = try loadedLot(lot, seed: seed, sims: sims)
+            let loaded = try loadedLot(lot, seed: seed, sims: sims, recordsCoverage: coverage != nil)
             vm = loaded.0
             loaded.1.forEach(leftOut)
         } catch SimAnticsError.unsupported(let reason) {
@@ -201,6 +205,7 @@ public struct Answers {
             let guid = vm.entity(id: broken.objectID).map { String(format: "0x%08X", $0.object.guid) } ?? "0x00000000"
             return "broken at tick \(tick) by \(guid): \(broken.rule.rawValue): \(broken.detail)"
         }
+        defer { coverage?.sites.formUnion(vm.coveredInstructions()) }
         if let gap = gap() { return ["unsupported at tick 0\(gap)"] }
         if let broken = brokenRule(at: 0) { return [broken] }
         var lines = Self.digestLines(of: vm, tick: 0, dump: dump)
@@ -256,4 +261,22 @@ public struct Answers {
         let text = "\(error)"
         return String(text.prefix { $0 != "(" })
     }
+}
+
+/// The instructions lot runs reached (``Answers/lotRun(_:ticks:every:seed:dump:sims:checksRules:coverage:leftOut:)``),
+/// gathered across runs. A coverage file keeps one ``SimAntics/InstructionSite`` a line.
+public final class Coverage {
+    public var sites: Set<InstructionSite> = []
+
+    public init(sites: Set<InstructionSite> = []) {
+        self.sites = sites
+    }
+
+    /// Reads a coverage file's lines, skipping any that aren't sites.
+    public convenience init(text: String) {
+        self.init(sites: Set(text.split(separator: "\n").compactMap { InstructionSite(line: $0) }))
+    }
+
+    /// The coverage file's text, sorted.
+    public var text: String { sites.sorted().map(\.description).joined(separator: "\n") + "\n" }
 }

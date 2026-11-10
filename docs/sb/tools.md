@@ -97,7 +97,9 @@ N by 0xGUID:`, naming the object that reached it, and what.
 install. Until its time budget runs out (`--minutes`, five in a review), it builds lots: about
 thirty objects both sides load (`--fso-objects`, from `fso-oracle list-objects`), picked by a seed
 with those its ledger hasn't seen first, on a grid of a floor plan, each facing a direction the
-seed picks. The floor plans (`--floor-plan`, repeatable) are lots emptied of their own objects,
+seed picks. Among the untested, and then among the rest, the pick is weighted toward code nothing
+has run yet (below). Up to `--sims` visitor Sims (2 by default, at most TSO's 18 visitors) join
+each lot, with no owner on it, as lots stay open without their owner in Simburbia. The floor plans (`--floor-plan`, repeatable) are lots emptied of their own objects,
 and the seed picks one per lot: FreeSO's `empty_lot_fso.xml` by default, and in a review on a
 real install, TSO's own job lots too, so objects meet real walls, counters, and doors. A plan
 FreeSO can't read (TSO's `nightclub00_01.xml`) is dropped for the rest of the run. Each lot runs
@@ -124,6 +126,32 @@ the last ones didn't. The seed defaults to the time, and is printed.
 ```sh
 sb-oracle study --game "$TSO_GAME_DIR" --fso-objects /tmp/oracle/fso/objects.tsv --out /tmp/study --minutes 5
 ```
+
+#### Coverage
+
+While Simburbia runs a lot it records every instruction its threads reach (`VM.recordsCoverage`,
+read back as `InstructionSite`s: the file, the routine, the index). The census works out the
+routines each candidate's own behavior can reach (`Census.reach`, leaving interactions out until
+Sims use objects in phase D), and each object's weight is 1 plus the instructions in its reach no
+run has reached, shared out over the lots it has been on. `--coverage-file` carries what's been
+reached between runs; a review keeps it with the run's output, since it's large and changes every
+run. `--unweighted` samples as before, to compare the two.
+
+On 1.1097.1.0 from seed 100, four minutes each (2026-11-10): weighted, 22 lots and 704 objects
+tried reached 10,981 of the 50,855 instructions the candidates' own behavior can reach (12,975
+in all); unweighted, 29 lots and 869 objects reached 10,089 (13,521 in all). Weighting reaches
+more of the objects' own code with fewer objects, but its heavier objects run slower, so it tries
+fewer and reaches slightly less shared global code. A first version that let weights override
+"untested first", and counted interactions, reached less on both counts (9,692 in all).
+
+#### Visitor Sims
+
+Before the first lot, a Sim made from `--sim-template` (FreeSO's template person, or the mock
+Sim on MockInstall) must run a game day on an empty floor plan on both sides; otherwise no Sims
+join this run, and the study says why. On 1.1097.1.0 the template person reaches Push Interaction
+(phase D), so Sims wait until then there. A Sim that reaches something unsupported during a lot
+leaves it, and the objects carry on. Halving a broken rule or a disagreement takes Sims out as
+well as objects, and names what's left by GUID and Sim count.
 
 The study replaced running every object alone (`run-objects`, still here for one-off
 questions), which took hours on a real install.

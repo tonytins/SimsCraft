@@ -11,6 +11,12 @@ public struct Routine: Sendable {
     public let argumentCount: UInt16
     public let localCount: UInt16
     public let instructions: [Instruction]
+    /// Where the BHAV lives, for coverage: `global`, `object NAME`, or `semi-global NAME`, the
+    /// file's name as TSOContent names it; empty for a routine built directly.
+    public internal(set) var file = ""
+    /// The VM's number for this routine, which coverage records instead of the file's name; -1
+    /// for a routine the VM didn't assemble.
+    var number: Int32 = -1
 
     /// Decodes a BHAV's instructions with the primitives in `table`.
     public init(_ bhav: BHAV, primitives table: PrimitiveTable) {
@@ -92,5 +98,33 @@ public struct SubroutineOperand: Sendable, Equatable {
         OperandWriter.bytes { writer in
             for argument in arguments { writer.int16(argument) }
         }
+    }
+}
+
+/// One instruction of one BHAV, for coverage: the file it lives in (`global`, `object NAME`, or
+/// `semi-global NAME`), the routine's ID, and the instruction's index.
+public struct InstructionSite: Sendable, Hashable, Comparable, CustomStringConvertible {
+    public var file: String
+    public var routine: UInt16
+    public var index: UInt8
+
+    public init(file: String, routine: UInt16, index: UInt8) {
+        self.file = file
+        self.routine = routine
+        self.index = index
+    }
+
+    public static func < (lhs: InstructionSite, rhs: InstructionSite) -> Bool {
+        (lhs.file, lhs.routine, lhs.index) < (rhs.file, rhs.routine, rhs.index)
+    }
+
+    /// `FILE<tab>ROUTINE<tab>INDEX`, the form a coverage file keeps.
+    public var description: String { "\(file)\t\(routine)\t\(index)" }
+
+    /// Reads ``description``'s form back, or `nil` for a line that isn't one.
+    public init?(line: some StringProtocol) {
+        let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
+        guard fields.count == 3, let routine = UInt16(fields[1]), let index = UInt8(fields[2]) else { return nil }
+        self.init(file: String(fields[0]), routine: routine, index: index)
     }
 }

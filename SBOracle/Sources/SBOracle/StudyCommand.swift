@@ -12,8 +12,10 @@ struct StudyCommand: AsyncParsableCommand {
         abstract: "Sample objects onto lots, run each lot a game day on both VMs, and compare.",
         discussion: """
             Until --minutes have passed, each lot takes --objects of the install's objects that both \
-            sides can load (no Sims, no multi-tile parts but their lead), picked by its seed with the \
-            ones the ledger hasn't seen first, and lays them on a grid of an emptied lot. Simburbia runs \
+            sides can load (no person objects, no multi-tile parts but their lead), picked by its seed with the \
+            objects whose code can reach instructions no run has reached yet likelier (--coverage-file), \
+            and lays them on a grid of an emptied lot. Up to --sims visitor Sims join it, with no \
+            owner on the lot; halving takes Sims out as well as objects. Simburbia runs \
             it first: an object that reaches something Simburbia doesn't support yet is recorded and \
             set aside, and the lot runs again without it. Simburbia also checks the lot's rules \
             (LotRule) every game minute, and runs the lot twice: a broken rule, or two runs that \
@@ -53,6 +55,21 @@ struct StudyCommand: AsyncParsableCommand {
     @Option(help: "fso-oracle's executable, already built (dotnet build FSO.Oracle -c Release).")
     var fsoOracle = fsoOracleExecutable.path
 
+    @Option(help: """
+        Instructions reached so far, one a line (file, routine, index), read and updated (such as \
+        --out's coverage.tsv); objects whose code can reach instructions it doesn't hold are picked first.
+        """)
+    var coverageFile: String?
+
+    @Flag(help: "Sample as the study did before coverage: objects the ledger hasn't seen first, unweighted. For comparing the two.")
+    var unweighted = false
+
+    @Option(help: "The most visitor Sims joining each lot, picked by its seed; none joins if the install can't run one yet.")
+    var sims = 2
+
+    @Option(help: "The person object visitor Sims are made from, in hexadecimal (default: FreeSO's template person).")
+    var simTemplate = String(VM.templatePerson, radix: 16, uppercase: true)
+
     @Option(help: "Ticks each lot runs (a game day by default).") var ticks = 216_000
     @Option(help: "A digest every this many ticks (a game hour by default).") var every = 9_000
 
@@ -61,6 +78,8 @@ struct StudyCommand: AsyncParsableCommand {
     /// The most Simburbia-only runs halving a broken rule or an unrepeatable run takes; they're
     /// quick, so more than a disagreement's.
     static let shrinkAloneRuns = 12
+    /// The most visitor Sims a lot takes: TSO's 18 visitors (TSO-E's lot limits, 2007).
+    static let mostSims = 18
     /// The most objects one lot sets aside before it's counted inconclusive.
     static let mostSetAside = 16
 
@@ -68,6 +87,7 @@ struct StudyCommand: AsyncParsableCommand {
         guard minutes > 0, minutes.isFinite else { throw ValidationError("--minutes takes a positive number") }
         guard objects > 0 else { throw ValidationError("--objects takes a positive number") }
         guard ticks > 0, every > 0 else { throw ValidationError("--ticks and --every take positive numbers") }
+        guard (0...Self.mostSims).contains(sims) else { throw ValidationError("--sims takes 0 to \(Self.mostSims)") }
     }
 
     func run() async throws {
@@ -90,35 +110,63 @@ struct StudyCommand: AsyncParsableCommand {
         guard FileManager.default.isExecutableFile(atPath: fsoOracle) else {
             throw ValidationError("no fso-oracle at \(fsoOracle); build it with dotnet build FSO.Oracle -c Release")
         }
+        guard let template = UInt32(simTemplate, radix: 16) else { throw ValidationError("--sim-template takes a GUID in hexadecimal") }
         let runner = Runner(answers: answers, fsoOracle: fsoOracle, game: game, content: install.contentDirectory,
-                            lotsFolder: lotsFolder, ticks: ticks, every: every)
+                            lotsFolder: lotsFolder, ticks: ticks, every: every, simTemplate: template)
+
+        // What each candidate's code can reach, and what runs have reached so far: the sample's weights.
+        // Interactions are left out until Sims use objects (phase D): their code can't run yet.
+        let reach = try Census.reach(content: content, guids: candidates, interactions: false)
+        let coverage = Coverage(text: coverageFile.flatMap { try? String(contentsOfFile: $0, encoding: .utf8) } ?? "")
+        let coveredAtStart = coverage.sites.count
+        let reachable = reach.sizes.values.reduce(0, +)
 
         print("study: \(candidates.count) objects to sample from, \(objects) a lot, first seed \(firstSeed), \(minutes) minutes")
         var records: [String] = []
+        var mostSims = sims
+        if mostSims > 0, let reason = try simsCantJoin(plans.first?.lot, template: template, answers: answers, runner: runner) {
+            print("study: no Sims on this install: \(reason)")
+            records.append("sims\t-\t0\tset aside\t\(reason)")
+            mostSims = 0
+        }
         let deadline = Date().addingTimeInterval(minutes * 60)
         var lotSeed = firstSeed
         while Date() < deadline {
             defer { lotSeed &+= 1 }
-            var sample = Study.sample(candidates, count: objects, seed: lotSeed, tested: book.tested)
+            let counts = Census.Reach.coveredCounts(coverage.sites)
+            let weights = Dictionary(uniqueKeysWithValues: candidates.map { guid in
+                (guid, Study.coverageWeight(uncovered: reach.uncovered(guid, coveredCounts: counts), lots: book.entries[guid]?.lots ?? 0))
+            })
+            var sample = unweighted ? Study.sample(candidates, count: objects, seed: lotSeed, tested: book.tested)
+                : Study.sample(candidates, count: objects, seed: lotSeed, weights: weights, tested: book.tested)
             guard !sample.isEmpty else { break }
             let usable = plans.indices.filter { !unusable.contains($0) }
             guard !usable.isEmpty else { break }
             let planIndex = usable[Study.floorPlan(of: usable.count, seed: lotSeed)]
             let base = plans[planIndex].lot
+            var simCount = Study.simCount(most: mostSims, seed: lotSeed)
+            func sims(_ count: Int) -> Answers.Sims? { count > 0 ? Answers.Sims(count: count, template: template) : nil }
 
             // Simburbia first, since it's quick: set aside each object that reaches something it
             // doesn't support yet, and run the lot again without it.
             var lot = Study.lot(sample, on: base, seed: lotSeed)
-            var ours = answers.lotRun(lot, ticks: ticks, every: every, checksRules: true)
+            var ours = answers.lotRun(lot, ticks: ticks, every: every, sims: sims(simCount), checksRules: true)
             var inconclusive: String?
             var setAside = 0
             while let last = ours.last, last.hasPrefix("unsupported") {
+                // A Sim that reaches something unsupported leaves the lot, and the objects stay.
+                if simCount > 0, let (reached, reason) = Self.unsupported(last), reached == template {
+                    records.append("sims\t\(lotSeed)\t\(simCount)\tset aside\t\(reason)")
+                    simCount = 0
+                    ours = answers.lotRun(lot, ticks: ticks, every: every, checksRules: true)
+                    continue
+                }
                 // The object that reached it may be a part of a sampled multi-tile object, or one a
                 // sampled object made; then halving the lot, on Simburbia alone, finds which.
                 guard setAside < Self.mostSetAside, let (reached, reason) = Self.unsupported(last),
                       let guid = sample.contains(reached) ? reached
                         : leads[reached].flatMap({ sample.contains($0) ? $0 : nil })
-                        ?? Self.culprit(of: reason, in: lot, answers: answers, ticks: ticks, every: every) else {
+                        ?? Self.culprit(of: reason, in: lot, sims: sims(simCount), answers: answers, ticks: ticks, every: every) else {
                     inconclusive = "Simburbia reached something unsupported in an object it can't set aside: \(Self.reason(of: last))"
                     break
                 }
@@ -127,7 +175,7 @@ struct StudyCommand: AsyncParsableCommand {
                 sample.removeAll { $0 == guid }
                 setAside += 1
                 lot.objects.removeAll { $0.guid == guid }
-                ours = answers.lotRun(lot, ticks: ticks, every: every, checksRules: true)
+                ours = answers.lotRun(lot, ticks: ticks, every: every, sims: sims(simCount), checksRules: true)
             }
             if inconclusive == nil, lot.objects.isEmpty { inconclusive = "every object was set aside" }
             if let inconclusive {
@@ -135,43 +183,51 @@ struct StudyCommand: AsyncParsableCommand {
                 print("lot \(lotSeed): inconclusive, \(inconclusive)")
                 continue
             }
+            if simCount > 0 { records.append("sims\t\(lotSeed)\t\(simCount)") }
+            let withSims = simCount > 0 ? " with \(simCount) Sim\(simCount == 1 ? "" : "s")" : ""
+
+            // What this lot's run reached, for the next lots' weights. A run that's kept repeats
+            // the first, so recording the second costs nothing extra.
+            let before = coverage.sites.count
+            let again = answers.lotRun(lot, ticks: ticks, every: every, sims: sims(simCount), checksRules: true, coverage: coverage)
+            let reachedNew = coverage.sites.count - before
 
             // Findings on Simburbia alone: a broken rule, or a second run that differs. Either is
             // halved without FreeSO, and FreeSO doesn't run the lot, since its digests would only
             // repeat what's already known to be wrong.
+            let whole = lot, wholeSims = simCount
+            func part(_ subset: [UInt32]) -> (Blueprint, Answers.Sims?) {
+                var part = whole
+                part.objects.removeAll { !subset.contains($0.guid) }
+                return (part, sims(subset.filter(Study.isSimToken).count))
+            }
+            let items = whole.objects.map(\.guid) + Study.simTokens(wholeSims)
             let finding: (kind: String, first: String, shows: ([UInt32]) -> Bool)?
             if let last = ours.last, last.hasPrefix("broken") {
                 finding = ("broken", last, { subset in
-                    var part = lot
-                    part.objects.removeAll { !subset.contains($0.guid) }
-                    return answers.lotRun(part, ticks: ticks, every: every, checksRules: true).last?.hasPrefix("broken") == true
+                    let (lot, sims) = part(subset)
+                    return answers.lotRun(lot, ticks: ticks, every: every, sims: sims, checksRules: true).last?.hasPrefix("broken") == true
                 })
-            } else if answers.lotRun(lot, ticks: ticks, every: every) != ours {
+            } else if again != ours {
                 finding = ("unrepeatable", "two runs of the same seed differ", { subset in
-                    var part = lot
-                    part.objects.removeAll { !subset.contains($0.guid) }
-                    return answers.lotRun(part, ticks: ticks, every: every) != answers.lotRun(part, ticks: ticks, every: every)
+                    let (lot, sims) = part(subset)
+                    return answers.lotRun(lot, ticks: ticks, every: every, sims: sims)
+                        != answers.lotRun(lot, ticks: ticks, every: every, sims: sims)
                 })
             } else {
                 finding = nil
             }
             if let finding {
                 records.append("lot\t\(lotSeed)\t\(lot.objects.count)\t\(finding.kind)\t\(finding.first)")
-                print("lot \(lotSeed): \(finding.kind), \(finding.first); narrowing it down on Simburbia alone")
-                let (culprits, _) = Study.shrink(lot.objects.map(\.guid), maxRuns: Self.shrinkAloneRuns, disagrees: finding.shows)
-                let guids = culprits.map { String(format: "0x%08X", $0) }
-                records.append("shrunk\t\(lotSeed)\t\(guids.joined(separator: ","))\t\(finding.kind): \(finding.first)")
-                for guid in culprits {
-                    records.append("object\t\(String(format: "0x%08X", guid))\t\(finding.kind)\ton lot \(lotSeed): \(finding.first)")
-                    book.record(guid, name: nameOf(guid, content), result: "\(finding.kind): \(finding.first)", seed: lotSeed)
-                }
-                print("lot \(lotSeed): narrowed to \(guids.joined(separator: ", "))")
+                print("lot \(lotSeed)\(withSims): \(finding.kind), \(finding.first); narrowing it down on Simburbia alone")
+                let (culprits, _) = Study.shrink(items, maxRuns: Self.shrinkAloneRuns, disagrees: finding.shows)
+                record(culprits, kind: finding.kind, first: finding.first, seed: lotSeed, records: &records, book: &book, content: content)
                 continue
             }
 
             // Then FreeSO, on the same lot.
             let file = "seed-\(lotSeed).xml"
-            let theirs = try runner.fso(lot, file: file)
+            let theirs = try runner.fso(lot, file: file, sims: simCount)
             if !theirs.leftOut.isEmpty {
                 for guid in theirs.leftOut {
                     records.append("object\t\(String(format: "0x%08X", guid))\tleft out\tFreeSO couldn't place it")
@@ -194,38 +250,67 @@ struct StudyCommand: AsyncParsableCommand {
                     records.append("object\t\(String(format: "0x%08X", object.guid))\tagree")
                     book.record(object.guid, name: nameOf(object.guid, content), result: "agree", seed: lotSeed)
                 }
-                print("lot \(lotSeed): \(lot.objects.count) objects agree on \(plans[planIndex].name)")
+                print("lot \(lotSeed): \(lot.objects.count) objects\(withSims) agree on \(plans[planIndex].name), \(reachedNew) new instructions")
                 continue
             }
 
             // A disagreement: halve the lot, keeping each object's tile and facing, to the fewest
-            // objects that still disagree.
+            // objects (and Sims) that still disagree.
             let first = comparison.mismatches.first ?? "differs"
             records.append("lot\t\(lotSeed)\t\(lot.objects.count)\tdisagree\t\(first)")
-            print("lot \(lotSeed): disagrees, \(first); narrowing it down")
-            let whole = lot
-            let (culprits, _) = Study.shrink(whole.objects.map(\.guid), maxRuns: Self.shrinkRuns) { subset in
-                var part = whole
-                part.objects.removeAll { !subset.contains($0.guid) }
-                let mine = answers.lotRun(part, ticks: ticks, every: every)
+            print("lot \(lotSeed)\(withSims): disagrees, \(first); narrowing it down")
+            let (culprits, _) = Study.shrink(items, maxRuns: Self.shrinkRuns) { subset in
+                let (lot, sims) = part(subset)
+                let mine = answers.lotRun(lot, ticks: ticks, every: every, sims: sims)
                 guard mine.last?.hasPrefix("unsupported") != true,
-                      let fso = try? runner.fso(part, file: "seed-\(lotSeed)-\(subset.count).xml"), fso.leftOut.isEmpty,
-                      fso.lines.first?.hasPrefix("tick") == true else { return false }
+                      let fso = try? runner.fso(lot, file: "seed-\(lotSeed)-\(subset.count).xml", sims: sims?.count ?? 0),
+                      fso.leftOut.isEmpty, fso.lines.first?.hasPrefix("tick") == true else { return false }
                 return !Comparison.lotRuns(fso: fso.lines.map { "x \($0)" }, nso: mine.map { "x \($0)" }).mismatches.isEmpty
             }
-            let guids = culprits.map { String(format: "0x%08X", $0) }
-            records.append("shrunk\t\(lotSeed)\t\(guids.joined(separator: ","))\t\(first)")
-            for guid in culprits {
-                records.append("object\t\(String(format: "0x%08X", guid))\tdisagree\ton lot \(lotSeed): \(first)")
-                book.record(guid, name: nameOf(guid, content), result: "disagree: \(first)", seed: lotSeed)
-            }
-            print("lot \(lotSeed): narrowed to \(guids.joined(separator: ", "))")
+            record(culprits, kind: "disagree", first: first, seed: lotSeed, records: &records, book: &book, content: content)
         }
 
         let recordsFile = outFolder.appendingPathComponent("study.tsv")
         try Data((records.joined(separator: "\n") + "\n").utf8).write(to: recordsFile)
         if let ledger { try Data(book.tsv.utf8).write(to: URL(fileURLWithPath: ledger)) }
+        if let coverageFile { try Data(coverage.text.utf8).write(to: URL(fileURLWithPath: coverageFile)) }
         for comparison in Comparison.study(records) { print(comparison.summary) }
+        let reachedOfReach = Census.Reach.coveredCounts(coverage.sites).reduce(0) { $0 + min($1.value, reach.sizes[$1.key] ?? 0) }
+        print("Study: coverage: \(coverage.sites.count) instructions reached (\(coverage.sites.count - coveredAtStart) new this run); "
+              + "\(reachedOfReach) of the \(reachable) the candidates' own code can reach")
+    }
+
+    /// Records what halving left: the `shrunk` line, then each object's result. Sims are
+    /// named by their count, since they're interchangeable.
+    private func record(_ culprits: [UInt32], kind: String, first: String, seed: UInt64,
+                        records: inout [String], book: inout StudyLedger, content: GameContent) {
+        let objects = culprits.filter { !Study.isSimToken($0) }
+        let simsLeft = culprits.count - objects.count
+        let names = objects.map { String(format: "0x%08X", $0) } + (simsLeft > 0 ? ["\(simsLeft) Sim\(simsLeft == 1 ? "" : "s")"] : [])
+        let detail = kind == "disagree" ? first : "\(kind): \(first)"
+        records.append("shrunk\t\(seed)\t\(names.joined(separator: ","))\t\(detail)")
+        for guid in objects {
+            records.append("object\t\(String(format: "0x%08X", guid))\t\(kind)\ton lot \(seed): \(first)")
+            book.record(guid, name: nameOf(guid, content), result: "\(kind): \(first)", seed: seed)
+        }
+        print("lot \(seed): narrowed to \(names.joined(separator: ", "))")
+    }
+
+    /// Why Sims can't join this install's lots yet, or `nil` if a Sim on an empty floor plan runs
+    /// a game day on both sides: on a real install the template person reaches the interaction
+    /// queue (phase D), and FreeSO can't create a Sim on the older discs.
+    private func simsCantJoin(_ plan: Blueprint?, template: UInt32, answers: Answers, runner: Runner) throws -> String? {
+        guard var empty = plan else { return "no floor plan" }
+        guard let person = try? answers.content.objects.object(guid: template), person.definition.knownObjectType == .person else {
+            return String(format: "no person object 0x%08X to make them from (--sim-template)", template)
+        }
+        empty.objects = []
+        let sim = Answers.Sims(count: 1, template: template)
+        let ours = answers.lotRun(empty, ticks: ticks, every: every, sims: sim, checksRules: true)
+        if let last = ours.last, !last.hasPrefix("tick") { return "Simburbia: \(Self.reason(of: last))" }
+        let theirs = try runner.fso(empty, file: "sims-probe.xml", sims: 1)
+        guard theirs.lines.first?.hasPrefix("tick") == true else { return "FreeSO couldn't run a Sim on an empty lot" }
+        return nil
     }
 
     private func nameOf(_ guid: UInt32, _ content: GameContent) -> String {
@@ -263,11 +348,12 @@ struct StudyCommand: AsyncParsableCommand {
 
     /// The one object of a lot that leads Simburbia to `reason`, found by halving the lot and
     /// running the halves on Simburbia alone, or `nil` if it takes more than one.
-    static func culprit(of reason: String, in lot: Blueprint, answers: Answers, ticks: Int, every: Int) -> UInt32? {
+    static func culprit(of reason: String, in lot: Blueprint, sims: Answers.Sims? = nil, answers: Answers,
+                        ticks: Int, every: Int) -> UInt32? {
         let (found, _) = Study.shrink(lot.objects.map(\.guid), maxRuns: 12) { subset in
             var part = lot
             part.objects.removeAll { !subset.contains($0.guid) }
-            guard let last = answers.lotRun(part, ticks: ticks, every: every).last, last.hasPrefix("unsupported") else { return false }
+            guard let last = answers.lotRun(part, ticks: ticks, every: every, sims: sims).last, last.hasPrefix("unsupported") else { return false }
             return Self.reason(of: last) == reason
         }
         return found.count == 1 ? found.first : nil
@@ -293,9 +379,10 @@ struct StudyCommand: AsyncParsableCommand {
         let lotsFolder: URL
         let ticks: Int
         let every: Int
+        let simTemplate: UInt32
 
-        /// FreeSO's digests for a lot, and the objects it left out of it.
-        func fso(_ lot: Blueprint, file: String) throws -> (lines: [String], leftOut: [UInt32]) {
+        /// FreeSO's digests for a lot, with `sims` visitor Sims joined, and the objects it left out.
+        func fso(_ lot: Blueprint, file: String, sims: Int = 0) throws -> (lines: [String], leftOut: [UInt32]) {
             let blueprint = lotsFolder.appendingPathComponent(file)
             try lot.xml().write(to: blueprint)
             let output = lotsFolder.appendingPathComponent(file + ".fso.txt")
@@ -309,6 +396,7 @@ struct StudyCommand: AsyncParsableCommand {
             process.executableURL = URL(fileURLWithPath: fsoOracle)
             process.arguments = ["run-lot", "--game", game.path, "--content", content.path, "--blueprint", blueprint.path,
                                  "--ticks", "\(ticks)", "--every", "\(every)"]
+                + (sims > 0 ? ["--sims", "\(sims)", "--sim-template", String(simTemplate, radix: 16, uppercase: true)] : [])
             process.standardOutput = try FileHandle(forWritingTo: output)
             process.standardError = try FileHandle(forWritingTo: messages)
             process.standardInput = FileHandle.nullDevice

@@ -74,6 +74,11 @@ public final class VM {
     private var deleted: [Entity] = []
     private var isLoading = false
     private var routines: [RoutineKey: Routine] = [:]
+    /// Each numbered routine's file and ID, by number.
+    private var routineFiles: [(String, UInt16)] = []
+    /// Instructions run while recording coverage, as routine number and index.
+    private var covered: Set<Int64> = []
+    var coverageEnabled = false
     /// The motive tuning once read, or why it couldn't be (``motiveTuning()``).
     var motiveTuningStorage: Result<MotiveTuning, SimAnticsError>?
 
@@ -764,7 +769,12 @@ public final class VM {
         guard let bhav = object.resource.treesByName[name] else { return nil }
         let key = RoutineKey(file: "tree \(object.resource.name) \(name)", id: bhav.id)
         if let cached = routines[key] { return cached }
-        let routine = Routine(bhav, primitives: primitives)
+        let file: String
+        switch object.resource.treeSourcesByName[name] {
+        case .semiGlobal(let semiGlobal): file = "semi-global \(semiGlobal)"
+        case .mainFile, nil: file = "object \(object.resource.name)"
+        }
+        let routine = numbered(Routine(bhav, primitives: primitives), file: file)
         routines[key] = routine
         return routine
     }
@@ -794,8 +804,42 @@ public final class VM {
             throw .simantics("BHAV \(opcode) in \(file) doesn't parse: \(error)")
         }
         guard let bhav else { return nil }
-        let routine = Routine(bhav, primitives: primitives)
+        let routine = numbered(Routine(bhav, primitives: primitives), file: file)
         routines[key] = routine
         return routine
+    }
+
+    /// A routine with its file and the next routine number, so coverage can record it.
+    private func numbered(_ routine: Routine, file: String) -> Routine {
+        var routine = routine
+        routine.file = file
+        routine.number = Int32(routineFiles.count)
+        routineFiles.append((file, routine.id))
+        return routine
+    }
+
+    // MARK: Coverage
+
+    /// Turns coverage on or off. While it's on, every instruction a thread runs is recorded
+    /// (``coveredInstructions()``). Recording reads nothing back into the simulation, so it
+    /// doesn't change a run's results.
+    public var recordsCoverage: Bool {
+        get { coverageEnabled }
+        set { coverageEnabled = newValue }
+    }
+
+    func recordCoverage(_ routine: Routine, _ index: UInt8) {
+        guard routine.number >= 0 else { return }
+        covered.insert(Int64(routine.number) << 8 | Int64(index))
+    }
+
+    /// Every instruction run since coverage was turned on, by file, routine, and index, sorted.
+    public func coveredInstructions() -> [InstructionSite] {
+        covered.compactMap { key -> InstructionSite? in
+            let number = Int(key >> 8)
+            guard routineFiles.indices.contains(number) else { return nil }
+            let (file, id) = routineFiles[number]
+            return InstructionSite(file: file, routine: id, index: UInt8(truncatingIfNeeded: key))
+        }.sorted()
     }
 }

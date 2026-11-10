@@ -161,6 +161,67 @@ public enum Census {
                       columns: results, failures: failures)
     }
 
+    /// One BHAV, by the file it lives in (as ``InstructionSite`` names files) and its ID.
+    public struct RoutineSite: Sendable, Hashable, Comparable {
+        public var file: String
+        public var id: UInt16
+
+        public init(file: String, id: UInt16) {
+            self.file = file
+            self.id = id
+        }
+
+        public static func < (lhs: RoutineSite, rhs: RoutineSite) -> Bool { (lhs.file, lhs.id) < (rhs.file, rhs.id) }
+    }
+
+    /// The routines each object's code can reach, worked out as the census walks it, and how many
+    /// instructions each routine has: what the study weighs objects by.
+    public struct Reach: Sendable, Equatable {
+        /// Each reachable routine's instruction count.
+        public var sizes: [RoutineSite: Int] = [:]
+        /// Each object's reachable routines, sorted.
+        public var byObject: [UInt32: [RoutineSite]] = [:]
+
+        public init(sizes: [RoutineSite: Int] = [:], byObject: [UInt32: [RoutineSite]] = [:]) {
+            self.sizes = sizes
+            self.byObject = byObject
+        }
+
+        /// How many of an object's reachable instructions `covered` doesn't hold, given how many
+        /// of each routine's instructions it holds (``coveredCounts(_:)``).
+        public func uncovered(_ guid: UInt32, coveredCounts: [RoutineSite: Int]) -> Int {
+            (byObject[guid] ?? []).reduce(0) { total, routine in
+                total + max(0, (sizes[routine] ?? 0) - (coveredCounts[routine] ?? 0))
+            }
+        }
+
+        /// How many instructions of each routine `covered` holds.
+        public static func coveredCounts(_ covered: Set<InstructionSite>) -> [RoutineSite: Int] {
+            var counts: [RoutineSite: Int] = [:]
+            for site in covered { counts[RoutineSite(file: site.file, id: site.routine), default: 0] += 1 }
+            return counts
+        }
+    }
+
+    /// The routines each of `guids` can reach, any object rather than only the catalog's.
+    ///
+    /// With `interactions` false, the walk starts from the object's own behavior (`OBJD`'s fields
+    /// and `OBJf`) and leaves its interactions (`TTAB`) out: what can run before Sims use objects.
+    ///
+    /// - Throws: ``ContentError`` if the install's global can't load; an object that can't load
+    ///   reaches nothing.
+    public static func reach(content: GameContent, guids: [UInt32], interactions: Bool = true) throws(ContentError) -> Reach {
+        let global = try content.global()
+        var walker = Walker(content: content, global: global, column: "reach", catalog: [:])
+        walker.recordsReach = true
+        walker.includesInteractions = interactions
+        walker.walk(guids)
+        var reach = Reach()
+        for (key, size) in walker.sizes { reach.sizes[key.site] = size }
+        for (guid, keys) in walker.reach { reach.byObject[guid] = keys.map(\.site).sorted() }
+        return reach
+    }
+
     private static func primitive(_ opcode: UInt8) -> (name: String, state: String) {
         if let name = PrimitiveTable.standard.name(of: opcode) { return (name, "ported") }
         if let name = PrimitiveTable.fsoCompat[opcode] { return (name, "unported") }
@@ -179,6 +240,15 @@ private struct RoutineKey: Hashable {
 
     var owner: Owner
     var id: UInt16
+
+    /// The routine as ``Census/RoutineSite`` names it, matching the VM's coverage.
+    var site: Census.RoutineSite {
+        switch owner {
+        case .global: Census.RoutineSite(file: "global", id: id)
+        case .semiGlobal(let name): Census.RoutineSite(file: "semi-global \(name)", id: id)
+        case .object(let name): Census.RoutineSite(file: "object \(name)", id: id)
+        }
+    }
 
     var description: String {
         switch owner {
@@ -205,6 +275,13 @@ private struct Walker {
 
     var counts = Census.Counts()
     var failures: [Census.Failure] = []
+    /// Whether to record each object's reachable routines (``reach``) and every object, not only
+    /// the catalog's.
+    var recordsReach = false
+    /// Whether an object's interactions (`TTAB`) are among the roots it's walked from.
+    var includesInteractions = true
+    var reach: [UInt32: Set<RoutineKey>] = [:]
+    var sizes: [RoutineKey: Int] = [:]
 
     private var routines: [RoutineKey: BHAV] = [:]
     private var missingRoutines: Set<RoutineKey> = []
@@ -224,7 +301,7 @@ private struct Walker {
     }
 
     mutating func walk(_ guids: [UInt32]) {
-        for guid in guids where catalog[guid] != nil {
+        for guid in guids where recordsReach || catalog[guid] != nil {
             counts.objects += 1
             let object: GameObject
             do {
@@ -256,6 +333,10 @@ private struct Walker {
                 (key, bhav) = resolved
             }
             guard scanned.insert(ScanKey(routine: key, object: object.guid)).inserted else { continue }
+            if recordsReach {
+                reach[object.guid, default: []].insert(key)
+                sizes[key] = bhav.instructions.count
+            }
             let isNew = counted.insert(key).inserted
             if isNew { counts.routines += 1 }
             for instruction in bhav.instructions {
@@ -289,6 +370,7 @@ private struct Walker {
         } catch {
             failures.append(.init(column: column, guid: object.guid, reason: "OBJf \(definition.id): \(error)"))
         }
+        guard includesInteractions else { return roots.filter { $0 != 0 } }
         do {
             var table = try object.resource.chunk(TTAB.self, id: definition.treeTableID)
             if table == nil, let semiGlobal = object.resource.semiGlobal {

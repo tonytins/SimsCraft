@@ -210,6 +210,7 @@ public final class VMThread {
     private func nextInstruction() throws(SimAnticsError) {
         guard let frame = stack.last else { return }
         let instruction = try frame.currentInstruction()
+        if vm.coverageEnabled { vm.recordCoverage(frame.routine, instruction.index) }
         switch instruction.operand {
         case .subroutine(let operand):
             try callSubroutine(instruction.opcode, operand: operand, from: frame)
