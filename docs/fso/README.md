@@ -1,7 +1,7 @@
 # SimsCraft: the FreeSO snapshot
 
 These pages explain the FreeSO source code at beta/update-46 (August 2017; the
-snapshot in [`TSOClient/`](../../TSOClient/)), the reference that Simburbia's
+snapshot in [`FreeSO/TSOClient/`](../../FreeSO/TSOClient/)), the reference that Simburbia's
 Swift reimplementation draws on. **How it works (update-46)** describes the code as
 it is. The **Modern .NET rewrite** sections come from an earlier goal of
 rewriting FreeSO on .NET; they're kept for reference and no longer maintained.
@@ -31,7 +31,7 @@ Claims that couldn't be confirmed in the code are marked **Unverified**.
 | [protocol.md](./protocol.md) | FSO.Server.Protocol, FSO.Server.Clients, the data service, the database service, FSO.Common.Domain |
 | [client.md](./client.md) | FSO.Client and FSO.UI: startup, screens and controllers, regulators, UIScript, mobile hosts |
 | [server.md](./server.md) | FSO.Server and its libraries: services, city and lot servers, database, watchdog |
-| [tools.md](./tools.md) | Volcanic IDE, debug tools, patcher, FSOInstaller, Charvatia, `Other/` |
+| [tools.md](./tools.md) | Volcanic IDE, debug tools, patcher, FSOInstaller, Charvatia, `FreeSO/Other/` |
 
 ## Beyond the snapshot
 
@@ -65,15 +65,15 @@ varies:
 | FSODroid, FSO.iOS, System.Drawing stub | [client.md](./client.md#mobile-hosts) | Brief |
 | FSO.Server.Framework | [server.md](./server.md) | Brief (placeholder project) |
 | `TSOClient.csproj` (legacy) | [client.md](./client.md#dead-files) | Brief |
-| Charvatia, FSOInstaller, `Other/libs`, `Other/tools` | [tools.md](./tools.md) | Brief |
+| Charvatia, FSOInstaller, `FreeSO/Other/libs`, `FreeSO/Other/tools` | [tools.md](./tools.md) | Brief |
 
 Not covered: the internals of the `FSOMonoGame` and `FSOMina.NET`
-forks, because the submodules aren't checked out in this repository.
+forks, which are vendored read-only under `FreeSO/Other/libs/`.
 
 ## Conventions
 
 - Links into the source are relative, such as
-  `../TSOClient/tso.simantics/VM.cs`.
+  `../../FreeSO/TSOClient/tso.simantics/VM.cs`.
 - Types and members are named exactly as in the code.
 - Code samples under "Modern .NET rewrite" are sketches. They follow the
   [.NET guidelines skill](../../.agents/skills/dotnet-guidelines/SKILL.md)

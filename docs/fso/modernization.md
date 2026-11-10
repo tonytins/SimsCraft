@@ -2,7 +2,7 @@
 
 > **Status: shelved.** SimsCraft chose to reimplement FreeSO's libraries in Swift (Simburbia)
 > instead of modernizing FreeSO itself. This plan is kept for its survey of FreeSO's dependencies
-> and platform blockers, which still applies to the code in `TSOClient/`. Nothing in it is being
+> and platform blockers, which still applies to the code in `FreeSO/TSOClient/`. Nothing in it is being
 > worked on.
 
 This guide plans a rewrite of the FreeSO snapshot (update-46) onto modern,
@@ -89,7 +89,7 @@ In the new layout the server references nothing graphical.
 | `FSO.Server.Updater` (watchdog), `FSO.Patcher` | Dropped (platform service managers and packaging) |
 | `FSO.IDE` (Volcanic) | Later phase; see [tools.md](./tools.md#what-to-keep) |
 | `tso.debug`, `FSO.Server.Debug` | Rebuilt as in-game panels and CLI tools |
-| `FSO.Server.Framework`, `System.Drawing`, `TSOClient.csproj`, `FSODroid`, `FSO.iOS`, `Charvatia`, `Other/tools`, `Other/libs/*DataModel` | Dropped |
+| `FSO.Server.Framework`, `System.Drawing`, `TSOClient.csproj`, `FSODroid`, `FSO.iOS`, `Charvatia`, `FreeSO/Other/tools`, `FreeSO/Other/libs/*DataModel` | Dropped |
 
 ### Shared build settings (sketch)
 

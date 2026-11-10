@@ -201,7 +201,7 @@ Two differences keep loading going: an object the content doesn't have, or can't
 and returned (FreeSO fails), and entities already on the VM are kept (FreeSO starts over).
 
 All of this matches FreeSO exactly. `fso-oracle room-maps` dumps FreeSO's room maps and rooms, and
-all 63 lots compared (FreeSO's empty lot, a house built in-game, in `Simburbia/Lots`, the mock lot,
+all 63 lots compared (FreeSO's empty lot, a house built in-game, in `Lots`, the mock lot,
 and 60 synthetic ones with walls, fences, diagonals, pools, and upper floors) match entry for
 entry. `fso-oracle run-lot` loads and runs a lot: the mock lot matches tick for tick, FreeSO's
 empty lot matches until its objects reach a primitive not ported yet, and the house loads with

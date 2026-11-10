@@ -3,7 +3,7 @@
 > **Last reviewed:** 2026-10-16 · **Last updated:** 2026-10-16 · **Change:** minor (21 primitives; both real lots run a full in-game day in step with FreeSO; next: Sims) · **Target:** behavior parity with FreeSO's engine-free libraries at the beta/update-46 snapshot (FSO.Files, FSO.Content, FSO.SimAntics)
 
 Forward-looking: the milestones, the current focus, and what comes next for the Swift packages in
-[`Simburbia/`](../Simburbia/). The evidence behind every status is in [scorecard.md](scorecard.md).
+the packages at the repository root. The evidence behind every status is in [scorecard.md](scorecard.md).
 What FreeSO's code does, and why, is in [fso/](fso/README.md); how the Swift code behaves is in
 [nso/](sb/README.md).
 
@@ -16,9 +16,9 @@ Three independent SwiftPM packages, each with its own tests:
 
 | Package | Ports | Depends on |
 | --- | --- | --- |
-| [TSOFiles](../Simburbia/TSOFiles/) | FSO.Files, plus the Vitaboy model formats (see [decisions](#decisions-for-the-owner)) | Foundation |
-| [TSOContent](../Simburbia/TSOContent/) | FSO.Content, without GPU upload | TSOFiles |
-| [SimAntics](../Simburbia/SimAntics/) | FSO.SimAntics, headless (no LotView, no HIT) | TSOContent, TSOFiles |
+| [TSOFiles](../TSOFiles/) | FSO.Files, plus the Vitaboy model formats (see [decisions](#decisions-for-the-owner)) | Foundation |
+| [TSOContent](../TSOContent/) | FSO.Content, without GPU upload | TSOFiles |
+| [SimAntics](../SimAntics/) | FSO.SimAntics, headless (no LotView, no HIT) | TSOContent, TSOFiles |
 
 Out of scope here: rendering, audio playback, UI, networking transports, and servers. Those consume
 these packages later.
@@ -54,7 +54,7 @@ In order:
        Create Object Instance primitive out of the world.
      - [x] C2. Placement in the world: footprints, placement checks, and the placement entry point.
      - [x] C3. Slots and containment, and Find Location For.
-   - [x] Mock install wiring: TSOContent and SimAntics tests read `Simburbia/MockInstall` (focused
+   - [x] Mock install wiring: TSOContent and SimAntics tests read `MockInstall` (focused
      edge-case fixtures stay in code), fso-oracle loads it, and CI runs both oracles on it
      (`oracle-review.sh --mock`). Primitive fixtures on the mock wait for a mock lot, in D2.
    - [x] D. In two steps:
@@ -69,7 +69,7 @@ In order:
      Set Balloon Headline, Idle For Input, Breakpoint, Special Effect, Stop All Sounds, and Get
      Terrain Info. Both real lots run a full in-game day in step with FreeSO.
 2. **A first client, before the fourth pass,** so the work so far can be seen instead of only
-   compared. `Simburbia/SBClient` (`simburbia`) loads a lot from the install (or MockInstall), runs it in
+   compared. `SBClient` (`simburbia`) loads a lot from the install (or MockInstall), runs it in
    the VM at TSO's 30 ticks a second, and draws it through the 3D camera of decision 7 with
    stand-ins until sprites decode: floors tinted by room, walls and fences (cut down or full), and
    each object's footprint. Clicking an object opens an inspector with its GUID, tile, facing, and
@@ -93,7 +93,7 @@ In order:
      - [x] C2. TSO's art: UI graphics by file ID and BMP and TGA (Hyde Park F), for TSO's `setup`
        background, with Simburbia's logo as the fallback.
      - [x] C3. The Start/Join window of the owner's mockup, over the loading background: lots from
-       `Simburbia/Lots` and the player's folder, Play through the loading screen, and Join shown
+       `Lots` and the player's folder, Play through the loading screen, and Join shown
        but disabled until networking.
 3. **Queen Margaret's, fourth pass: Sims,** so a lot with Sims runs a full in-game day in step
    with FreeSO (the alpha gate's lot job). Each phase ends with the oracles agreeing on what real
@@ -136,7 +136,7 @@ In order:
      - [x] B3. A Sim's tick: `tuning.dat` in TSOContent, motive decay, motive changes, and Set
        Motive Deltas. The mock Sim matches FreeSO over a game day. The unpatched 2002 and beta
        discs lack the motive tuning patches delivered, so Simburbia's own defaults fill in
-       (`Simburbia/Tuning/tuning.xml`, DIFF-33), on both oracles.
+       (`Tuning/tuning.xml`, DIFF-33), on both oracles.
      - [x] B4. Primitive cases that name the mock Sim (Set Motive Deltas, person data and motives).
        - [x] B4a. Scaffolding: cases preset and report a Sim's person data, motives, and motive
          changes, and the lot's category, and run on a lot of their own with the Sim joined.
@@ -224,7 +224,7 @@ criteria met, not lines written.
 | Upper Shankelston | EOD plugin handlers | 5,217 | 65–105 | 0% | 65–105 | Server-side logic only; panels belong to a client. |
 | Virginia Islands | Lot utilities: world and TS1 activators, architecture tools, lot rotation, terrain restore | 2,680 | 35–55 | 0% | 35–55 | Needed for houses from XML and surrounding lots. |
 | Charvatia | TS1 house and neighborhood chunks: `OBJT`, `OBJM`, `ARRY`, `WALm`, `FLRm`, `CARR`, `FAMI`, `FAMs`, `NBRS`, `NGBH`, `SIMI`, `TATT`, and field-encoded strings | 764 | 5–8 | 0% | 5–8 | Only TS1 hybrid mode reads these; a TSO install contains none (checked 2026-10-15). Deferred by the owner; port it when TS1 hybrid is needed, ideally checked against a TS1 install. `OBJM` is decoded by heuristic search in FreeSO. |
-| Yatesport | SimsScript: a text assembly for BHAVs, an LSL-like language that compiles to them, a decompiler from existing objects, LSL `state`s and interactions, editor support | new | 70–120 | 5% | 67–114 | Later, after alpha; not counted in the totals below. Proof of concept in `Simburbia/SimsScript` (decision 5). |
+| Yatesport | SimsScript: a text assembly for BHAVs, an LSL-like language that compiles to them, a decompiler from existing objects, LSL `state`s and interactions, editor support | new | 70–120 | 5% | 67–114 | Later, after alpha; not counted in the totals below. Proof of concept in `SimsScript` (decision 5). |
 | | **Total** | **≈ 53,000** | **≈ 580–930** | **≈ 18% ready** | **≈ 419–658** | |
 
 ## Upcoming milestones, ranked
@@ -248,7 +248,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 1. **Where the Vitaboy model formats live.** In TSOFiles (they're file formats) or a fourth package
    `Vitaboy` (as in FreeSO). Recommended: TSOFiles, to keep three packages.
 2. **How to record FreeSO replays.** Decided (2026-10-15): an oracle harness. A .NET 10 console tool
-   in `Simburbia/FSO.Oracle/` compiles FreeSO's SimAntics, Files, and Content sources (linked read-only)
+   in `FSO.Oracle/` compiles FreeSO's SimAntics, Files, and Content sources (linked read-only)
    with stubs for rendering and audio, and runs the VM headless (`VM.UseWorld = false`, as the lot
    server does). It serves two kinds of reference results: first, per-primitive differential tests
    (the Swift tests send an operand and variables, the oracle runs FreeSO's primitive); later,
@@ -272,10 +272,10 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
    objects, walls, and floors are sprites drawn as quads in the same 3D pass, so a Sim sitting on a
    couch is hidden behind the couch's front edge without sorting tricks. SPR2 depth is local to
    each sprite, so it's made global the way FreeSO's `vsZSprite`
-   (`TSOClient/tso.content/ContentSrc/Effects/2DWorldBatch.fx`) does: from the draw group's
-   `ObjectOffset` (`TSOClient/tso.files/formats/iff/chunks/DGRP.cs`), in a shader that writes the
+   (`FreeSO/TSOClient/tso.content/ContentSrc/Effects/2DWorldBatch.fx`) does: from the draw group's
+   `ObjectOffset` (`FreeSO/TSOClient/tso.files/formats/iff/chunks/DGRP.cs`), in a shader that writes the
    fragment depth. Vitaboy models are built from TSOFiles' decoded data at run time, with TSO's
-   blend weights (`TSOClient/tso.vitaboy.model/Mesh.cs`), never converted ahead of time, since Simburbia
+   blend weights (`FreeSO/TSOClient/tso.vitaboy.model/Mesh.cs`), never converted ahead of time, since Simburbia
    reads the player's own install. FreeSO's 2D approach stays the reference for what a lot should
    look like. Sprites without depth (every `SPR#` frame) aren't drawn in the world, as FreeSO's
    `DGRPRenderer` leaves them out; the owner checked the house drawn this way (2026-10-28) and it's
@@ -308,7 +308,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 | 2026-11-04 | patch | Fourth pass, step B4d: 1,653 Set Motive Deltas cases with the mock Sim (once, an hour, clearing; every motive and two past the last; six lot categories; several scopes; an object caller) agree with FreeSO. The mock's `tuning.dat` is now written by `generators/mock_tuning.py`, with made-up weights outside the None category that don't divide 1000 evenly, so the scaling truncates on both sides; None stays at 1, so the mock lots' runs are unchanged. The same cases on 1.1097.1.0 are inconclusive until phase D: the template person reaches Push Interaction as it joins. |
 | 2026-11-04 | minor | Fourth pass, step B4c: Sims are placed as FreeSO's `VMAvatar` places them, with a 6-by-6 obstacle, `GetAvatarPlace`, a hand slot that carries what it holds, and position changes without walls. The Set Motive Deltas scaffold cases, which disagreed only on how the Sim sat on the lot, return to the fixtures. FreeSO's empty-hand `ClearSlot` crash does nothing here. |
 | 2026-11-04 | minor | Fourth pass, steps B4a and B4b. B4a: `run-primitive` on both oracles presets and reports a Sim's person data, motives, and motive changes and the lot's category, and primitives that need a Sim run on a lot of their own with it joined. It found that FreeSO places a Sim as `VMAvatar` does (a 6-by-6 obstacle footprint, `GetAvatarPlace`, a hand slot) where Simburbia uses the object path, now B4c. B4b: the mock Sim gets a whole body from Kenney's CC0 character, written in TSO's avatar formats by `generators/mock_avatar.py`; `fso-oracle avatars`, new, decodes it with FreeSO's readers (FreeSO's headless content never loads meshes), and reads all of 1.1097.1.0's avatar files but five test animations. |
-| 2026-11-04 | minor | Fourth pass, step B3: a Sim's tick. `Entity.decayMotives` ports `VMAvatarMotiveDecay` (the Room motive from the room score each tick; each game minute the seven decaying motives, by the lot category's weights, and Mood), keeping its quirks: float-then-truncate thousandths, products cut to 32 bits before dividing, and rates and fractions that wrap as shorts (the mock's Hunger does). `tickMotiveChange` ports `VMMotiveChange`, and Set Motive Deltas (opcode 29) runs with `ScaleRate`; the tick also retries an out-of-world Sim by the mailbox, all in `VMAvatar.Tick`'s order. The mock Sim's lot now agrees with FreeSO over a game day (lots run: 3 agree, none inconclusive), with real decay on both sides. Motive tuning: the unpatched 2002 and beta discs' `tuning.dat` lacks what patches delivered, so TSOContent lays the install's file over Simburbia's own defaults (`Simburbia/Tuning/tuning.xml`, in TSOFiles' new `TuningXML` format), key by key for now; the numbers are ours, with TSO Mania's easy, average, and hard categories, and `fso-oracle` lays them under older installs too (DIFF-33). 1.1097.1.0 takes nothing from them. On the 2002 copy FreeSO now gets past the tuning but stops creating a Sim on a missing skeleton (Vitaboy), a gap for phase C. |
+| 2026-11-04 | minor | Fourth pass, step B3: a Sim's tick. `Entity.decayMotives` ports `VMAvatarMotiveDecay` (the Room motive from the room score each tick; each game minute the seven decaying motives, by the lot category's weights, and Mood), keeping its quirks: float-then-truncate thousandths, products cut to 32 bits before dividing, and rates and fractions that wrap as shorts (the mock's Hunger does). `tickMotiveChange` ports `VMMotiveChange`, and Set Motive Deltas (opcode 29) runs with `ScaleRate`; the tick also retries an out-of-world Sim by the mailbox, all in `VMAvatar.Tick`'s order. The mock Sim's lot now agrees with FreeSO over a game day (lots run: 3 agree, none inconclusive), with real decay on both sides. Motive tuning: the unpatched 2002 and beta discs' `tuning.dat` lacks what patches delivered, so TSOContent lays the install's file over Simburbia's own defaults (`Tuning/tuning.xml`, in TSOFiles' new `TuningXML` format), key by key for now; the numbers are ours, with TSO Mania's easy, average, and hard categories, and `fso-oracle` lays them under older installs too (DIFF-33). 1.1097.1.0 takes nothing from them. On the 2002 copy FreeSO now gets past the tuning but stops creating a Sim on a missing skeleton (Vitaboy), a gap for phase C. |
 | 2026-11-04 | patch | Fourth pass, step B2: room score, low priority. `VM.roomScore` ports `RefreshLighting`'s and `RefreshRoomScore`'s score (room impact over area in twelfths, or 30 outdoors, less 10 or 15, within ±100), refreshed as FreeSO refreshes it, with its quirks: objects with negative impact wait for the next full refresh, a room lit by another keeps 0, and "outdoors" is the last support room's. The Refresh primitive now refreshes it. Room maps record scores on both oracles; every one agrees on MockInstall and on 1.1097.1.0's 24 readable lots. A Sim's Room motive takes it in B3. |
 | 2026-11-04 | minor | Fourth pass, step B1: Sims are set up. `Entity.setUpSim` ports `VMAvatar`'s constructor and `Init` (body strings with FreeSO's random picks, which draw `NextRandom(count − 1)` for outfits and `NextRandom(count)` for names; walk and swim tables; starting motives; Neat 1000), person data and motives go through FreeSO's accessors and their special cases, and `VM.joinSim` applies a joining player's state. The mock Sim matches FreeSO at tick 0 in everything but the Room motive (room score, B2), and 1.1097.1.0's template person matches FreeSO's digest at creation, seed included, before its own code reaches Push Interaction (phase D). Where FreeSO crashes on bad body strings, Simburbia reports and carries on (DIFF-32). A Sim's first tick reports motive decay as unsupported until B3. |
 | 2026-11-04 | minor | Fourth pass, step A3, which finishes phase A: Sims join on both oracles (`run-lot` and `run-primitive --sims`), Simburbia's side through SimAntics' new `VM.joinSim` (by the mailbox, else tile 3,3, with FreeSO's quirk that a taken 3,3 leaves the Sim out of the world). `mock-lot-sim.xml` keeps 3,3 free and its Sim joins; `mock-lot.xml` keeps the blocked case. The owner recalls TSO putting players on 3,3 after some jobs; FreeSO uses 3,3 only for this fallback, so that stays unverified. Primitive cases naming Sims will be generated in phase B, when a Sim's state can be compared. |
@@ -324,10 +324,10 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 | 2026-11-04 | patch | The study's lots now sit on floor plans: the seed picks FreeSO's empty lot or one of TSO's job lots emptied of its objects (`--floor-plan`), so objects meet real walls and doors; a plan FreeSO can't read is dropped for the run. Room maps also cover FreeSO's `empty_lot.xml` (`fso-oracle` ignores its DTD) and the 23 job lots: all agree, and the nightclub lot FreeSO fails to read is counted as answered by Simburbia alone. Running the job lots over time waits for the fourth pass. Simburbia's version base corrected to `0.1.100`, after the .NET SDK's `1xx` bands. |
 | 2026-11-04 | patch | The study's first finding, fixed: user placement now lays or clears the floor under the upper part of stairs and elevators (an `OBJD` level offset above 0: `InAir` clears it, `OnFloor` lays pattern 1 where there's none), as FreeSO's `VMEntity.ExecuteEntryPoint` does. Simburbia had skipped it, since objects were only ever created out of the world until lots placed them; without it an elevator's upstairs tile wasn't its own room, so room numbers upstairs were one short. All 12 lots the first study found disagreeing now agree over a game day. `AGENTS.md` and `REVIEW.md` added, after AmtrakStatus and NVFlare. |
 | 2026-11-03 | minor | The oracles' object experiment is now a randomized study (`sb-oracle study`), replacing running every object alone, which took hours. For five minutes it samples lots of about thirty objects by a recorded seed, lays them on a grid with random facings, and runs each a game day on both VMs; an object reaching something unported is set aside (mapped to its multi-tile lead, or found by halving on Simburbia alone), and a disagreeing lot is halved to the fewest objects. A ledger per install (`docs/results/sb-study-<install>.tsv`) carries coverage between reviews. First run on 1.1097.1.0: 22 of 35 lots agree; 12 disagree at tick 0, a placement finding still to explain. The review script runs it; CI's mock review runs a minute with a fixed seed. |
-| 2026-11-03 | minor | The client's interface is data: the top bar and the Help, MOMI, and inspector windows are UIScript documents in `Simburbia/Interface/`, read with Hudini when the window opens, so Hudini's API can change under the client without it, and the screens can be edited without a rebuild. A document missing a control the client uses stops the client with a message. The windows look as before (Help pixel for pixel; MOMI and the inspector take Hudini's list and text insets), and the top bar's items now sit in fixed slots rather than following each other's measured widths. Packages carry the documents. |
+| 2026-11-03 | minor | The client's interface is data: the top bar and the Help, MOMI, and inspector windows are UIScript documents in `Interface/`, read with Hudini when the window opens, so Hudini's API can change under the client without it, and the screens can be edited without a rebuild. A document missing a control the client uses stops the client with a message. The windows look as before (Help pixel for pixel; MOMI and the inspector take Hudini's list and text insets), and the top bar's items now sit in fixed slots rather than following each other's measured widths. Packages carry the documents. |
 | 2026-11-03 | minor | The client's windows come from Hudini, the owner's interface library, which NSOInterface grew into. NSOInterface, its cs2swift translation of CityLimits' controls, and `sync-interface.sh` are gone, and with them the generated code the no-crash rules made an exception for. The windows look exactly as before: screenshots of the Help, MOMI, and inspector windows with each are identical, pixel for pixel. Hudini has no releases yet, so the client follows its `main`, pinned in `Package.resolved`. |
-| 2026-11-03 | minor | Packaging, after CityLimits': `Simburbia/packaging/` builds the client into packages, so the owner can test it without `swift run`. Linux works: an AppImage and a `.tar.gz` with the Swift runtime built in and libxml2 carried inside (distributions name it `.so.2` or, lately, `.so.16`), checked by running the mock lot from the package. The Windows and macOS scripts are written but unrun, waiting for raylib-swift on those systems. A packaged client finds its lots and the mock install beside itself. The icon is a placeholder. |
-| 2026-11-03 | minor | Simburbia has a version: the owner's GitVersion plugin works it out as the client builds, from `Simburbia/GitVersion.txt` (`0.1.1000`) plus each commit since that touches `Simburbia/`, after the .NET SDK's `major.minor.1xxx`. `simburbia --version` prints it, and a run's log starts with it. CI's Swift jobs fetch the whole history, which the count needs. |
+| 2026-11-03 | minor | Packaging, after CityLimits': `packaging/` builds the client into packages, so the owner can test it without `swift run`. Linux works: an AppImage and a `.tar.gz` with the Swift runtime built in and libxml2 carried inside (distributions name it `.so.2` or, lately, `.so.16`), checked by running the mock lot from the package. The Windows and macOS scripts are written but unrun, waiting for raylib-swift on those systems. A packaged client finds its lots and the mock install beside itself. The icon is a placeholder. |
+| 2026-11-03 | minor | Simburbia has a version: the owner's GitVersion plugin works it out as the client builds, from `GitVersion.txt` (`0.1.1000`) plus each commit since, after the .NET SDK's `major.minor.1xxx`. `simburbia --version` prints it, and a run's log starts with it. CI's Swift jobs fetch the whole history, which the count needs. |
 | 2026-11-03 | major | NewSO becomes **Simburbia** (SB). `NSOClient/` is now `Simburbia/`, its client package `SBClient` (the command `simburbia`), and `NSOOracle` `SBOracle` (`sb-oracle`); `docs/nso/` is `docs/sb/` and the review `docs/results/sb-review.md`. Names outside the code moved too, before anything was released: the blueprint marker `<simburbia version>`, `SB_USER_DIR` (and `sb.user.dir`), and the player folder `Simburbia`. TSO's own formats keep the `TSO` prefix; `NSOInterface` keeps its name until Hudini replaces it. Earlier rows keep the old names. |
 | 2026-10-29 | minor | Blueprints, step 2: `Blueprint.xml()` writes TSO's dialect as `blueprint.dtd` lays it out (names, `hidden`, the revision, a comment per level, NewSO's marker), keeping what reading didn't understand; every job lot and every blueprint in the repository round-trips. `newso --rewrite-blueprint` names each object from its `OBJD`, and the owner's house is rewritten so people can read it: 211 objects named. FreeSO reads the rewritten house the same (room maps and a 1,800-tick run identical). FMT-22 done. |
 | 2026-10-29 | patch | `newso` honors a blueprint's `hidden="1"`: the job lots' portals and zone markers, which showed in the nightclub, are no longer drawn or picked. It's the lot format's, not SimAntics', so the client applies it (`LotSession.hiddenByBlueprint`, from `VM.loadLot(_:)`, which reports each blueprint object's object IDs) and the VM's state is untouched. |

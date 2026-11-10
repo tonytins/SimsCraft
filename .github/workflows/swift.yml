@@ -4,18 +4,48 @@ name: Swift
 # each one builds and tests on its own, as AGENTS.md's "Before you finish" asks.
 # Real-install tests skip themselves here: CI has no TSO_GAME_DIR, and no
 # game data may be stored in the repository. oracle.yml compares Simburbia
-# with FreeSO on Simburbia/MockInstall, a made-up install, instead.
+# with FreeSO on MockInstall, a made-up install, instead.
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - "Simburbia/**"
+      - "TSOFiles/**"
+      - "TSOFilesC/**"
+      - "TSOFilesCheck/**"
+      - "TSOContent/**"
+      - "SimAntics/**"
+      - "SimsScript/**"
+      - "SBOracle/**"
+      - "ScriptOracle/**"
+      - "SBClient/**"
+      - "MockInstall/**"
+      - "Lots/**"
+      - "Interface/**"
+      - "Tuning/**"
+      - "packaging/**"
+      - "scripts/**"
+      - "GitVersion.txt"
       - ".github/workflows/swift.yml"
   pull_request:
     branches: [ "main" ]
     paths:
-      - "Simburbia/**"
+      - "TSOFiles/**"
+      - "TSOFilesC/**"
+      - "TSOFilesCheck/**"
+      - "TSOContent/**"
+      - "SimAntics/**"
+      - "SimsScript/**"
+      - "SBOracle/**"
+      - "ScriptOracle/**"
+      - "SBClient/**"
+      - "MockInstall/**"
+      - "Lots/**"
+      - "Interface/**"
+      - "Tuning/**"
+      - "packaging/**"
+      - "scripts/**"
+      - "GitVersion.txt"
       - ".github/workflows/swift.yml"
 
 permissions:
@@ -52,8 +82,8 @@ jobs:
           set -euo pipefail
           for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript SBOracle ScriptOracle SBClient; do
             echo "::group::$package"
-            swift build --package-path "Simburbia/$package"
-            swift test --package-path "Simburbia/$package"
+            swift build --package-path "$package"
+            swift test --package-path "$package"
             echo "::endgroup::"
           done
 
@@ -61,7 +91,7 @@ jobs:
         shell: bash
         run: |
           # AGENTS.md "Never crash": no try!, as!, fatalError, or precondition in Sources.
-          if grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' Simburbia/*/Sources; then
+          if grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' */Sources; then
             echo "::error::Trap patterns found in library sources"
             exit 1
           fi
@@ -84,7 +114,7 @@ jobs:
           set -euo pipefail
           for package in TSOFiles TSOFilesCheck TSOContent SimAntics SimsScript SBOracle ScriptOracle SBClient; do
             echo "::group::$package"
-            swift build --package-path "Simburbia/$package"
-            swift test --package-path "Simburbia/$package"
+            swift build --package-path "$package"
+            swift test --package-path "$package"
             echo "::endgroup::"
           done

@@ -203,7 +203,7 @@ as a tile or an object.
   the NSOInterface package this repository used to have. It also reads TSO's `.uis` screens
   and `.cst` text, and describes screens in its own XML, UIScript: the base for Simburbia's
   take on TSO's screens. Hudini is changed in its own repository, not here.
-- The client's screens are UIScript documents in `Simburbia/Interface/`: where controls go,
+- The client's screens are UIScript documents in `Interface/`: where controls go,
   their fixed text, and their colors live there, not in Swift. The client fills in what
   changes and draws only what UIScript has no control for, into `<Region>`s the document places.
 - Simburbia's own colors are `InterfaceTheme.simburbia`, in the client's `Theme.swift`, not

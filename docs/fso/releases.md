@@ -1,7 +1,7 @@
 # FreeSO's releases
 
 FreeSO's updates, newest first, by the names FreeSO gave them. SimsCraft's snapshot in
-[`TSOClient/`](../../TSOClient/) is FreeSO's `master` on August 10, 2017: **beta/update-46**, plus
+[`FreeSO/TSOClient/`](../../FreeSO/TSOClient/) is FreeSO's `master` on August 10, 2017: **beta/update-46**, plus
 two days of server networking fixes (FreeSO's modified Mina library) and its "Any CPU" build. It's
 marked below, between update-46 and update-50. Everything above that line is newer than the
 snapshot, and Simburbia doesn't follow it.
@@ -909,7 +909,7 @@ TSOMania's news archives, and [FreeSO's news](https://freeso.org/news/).
 *December 19, 2019*
 
 - Fix dir cases 3 (#169).
-- Bump npm from 3.10.10 to 6.13.4 in /TSOClient/FSO.Server/Admin (#171).
+- Bump npm from 3.10.10 to 6.13.4 in /FreeSO/TSOClient/FSO.Server/Admin (#171).
 - Primitives Snap To Edges of other Primitives (#172).
 - \[VM, LotView\] Various changes.
 - \[Fixes\] Some fixes to the new inventory handler.
@@ -950,7 +950,7 @@ TSOMania's news archives, and [FreeSO's news](https://freeso.org/news/).
 *November 17, 2019*
 
 - \[LotView\] Fix surrounding lot pools, mesh gen.
-- Bump bootstrap from 3.0.0 to 3.4.1 in /TSOClient/FSO.Server.Api (#163).
+- Bump bootstrap from 3.0.0 to 3.4.1 in /FreeSO/TSOClient/FSO.Server.Api (#163).
 - \[VM, LotView\] Lots of bugfixes.
 - Update FSO.Client.csproj.
 - \[LotView, TS1\] Fix various prop/anim bugs in TS1, correctly update position with plate stacking in 2d.
@@ -1481,7 +1481,7 @@ TSOMania's news archives, and [FreeSO's news](https://freeso.org/news/).
 - Bug fixes for interactions, disappearing purchased objects, lot saves, and common SimAntics exceptions.
 - 2D mode: mouse wheel zoom, and optional 3D wall shadows.
 
-> **The snapshot.** SimsCraft's `TSOClient/` is FreeSO's `master` on August 10, 2017
+> **The snapshot.** SimsCraft's `FreeSO/TSOClient/` is FreeSO's `master` on August 10, 2017
 > (commit `47150446`, "Client and Server compile for Any CPU"): beta/update-46, plus FreeSO's
 > server networking fixes of August 9. Updates 47 to 49 were never announced; update-50 is the
 > next announced build.

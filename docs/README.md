@@ -5,8 +5,8 @@ of that work:
 
 - **FreeSO**, the open-source C# reimplementation of the game that SimsCraft learns from, as its
   source stood at its beta/update-46 build (August 2017). That copy of the code is in
-  [`TSOClient/`](../TSOClient/), and [fso/releases.md](fso/releases.md) places it among FreeSO's updates.
-- **Simburbia**, the game SimsCraft is making, written in Swift, in [`Simburbia/`](../Simburbia/). Its libraries cover
+  [`FreeSO/TSOClient/`](../FreeSO/TSOClient/), and [fso/releases.md](fso/releases.md) places it among FreeSO's updates.
+- **Simburbia**, the game SimsCraft is making, written in Swift, in the packages at the repository root. Its libraries cover
   the parts of FreeSO that don't depend on a game engine: reading the game's files, loading its
   content, and running its object behavior. Its client, `simburbia`, shows a lot running on them, or
   runs one with no window and logs what happens.
@@ -33,10 +33,10 @@ are in [`AGENTS.md`](../AGENTS.md); they apply to people and AI assistants alike
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | *The Sims Online* (TSO)     | Maxis and EA's online Sims game, released in 2002 and renamed *EA-Land* before it closed in 2008                                                                                                                                                     |
 | FreeSO                      | An open-source C# reimplementation of TSO, built on MonoGame. Simburbia is checked against it                                                                                                                                                        |
-| Simburbia                       | The game SimsCraft is making: TSO playable again, small and LAN-first. Its Swift code, in `Simburbia/`, is the libraries that reimplement FreeSO's engine-independent parts, the client, and the tools                                                                                                                                                                                |
+| Simburbia                       | The game SimsCraft is making: TSO playable again, small and LAN-first. Its Swift code, in the packages at the repository root, is the libraries that reimplement FreeSO's engine-independent parts, the client, and the tools                                                                                                                                                                                |
 | SB                          | Short for Simburbia, and the prefix of its own packages and tools (`SBClient`, `SBOracle`, `sb-oracle`); TSO's own formats keep the `TSO` prefix |
 | `simburbia`                     | Simburbia's client. It shows a lot running; `--headless` runs one with no window and logs it                                                                                                                                                             |
-| Install                     | A copy of TSO's game files on disk (a `TSOClient` folder). The repository holds none; tests that need one read the `TSO_GAME_DIR` environment variable, or use [`Simburbia/MockInstall`](../Simburbia/MockInstall/README.md), a tiny made-up install |
+| Install                     | A copy of TSO's game files on disk (a `TSOClient` folder). The repository holds none; tests that need one read the `TSO_GAME_DIR` environment variable, or use [`MockInstall`](../MockInstall/README.md), a tiny made-up install |
 | SimAntics                   | The virtual machine that runs object behavior in The Sims games                                                                                                                                                                                      |
 | Routine (`BHAV`), primitive | A routine is a small program an object runs; each of its instructions is either a call to another routine or a primitive, one of the VM's built-in operations                                                                                        |
 | update-46                   | The version of FreeSO that Simburbia was built against.                                                                                                                                                                                                  |
@@ -73,8 +73,8 @@ scorecard and the roadmap disagree, the scorecard wins.
 ### [nso/](sb/README.md): how Simburbia works
 
 How the Swift libraries, the client, and the tools behave today, with code examples. `fso-oracle`
-and SimsScript have READMEs of their own ([fso-oracle](../Simburbia/FSO.Oracle/README.md),
-[SimsScript](../Simburbia/SimsScript/README.md)).
+and SimsScript have READMEs of their own ([fso-oracle](../FSO.Oracle/README.md),
+[SimsScript](../SimsScript/README.md)).
 
 | Page | Covers |
 | --- | --- |
@@ -96,7 +96,7 @@ and SimsScript have READMEs of their own ([fso-oracle](../Simburbia/FSO.Oracle/R
 
 ### [fso/](fso/README.md): FreeSO's code, at update-46
 
-Written from reading the source in `TSOClient/`. Each page explains how one part of FreeSO works.
+Written from reading the source in `FreeSO/TSOClient/`. Each page explains how one part of FreeSO works.
 The "Modern .NET rewrite" sections are from an earlier plan to modernize FreeSO itself, which
 SimsCraft dropped in favor of Simburbia; they're kept for reference.
 
@@ -134,6 +134,6 @@ A copy of the community wiki at simantics.wikidot.com, under its own license (CC
 
 ## Elsewhere in the repository
 
-- [`Simburbia/FSO.Oracle/README.md`](../Simburbia/FSO.Oracle/README.md): `fso-oracle`, which runs FreeSO's
+- [`FSO.Oracle/README.md`](../FSO.Oracle/README.md): `fso-oracle`, which runs FreeSO's
   SimAntics code through the experiments Simburbia is measured against.
 - [`AGENTS.md`](../AGENTS.md): the workspace map and the rules for working in this repository.

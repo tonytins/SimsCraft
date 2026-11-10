@@ -32,7 +32,7 @@ person maintains SimsCraft, so a review is often the only other pair of eyes a c
   around it is fine.
 - Speculative refactors, and missing tests with no concrete risk behind them.
 - Process details CLAUDE.md doesn't mark strict, such as a doc comment that doesn't name its FreeSO type.
-- FreeSO's snapshot itself (`TSOClient/` and the folders beside it), which is never edited; any
+- FreeSO's snapshot itself (`FreeSO/TSOClient/` and the folders beside it), which is never edited; any
   change to it is a finding.
 - Build output (`.build/`, `dist/`, `bin/`, `obj/`), unless a change tracks it.
 - Bad input in a test that's meant to be rejected: check it's rejected as intended.

@@ -8,10 +8,10 @@ it is WinForms on .NET Framework.
 
 ### Volcanic: the object IDE
 
-`TSOClient/FSO.IDE` builds `Volcanic.exe`, a WinForms editor for objects
+`FreeSO/TSOClient/FSO.IDE` builds `Volcanic.exe`, a WinForms editor for objects
 and SimAntics code. It runs the real game inside it:
 
-1. [`Program.Main`](../../TSOClient/FSO.IDE/Program.cs) loads the client
+1. [`Program.Main`](../../FreeSO/TSOClient/FSO.IDE/Program.cs) loads the client
    assembly by reflection, finds `FSO.Client.GameStartProxy` (falling
    back to `Simitone.Windows.GameStartProxy`, from a separate TS1-focused
    project), and runs `FSOProgram.InitWithArguments`.
@@ -36,7 +36,7 @@ Main parts:
 
 ### Client debug tools
 
-- **FSO.Debug** (`TSOClient/tso.debug`) is a WinExe with WinForms windows
+- **FSO.Debug** (`FreeSO/TSOClient/tso.debug`) is a WinExe with WinForms windows
   for SimAntics (`Simantics`, `ActionQueue`) and content browsing. The
   client references it as a project, and `UIDebugMenu`, `UIModMenu`, and
   `CoreGameScreen` use its types. `ActionQueue.cs` calls `user32.dll`
@@ -46,7 +46,7 @@ Main parts:
 
 ### Server debug tools
 
-**FSO.Server.Debug** (`TSOClient/FSO.Server.Debug`) is a WinForms packet
+**FSO.Server.Debug** (`FreeSO/TSOClient/FSO.Server.Debug`) is a WinForms packet
 inspector. `server run -d` opens its `NetworkDebugger`, which shows
 Aries, Voltron, and Electron packets as they pass. Analyzers in
 `PacketAnalyzer/` guess at unknown fields: Pascal strings, constants,
@@ -55,40 +55,40 @@ It uses ScintillaNET and Be.Windows.Forms.HexBox.
 
 ### Patcher
 
-**FSO.Patcher** (`TSOClient/FSO.Patcher`, assembly `update.exe`) is a
+**FSO.Patcher** (`FreeSO/TSOClient/FSO.Patcher`, assembly `update.exe`) is a
 WinForms window that extracts `PatchFiles/patch.zip` over the client
 folder, retrying locked files. It renames an incoming `update.exe` to
 `update2.exe`, since it can't overwrite itself.
 
 ### FSOInstaller
 
-`FSOInstaller/` is a WinForms wizard (.NET 4.5.2) that downloads the
+`FreeSO/FSOInstaller/` is a WinForms wizard (.NET 4.5.2) that downloads the
 original TSO files from EA's public mirror
 (`http://largedownloads.ea.com/pub/misc/tso/`) using a manifest, then
 unpacks them. **Unverified:** whether that mirror is still online.
 
 ### Charvatia
 
-`Charvatia/` is a console program (.NET 4.5.2) that hosts one SimAntics VM
+`FreeSO/Charvatia/` is a console program (.NET 4.5.2) that hosts one SimAntics VM
 as a standalone server (`CVMInstance`, port 37564). It predates the
 current `FSO.Server` lot server. It references `GonzoNet` and
-`ProtocolAbstractionLibraryD` under `Other/libs/`, which no longer exist,
+`ProtocolAbstractionLibraryD` under `FreeSO/Other/libs/`, which no longer exist,
 and the old `NetworkClient`/`PacketHandlers` API that the client no
 longer compiles. It cannot build as-is.
 
-### Other/libs
+### FreeSO/Other/libs
 
 | Library | Used by | Notes |
 | --- | --- | --- |
-| `FSOMonoGame` (submodule, not checked out) | Everything graphical | FreeSO's MonoGame fork. See [rendering.md](./rendering.md#engine-choice). |
-| `FSOMina.NET` (submodule, not checked out) | Protocol, servers, client | FreeSO's Mina.NET fork. See [protocol.md](./protocol.md#keep-the-wire-format-replace-the-plumbing). |
+| `FSOMonoGame` (vendored fork) | Everything graphical | FreeSO's MonoGame fork. See [rendering.md](./rendering.md#engine-choice). |
+| `FSOMina.NET` (vendored fork) | Protocol, servers, client | FreeSO's Mina.NET fork. See [protocol.md](./protocol.md#keep-the-wire-format-replace-the-plumbing). |
 | `mp3sharp` | FSO.Common | Managed MP3 decoder (.NET 4.5). `ManagedDirectsoundDemo` beside it is a sample. |
 | `TargaImage` | FSO.Content, FSO.Debug, FSO.UI, server | TGA loader on `System.Drawing`. A `VS2008/` copy targets .NET 2.0. |
 | `TargaImagePCL` | FSO.Files | Portable TGA loader (PCL Profile 7). |
 | `ColorQuantizer` | Volcanic | Palette quantization for sprite encoding. |
 | `CityDataModel`, `LoginDataModel` | none in the solution | .NET 3.5 leftovers from Project Dollhouse. |
 
-### Other/tools
+### FreeSO/Other/tools
 
 Older standalone tools, none in `FreeSO.sln`. All are .NET 3.0 to 4.0,
 and several need XNA Game Studio, which isn't available anymore.
@@ -138,8 +138,8 @@ and several need XNA Game Studio, which isn't available anymore.
 
 ### What to delete
 
-- `Charvatia/` (superseded by the lot server; can't build).
-- `Other/tools/` (superseded by FSO.Files and Volcanic; needs XNA).
+- `FreeSO/Charvatia/` (superseded by the lot server; can't build).
+- `FreeSO/Other/tools/` (superseded by FSO.Files and Volcanic; needs XNA).
 - `CityDataModel`, `LoginDataModel`, the `TargaImage/VS2008` copy, and
   `ManagedDirectsoundDemo`.
 - `FSO.Server.Framework` (only a placeholder class).

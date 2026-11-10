@@ -21,7 +21,7 @@ nightclub, restaurant, and robot factory job lots, 2004) and the format's defini
 **FreeSO's dialect** is whatever FreeSO's `XmlHouseData` (`tso.world/model/XmlHouse.cs`) writes:
 only what it reads. Objects are GUIDs and coordinates, with no names, no `hidden`, no flags, no
 puddles, no revision, and no comments, plus XML Schema namespaces on the root. The community lot
-(`Simburbia/Lots/community-lot.xml`) is in it, which is why it's hard to read: knowing what's on the
+(`Lots/community-lot.xml`) is in it, which is why it's hard to read: knowing what's on the
 lot means looking up 211 GUIDs.
 
 TSO's files also say where Maxis meant to take the format. `housedata/default_house.xml`, which
@@ -94,7 +94,7 @@ line feeds rather than CRLF; and no `DOCTYPE`, which .NET since Core refuses, so
 builds can still open the file.
 
 `simburbia --rewrite-blueprint FILE` rewrites a lot in TSO's dialect, naming each object from its
-`OBJD`. The community lot (`Simburbia/Lots/community-lot.xml`) was rewritten this way on
+`OBJD`. The community lot (`Lots/community-lot.xml`) was rewritten this way on
 2026-10-29, from FreeSO's dialect; FreeSO saved its controllers at tile (-2048, -2048), its
 out-of-world place, which is kept.
 

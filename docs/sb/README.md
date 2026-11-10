@@ -1,9 +1,9 @@
 # Simburbia
 
-This is Simburbia's Swift code, in [`Simburbia/`](../../Simburbia/). At its core are libraries that reimplement the parts of
+This is Simburbia's Swift code, in packages at the repository root. At its core are libraries that reimplement the parts of
 FreeSO that don't depend on a game engine: the file formats, the content system, and the SimAntics
 virtual machine that runs object behavior. They aim to get the same results as FreeSO, as its code
-stood at beta/update-46, in August 2017 (in [`TSOClient/`](../../TSOClient/)), without copying that
+stood at beta/update-46, in August 2017 (in [`FreeSO/TSOClient/`](../../FreeSO/TSOClient/)), without copying that
 code. Around them are Simburbia's own client, `simburbia`, which shows a lot running, and the tools that
 check the libraries against FreeSO. It all keeps working on older copies of the game, the base game
 and a beta, whose files differ from the ones FreeSO expects.
@@ -13,12 +13,12 @@ the [scorecard](../scorecard.md); for what comes next, the [roadmap](../roadmap.
 terms are explained in the [docs index](../README.md#terms).
 
 These pages cover the libraries, the client, and the tools. `fso-oracle`, which runs FreeSO's code
-through the experiments Simburbia is measured against, has [its own README](../../Simburbia/FSO.Oracle/README.md),
-and so does [SimsScript](../../Simburbia/SimsScript/README.md), the scripting language in progress.
+through the experiments Simburbia is measured against, has [its own README](../../FSO.Oracle/README.md),
+and so does [SimsScript](../../SimsScript/README.md), the scripting language in progress.
 
 ## The packages
 
-Each package is an independent Swift package under [`Simburbia/`](../../Simburbia/). Dependencies
+Each package is an independent Swift package at the repository root. Dependencies
 point one way:
 
 ```text
@@ -76,12 +76,12 @@ A few rules hold everywhere. Knowing them makes each package easier to follow.
 Every package builds and tests on its own:
 
 ```sh
-swift test --package-path Simburbia/SimAntics
+swift test --package-path SimAntics
 ```
 
 You need Swift 6, the X11 and GL headers on Linux for the client, and, for the comparisons with
 FreeSO, the .NET 10 SDK. You don't need the game:
-without it, the tests use [`Simburbia/MockInstall`](../../Simburbia/MockInstall/README.md), a tiny
+without it, the tests use [`MockInstall`](../../MockInstall/README.md), a tiny
 made-up install, and the tests that need the real game are skipped. To run those too, set these
 environment variables:
 
@@ -92,10 +92,10 @@ environment variables:
 | `TSO_BETA_DIR` | The beta's `TSOClient` folder |
 | `SB_USER_DIR` | Simburbia's user folder, whose `Mods` folder holds a player's custom objects and patches (default: the OS's usual Simburbia folder) |
 | `FSO_CONTENT_DIR` | FreeSO's `Content` folder, for its patches and custom objects (default: beside the executable, else the FreeSO snapshot's) |
-| `TSO_ORACLE_DIR` | A folder of FreeSO's records of the experiments, written by `Simburbia/scripts/oracle-fixtures.sh` (or `oracle-review.sh`), for the tests that compare Simburbia with FreeSO |
+| `TSO_ORACLE_DIR` | A folder of FreeSO's records of the experiments, written by `scripts/oracle-fixtures.sh` (or `oracle-review.sh`), for the tests that compare Simburbia with FreeSO |
 
 ```sh
-Simburbia/scripts/oracle-review.sh --mock /tmp/review     # both oracles on the mock install, as CI runs them
+scripts/oracle-review.sh --mock /tmp/review     # both oracles on the mock install, as CI runs them
 ```
 
 The snippets on these pages use the public API. Where a snippet needs an install, it assumes
@@ -104,7 +104,7 @@ The snippets on these pages use the public API. Where a snippet needs an install
 ## Compatibility
 
 Simburbia matches FreeSO as of beta/update-46 (August 2017), the snapshot in
-[`TSOClient/`](../../TSOClient/); [FreeSO's releases](../fso/releases.md) list what came before and
+[`FreeSO/TSOClient/`](../../FreeSO/TSOClient/); [FreeSO's releases](../fso/releases.md) list what came before and
 after it. Nothing newer is a target. In particular, FreeSO is rebuilding its server and client for
 the self-hosting FreeSO Archive, and says modifications to the current software may need to be
 refactored to work with them ([freeso.org/download](https://freeso.org/download/)). Simburbia doesn't

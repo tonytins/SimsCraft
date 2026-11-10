@@ -1,12 +1,12 @@
 # The client: simburbia
 
-`simburbia` is Simburbia's client, in [`Simburbia/SBClient`](../../Simburbia/SBClient/). It loads a lot from an
+`simburbia` is Simburbia's client, in [`SBClient`](../../SBClient/). It loads a lot from an
 install, runs it on SimAntics at TSO's 30 ticks a second, and shows it in a window. It doesn't play
 the game yet: there are no Sims, no building, and no online play. It shows how far the libraries
 have come, and it's the tool for watching a lot run.
 
 ```sh
-swift run --package-path Simburbia/SBClient simburbia
+swift run --package-path SBClient simburbia
 ```
 
 On Linux the build needs the X11 and GL headers; [`AGENTS.md`](../../AGENTS.md) says where they come
@@ -15,11 +15,11 @@ from on the owner's machine.
 ## What it opens
 
 Without `--game`, the install is `TSO_GAME_DIR`, then `TSO_CLASSIC_DIR`, then `TSO_BETA_DIR`
-(TSOContent's `InstallKind` lists them), then [MockInstall](../../Simburbia/MockInstall/README.md),
+(TSOContent's `InstallKind` lists them), then [MockInstall](../../MockInstall/README.md),
 so it runs anywhere. With `--lot`, the client goes straight to that lot. Without it, the client
 opens the login window (below), the start of the flow TSO's client takes: loading and login, then
 (when Sims and cities come) picking a Sim and entering a city, then entering a lot. Screenshots and
-headless runs without `--lot` use the owner's lot, `tonys-lot.xml` ([`Simburbia/Lots`](../../Simburbia/Lots/)) on a
+headless runs without `--lot` use the owner's lot, `tonys-lot.xml` ([`Lots`](../../Lots/)) on a
 real install and the mock lot on MockInstall, so they never wait for a click. Objects the install
 doesn't have, or can't load, are left out and reported, as `fso-oracle` leaves them out.
 
@@ -117,7 +117,7 @@ explains why a 3D camera rather than FreeSO's 2D batches.
 | Click an object | Inspect it |
 | Escape | Close the open window |
 
-The interface follows the owner's prototype mockup ([`Simburbia/mockups`](../../Simburbia/mockups/README.md)),
+The interface follows the owner's prototype mockup ([`mockups`](../../mockups/README.md)),
 which also serves as Simburbia's fallback and debug interface:
 
 - **The top bar** shows the lot, the speed, the game time, the floor in view, the object count, a
@@ -134,7 +134,7 @@ used to have. Its `hudini-demo` shows them on their own. Simburbia's colors are
 `InterfaceTheme.simburbia`, for now Hudini's standard palette.
 
 The top bar and the Help, MOMI, and inspector windows are described in Hudini's UIScript XML, in
-[`Simburbia/Interface/`](../../Simburbia/Interface/): `topbar.xml`, `help.xml`, `momi.xml`, and
+[`Interface/`](../../Interface/): `topbar.xml`, `help.xml`, `momi.xml`, and
 `inspector.xml`. Each says where its controls go, what fixed text they hold, and their colors;
 the client fills in what changes (the lot, the time, the messages, the object) and draws what
 UIScript has no control for (the speed arrows and the round help button, in regions the document
@@ -180,19 +180,19 @@ headless run of the community lot covers a game day in about 9 seconds.
 ## Versions
 
 `simburbia --version` prints Simburbia's version, which the owner's GitVersion plugin works out
-as the client builds: the base in [`Simburbia/GitVersion.txt`](../../Simburbia/GitVersion.txt)
-(`0.1.100`), plus each commit since that touches `Simburbia/`, after the .NET SDK's
+as the client builds: the base in [`GitVersion.txt`](../../GitVersion.txt)
+(`0.1.100`), plus each commit since, after the .NET SDK's
 `major.minor.1xx` feature bands. The branch and commit follow it (`0.1.103+main.1a2b3c4d5e6f`), and `.dirty`
 when the working tree has staged changes. A build needs the whole history: a shallow clone fails
 on purpose, since its count would be wrong.
 
 ## Packages
 
-`Simburbia/packaging/` builds the client into packages players download, so it runs without
+`packaging/` builds the client into packages players download, so it runs without
 `swift run`: an AppImage and a `.tar.gz` on Linux, and, once they've been tried on those systems,
-a zip on Windows and an app on macOS ([its README](../../Simburbia/packaging/README.md)). A
+a zip on Windows and an app on macOS ([its README](../../packaging/README.md)). A
 packaged client finds its lots and the mock install beside itself (in `Contents/Resources` in the
-Mac app), and a build run from the repository finds them in `Simburbia/`.
+Mac app), and a build run from the repository finds them at the repository root.
 
 ## How it's built
 

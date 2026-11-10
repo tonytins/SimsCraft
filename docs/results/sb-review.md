@@ -2,7 +2,7 @@
 
 SimsCraft is rebuilding the engine of *The Sims Online* (Maxis and EA, 2002) in Swift, as
 Simburbia. Its reference is FreeSO, an open-source C# reimplementation of the same game, as it
-stood at its beta/update-46 build, August 2017 (the copy in `TSOClient/`). Neither project ships
+stood at its beta/update-46 build, August 2017 (the copy in `FreeSO/TSOClient/`). Neither project ships
 the game's files: each run reads a copy of the game installed on the machine running it.
 
 This page is a report for peer review. It asks one question: **given the same game files and the
@@ -43,7 +43,7 @@ makes the smallest change that makes it so; its README describes each.
 Each section below covers one copy of the game. *Production* is the copy in `TSO_GAME_DIR` (1.1097.1.0
 since 2026-10-28, the base game before then), *classic* is the base game in `TSO_CLASSIC_DIR`,
 and *beta* is a beta. *Mock* is
-`Simburbia/MockInstall`, a small made-up install in the repository with no game data, so anyone
+`MockInstall`, a small made-up install in the repository with no game data, so anyone
 can reproduce its section without a copy of the game; its numbers are small, and grow as the mock
 gains objects. In each table:
 
@@ -57,7 +57,7 @@ gains objects. In each table:
 
 The last table shows how long each program took for each experiment.
 
-`Simburbia/scripts/oracle-review.sh --review` writes this page after each phase of work; earlier
+`scripts/oracle-review.sh --review` writes this page after each phase of work; earlier
 reports are in its git history. It holds only counts, IDs, and values, never the game's own data.
 The same experiments also run as checks in the repository: on every change, continuous
 integration runs them on a small made-up install and stops the change when a new disagreement

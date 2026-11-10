@@ -1,7 +1,7 @@
 # Beyond the snapshot: FreeSO's other branches
 
 The rest of [`docs/fso/`](../README.md) describes FreeSO at beta/update-46 (August 2017), the snapshot in
-[`TSOClient/`](../../../TSOClient/). This repository also carries four of FreeSO's branches. Two of
+[`FreeSO/TSOClient/`](../../../FreeSO/TSOClient/). This repository also carries four of FreeSO's branches. Two of
 them led *into* the snapshot; two carry FreeSO's development *after* it. "Future" is relative to the
 snapshot: all of this work was finished long ago.
 

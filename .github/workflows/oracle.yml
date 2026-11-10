@@ -1,23 +1,47 @@
 name: Oracle
 
-# Runs fso-oracle (FreeSO's code) and sb-oracle (Simburbia) on Simburbia/MockInstall,
+# Runs fso-oracle (FreeSO's code) and sb-oracle (Simburbia) on MockInstall,
 # a made-up install with no game data, then sso-oracle's SimsScript scenarios on both VMs,
 # and stops on any disagreement between the two sides' records, so someone looks at it
 # before the change goes in. The unit tests are in swift.yml. Real installs are compared by
-# hand with Simburbia/scripts/oracle-review.sh, since no game data may be stored here.
+# hand with scripts/oracle-review.sh, since no game data may be stored here.
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - "Simburbia/**"
-      - "TSOClient/**"
+      - "TSOFiles/**"
+      - "TSOFilesC/**"
+      - "TSOFilesCheck/**"
+      - "TSOContent/**"
+      - "SimAntics/**"
+      - "SimsScript/**"
+      - "SBOracle/**"
+      - "ScriptOracle/**"
+      - "FSO.Oracle/**"
+      - "MockInstall/**"
+      - "Lots/**"
+      - "Tuning/**"
+      - "scripts/**"
+      - "FreeSO/**"
       - ".github/workflows/oracle.yml"
   pull_request:
     branches: [ "main" ]
     paths:
-      - "Simburbia/**"
-      - "TSOClient/**"
+      - "TSOFiles/**"
+      - "TSOFilesC/**"
+      - "TSOFilesCheck/**"
+      - "TSOContent/**"
+      - "SimAntics/**"
+      - "SimsScript/**"
+      - "SBOracle/**"
+      - "ScriptOracle/**"
+      - "FSO.Oracle/**"
+      - "MockInstall/**"
+      - "Lots/**"
+      - "Tuning/**"
+      - "scripts/**"
+      - "FreeSO/**"
       - ".github/workflows/oracle.yml"
 
 permissions:
@@ -41,9 +65,9 @@ jobs:
       - name: Run both oracles on the mock install and compare them
         shell: bash
         # --mock compares strictly: any mismatch fails the job.
-        run: Simburbia/scripts/oracle-review.sh --mock "$RUNNER_TEMP/oracle"
+        run: scripts/oracle-review.sh --mock "$RUNNER_TEMP/oracle"
 
       - name: Run the SimsScript scenarios on both VMs and compare them
         shell: bash
         # Fails on any scenario that differs or is inconclusive.
-        run: Simburbia/scripts/scenario-oracle.sh --mock "$RUNNER_TEMP/scenarios"
+        run: scripts/scenario-oracle.sh --mock "$RUNNER_TEMP/scenarios"

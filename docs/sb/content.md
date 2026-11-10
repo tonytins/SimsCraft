@@ -77,7 +77,7 @@ registers every object up front. Object files, globals, and tuning load on first
 
 ```swift
 let content = try GameContent(.init(gameDirectory: install,
-                                    freeSOContentDirectory: repository.appendingPathComponent("TSOClient/tso.content/Content")))
+                                    freeSOContentDirectory: repository.appendingPathComponent("FreeSO/TSOClient/tso.content/Content")))
 ```
 
 The `freeSOContentDirectory` form uses FreeSO's layout: patches from `Content/Patch` and standalone

@@ -53,7 +53,7 @@ From the bottom up:
 | UI framework | FSO.UI | [client.md](./client.md#ui-framework-fsoui) |
 | Client | FreeSO (`tso.client`), FSO.Debug, FSO.Patcher | [client.md](./client.md) |
 | Server | server (`FSO.Server`), FSO.Server.Database, FSO.Server.Common, FSO.Server.Domain, FSO.Server.Api, watchdog | [server.md](./server.md) |
-| Tools | Volcanic (`FSO.IDE`), FSO.Server.Debug, FSOInstaller, Charvatia, `Other/` | [tools.md](./tools.md) |
+| Tools | Volcanic (`FSO.IDE`), FSO.Server.Debug, FSOInstaller, Charvatia, `FreeSO/Other/` | [tools.md](./tools.md) |
 
 ## Project dependencies
 

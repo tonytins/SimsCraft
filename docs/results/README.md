@@ -11,7 +11,7 @@ They hold counts, object IDs (GUIDs), file and chunk names, and values, never th
 
 | File | What it shows | Written by | When |
 | --- | --- | --- | --- |
-| [sb-review.md](sb-review.md) | Whether Simburbia and FreeSO behave the same, experiment by experiment: where they agree, every disagreement, and what's inconclusive | `Simburbia/scripts/oracle-review.sh --review` | After each phase of work |
+| [sb-review.md](sb-review.md) | Whether Simburbia and FreeSO behave the same, experiment by experiment: where they agree, every disagreement, and what's inconclusive | `scripts/oracle-review.sh --review` | After each phase of work |
 | `sb-study-<install>.tsv` | Each object the randomized study has sampled on that copy, and its latest result: agree, disagree, or what Simburbia doesn't support yet | `oracle-review.sh --review` (`sb-oracle study`) | With each review |
 | [install-differences.md](install-differences.md) | How the copies of the game used here differ, file by file, from the oldest to the newest | `tsofiles-check` | Once, again when a copy is added |
 | [install-notes.md](install-notes.md) | What those differences mean for Simburbia, and content that relies on something unusual | By hand | As findings come in |
@@ -35,14 +35,14 @@ loads that FreeSO can't.
 Each copy of the game gets its own section, with the date and the commit it was run on:
 *Production* is 1.1097.1.0 (`TSO_GAME_DIR`), the copy closest to the files FreeSO expects;
 *Classic* is the base game (1.145.1.0, `TSO_CLASSIC_DIR`); *Beta* is the beta (1.3.2.121,
-`TSO_BETA_DIR`); and *Mock* is `Simburbia/MockInstall`, a small made-up install anyone can run the
+`TSO_BETA_DIR`); and *Mock* is `MockInstall`, a small made-up install anyone can run the
 experiments on. Until 2026-10-29, the Production section was measured on the base game. A new run
 replaces only the sections of the copies it covered, and earlier reports are in the file's git
 history. Results can differ from one copy of the game to another.
 
 The same experiments also run as checks in the repository. The report is written only after a
 phase of work, because it reruns every experiment on every copy; on every push, continuous
-integration runs them on `Simburbia/MockInstall`, a small made-up install with no game data, and
+integration runs them on `MockInstall`, a small made-up install with no game data, and
 stops a change that introduces a new disagreement until someone has looked at it.
 
 ## install-differences.md

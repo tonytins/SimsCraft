@@ -7,7 +7,7 @@ install. It opens every FAR1, FAR3, DBPF, and IFF file, reads every archive entr
 supported chunk, then reports counts and failures.
 
 ```sh
-swift run --package-path Simburbia/TSOFilesCheck -c release tsofiles-check
+swift run --package-path TSOFilesCheck -c release tsofiles-check
 ```
 
 ### Which installs it checks
@@ -83,6 +83,7 @@ disagreement is a finding to explain, and a case one side couldn't measure is in
 | `room-maps` | Each blueprint path on standard input: its room maps and rooms |
 | `architecture` | Which sprite chunks each wall pattern, wall style, and floor resolves to |
 | `study` | The randomized study (below): sampled objects on lots, a game day on both VMs, for a time budget |
+| `census` | What the buy-mode catalog and given lots reach: primitives, operand shapes, and variable scopes, without a VM |
 | `compare` | Whether both sides' records agree, experiment by experiment, and with `--review FILE`, that install's section of the report written; `--strict` exits with an error on any disagreement |
 
 Where Simburbia can't take a measurement yet, `run-objects` adds an `unsupported` line naming what
@@ -122,10 +123,44 @@ sb-oracle study --game "$TSO_GAME_DIR" --fso-objects /tmp/oracle/fso/objects.tsv
 The study replaced running every object alone (`run-objects`, still here for one-off
 questions), which took hours on a real install.
 
+### The content census
 
-`Simburbia/scripts/oracle-review.sh [--review | --mock]` runs both oracles on every install it's
+`sb-oracle census` measures the content Simburbia has to handle before running anything. It
+starts from every buyable entry of `packingslips/catalog.xml`, takes each object's `OBJD`
+behavior fields, `OBJf` entry points, and `TTAB` interactions, then follows subroutine calls
+and `run_tree_by_name` through the object's file, its semi-global, and the global. It counts:
+
+- **primitives:** how often each opcode below 256 appears, and whether Simburbia runs it, only
+  decodes it, or neither it nor FreeSO knows it.
+- **operand shapes:** for each primitive, the scopes of the variables its operand names, in field
+  order (`expression: local,temps`), or `-` for an operand that names none. A flag that makes a
+  variable unused doesn't hide it: the file still holds it, and the flag can change.
+- **variable scopes:** every variable in those operands, by scope (`local`, `temps`, `tuning`,
+  and so on).
+
+The `catalog` column counts every buyable object. Each `--lot` column counts only the objects
+that lot places and the catalog lists, so it says what that lot exercises. By default the lots
+are `Lots/tonys-lot.xml` (the realistic case) and `Lots/community-lot.xml`; `--lot` replaces them,
+and `--catalog-only` leaves them out. A routine shared by many objects counts once per column,
+while its instructions are still followed from each object that reaches it. No VM and no FreeSO
+are needed, so a real install takes seconds.
+
+The output is tab-separated: comments, a header (`kind`, `key`, and one column per source), then
+summary, primitive, shape, and scope rows, and `# failure` lines for objects that didn't load. A
+routine is resolved exactly as the VM resolves it: IDs below 4096 are global, 4096 to 8191 are
+the object's, and 8192 and up are its semi-global's. `run_tree_by_name` is resolved in the
+calling object's own file and semi-global, which is where the VM looks when the object is its own
+stack object; a tree that runs on a different stack object may reach more.
+
+```sh
+sb-oracle census --game "$TSO_GAME_DIR"
+sb-oracle census --game "$TSO_GAME_DIR" --lot Lots/community-lot.xml
+```
+
+
+`scripts/oracle-review.sh [--review | --mock]` runs both oracles on every install it's
 given (`TSO_GAME_DIR` as "production", `TSO_CLASSIC_DIR` as "classic", `TSO_BETA_DIR` as "beta") and compares them; `--mock` uses
-`Simburbia/MockInstall` instead, as CI does, and stops on any disagreement (`compare --strict`) so a
+`MockInstall` instead, as CI does, and stops on any disagreement (`compare --strict`) so a
 person looks at it before the change goes in.
 FreeSO's side comes from `oracle-fixtures.sh`. With `--review` it writes
 [docs/results/sb-review.md](../results/sb-review.md); do that only after a phase of the roadmap,
@@ -135,9 +170,9 @@ each other.
 
 ## sso-oracle
 
-`sso-oracle` (`Simburbia/ScriptOracle`) runs experiments written in SimsScript. A scenario is a
+`sso-oracle` (`ScriptOracle`) runs experiments written in SimsScript. A scenario is a
 small object with a header saying how long to run it and which object variables it should leave
-(`@ticks`, `@expect`); see [its README](../../Simburbia/ScriptOracle/README.md).
+(`@ticks`, `@expect`); see [its README](../../ScriptOracle/README.md).
 
 - `check` compiles each scenario.
 - `run` runs each on Simburbia's VM, as `run-objects` runs an object, and checks its expectations.
@@ -145,7 +180,7 @@ small object with a header saying how long to run it and which object variables 
 - `compare RECORDS` runs them on Simburbia's VM and sets the result beside FreeSO's records.
 
 ```sh
-Simburbia/scripts/scenario-oracle.sh --mock     # build, run on FreeSO, compare; fails on any difference
+scripts/scenario-oracle.sh --mock     # build, run on FreeSO, compare; fails on any difference
 ```
 
 Because both VMs run the same compiled bytes, a scenario pins down one behavior in a form anyone
@@ -153,9 +188,9 @@ can read. The first two cover SimAntics' 16-bit arithmetic, which FreeSO's VM co
 
 ## simsscript
 
-`simsscript list OBJECT` (`Simburbia/SimsScript`) prints an object's routines as SimsScript's
+`simsscript list OBJECT` (`SimsScript`) prints an object's routines as SimsScript's
 `Listing` writes them: one line per instruction, with routines, parameters, locals, attributes,
 and constants named from the object's files, its semi-global, and the global file, and ported
-primitives' operands in words. See [SimsScript's README](../../Simburbia/SimsScript/README.md).
+primitives' operands in words. See [SimsScript's README](../../SimsScript/README.md).
 Primitives Simburbia doesn't run yet still read in words: their operands are decoded, and
 `fso-oracle operands` checks every field against FreeSO's own decoding.

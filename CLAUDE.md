@@ -8,7 +8,7 @@ SimsCraft is rebuilding the engine of The Sims Online in Swift, so the game can 
 
 Key entrypoints:
 
-- ``Simburbia/`` - Swift packages, each independent:
+- Simburbia's packages, each independent, at the repository root:
   - ``TSOFiles/`` - file format readers (FAR, DBPF, IFF, and their chunks)
   - ``TSOFilesC/`` - a C ABI over TSOFiles
   - ``TSOFilesCheck/`` - ``tsofiles-check``, which scans a real install
@@ -22,7 +22,7 @@ Key entrypoints:
   - ``Lots/`` - the owner's lots as blueprint XML: ``tonys-lot.xml`` (a recreation of their original TSO lot) and ``community-lot.xml`` (a lot for group events)
   - ``Tuning/`` - Simburbia's default global tuning (``tuning.xml``), laid under an install's ``tuning.dat``
   - ``packaging/`` - the scripts that build the client into packages players download
-- ``TSOClient/`` - FreeSO's source, frozen at a snapshot (read-only)
+- ``FreeSO/TSOClient/`` - FreeSO's source, frozen at a snapshot (read-only)
 - ``docs/`` - the documentation and development progress:
   - ``roadmap.md`` - milestones, the alpha gate, owner decisions
   - ``scorecard.md`` - status per feature with evidence (wins over the roadmap)
@@ -32,19 +32,19 @@ Key entrypoints:
   - ``simantics/`` - the SimAntics Wiki in Markdown (CC BY-SA 3.0)
 - ``.agents/skills/`` - Swift, C, and .NET conventions, and the ``raylib-swift`` skill for the client
 
-``Charvatia/``, ``FSOInstaller/``, and ``Other/`` belong to the snapshot too. Build output (``.build/``, ``bin/``, ``obj/``, ``packages/``) is never committed.
+``FreeSO/Charvatia/``, ``FreeSO/FSOInstaller/``, and ``FreeSO/Other/`` belong to the snapshot too. Build output (``.build/``, ``bin/``, ``obj/``, ``packages/``) is never committed.
 
 ## About this Project
 
 [The Sims Online](https://en.wikipedia.org/wiki/The_Sims_Online) (TSO) was an MMORPG based on The Sims. When the servers shutdown, [FreeSO](https://github.com/riperiperi/FreeSO) (FSO) re-implementated the game with their own open source server and client. Now, their servers have shutdown. With no new alternatives, FSO has been refactoring the client to serve as an "archive" client that can be used for self-hosting.
 
-SimsCraft started as FSOdoc, an early attempt to document a snapshot of FSO update-46 with AI, but has since grown to use that knowledge to start over fresh with a new client and server intended for small scale use, known as Simburbia (SB), which lives in ``Simburbia/``.
+SimsCraft started as FSOdoc, an early attempt to document a snapshot of FSO update-46 with AI, but has since grown to use that knowledge to start over fresh with a new client and server intended for small scale use, known as Simburbia (SB).
 
 The goals:
 
 - **Play The Sims Online again**. Simburbia, playable with friends, is the end goal.
-- **Explain FreeSO's codebase** in ``docs/fso/``: the reference the reimplementation draws on.
 - **Reimplement the game in Swift**. This is a new implementation, not a line-by-line port, that is intended for a lot server of our own, LAN play, and the client.
+- **Explain Simburbia's codebase** in ``docs/sb/``: Make it easy for others tinker with the code to run their own server or client.
 - **Go past that baseline:** SimAntics extensions, scripting, and older games' data such as The Sims 1.
 
 ### Small and LAN First
@@ -57,7 +57,7 @@ The self-hosted infrastructure is designed to scale upward for massively multipl
 
 Because TSO's servers shutdown decades ago now, FSO's code provides the only ground truth on how the game worked. Even though FSO took some creative liberties (as will SB), the underlining game remains the same.
 
-Learn from everything available: FSO's code, [FreeSims](https://github.com/francot514/FreeSims), the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game's AI extends SimAntics), [Don Hopkins](https://github.com/SimHacker), [SimObliterator Suite](https://github.com/DnfJeff/SimObliterator_Suite), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), and [The Modding Guide](https://cyndersanity.github.io/sims-legacy-mod-guide/index.html).
+Learn from everything available: FSO's code, [FreeSims](https://github.com/francot514/FreeSims), the [SimAntics Wiki](http://simantics.wikidot.com/wiki:introduction-to-simantics) copy, [SimsWiki](https://simswiki.info/wiki.php?title=Main_Page) (Sims 2 as well, the game's AI extends SimAntics), [Don Hopkins](https://github.com/SimHacker), [SimObliterator Suite](https://github.com/DnfJeff/SimObliterator_Suite), [TS1 Compiler](https://github.com/mixiate/ts1-compiler), [TS1 Renderer](https://github.com/mixiate/ts1-renderer) ([IO](https://github.com/mixiate/ts1-blender-io)), [TheSimsOpenTechDoc](https://github.com/DnfJeff/TheSimsOpenTechDoc), and [The Modding Guide](https://cyndersanity.github.io/sims-legacy-mod-guide/index.html).
 
 Treat them as leads to verify against the code or the oracles.
 
@@ -73,22 +73,22 @@ Treat them as leads to verify against the code or the oracles.
 
 ```sh
 for package in TSOFiles TSOContent; do   # the packages you changed and those that depend on them (CI builds them all)
-    swift build --package-path "Simburbia/$package" && swift test --package-path "Simburbia/$package"
+    swift build --package-path "$package" && swift test --package-path "$package"
 done
-grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' Simburbia/*/Sources  # must print nothing
-swift run --package-path Simburbia/TSOFilesCheck -c release tsofiles-check            # scans every TSO_*_DIR install that's set
-swift run --package-path Simburbia/SBClient -c release simburbia --headless --ticks 9000    # run a lot a game hour with no window; read the log
-Simburbia/packaging/linux/package.sh                                                   # the client as an AppImage and a .tar.gz, in dist/release
-Simburbia/scripts/oracle-fixtures.sh /tmp/oracle                                       # FreeSO's side; needs TSO_GAME_DIR
-TSO_ORACLE_DIR=/tmp/oracle swift test --package-path Simburbia/SBOracle               # Simburbia's side, compared
-Simburbia/scripts/oracle-review.sh --mock /tmp/review                                  # both oracles on MockInstall
-Simburbia/scripts/scenario-oracle.sh --mock                                            # SimsScript scenarios on both VMs
-git status --short -- TSOClient Charvatia FSOInstaller Other                           # must print nothing
+grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' */Sources  # must print nothing
+swift run --package-path TSOFilesCheck -c release tsofiles-check            # scans every TSO_*_DIR install that's set
+swift run --package-path SBClient -c release simburbia --headless --ticks 9000    # run a lot a game hour with no window; read the log
+packaging/linux/package.sh                                                   # the client as an AppImage and a .tar.gz, in dist/release
+scripts/oracle-fixtures.sh /tmp/oracle                                       # FreeSO's side; needs TSO_GAME_DIR
+TSO_ORACLE_DIR=/tmp/oracle swift test --package-path SBOracle               # Simburbia's side, compared
+scripts/oracle-review.sh --mock /tmp/review                                  # both oracles on MockInstall
+scripts/scenario-oracle.sh --mock                                            # SimsScript scenarios on both VMs
+git status --short -- FreeSO/TSOClient FreeSO/Charvatia FreeSO/FSOInstaller FreeSO/Other                           # must print nothing
 ```
 
 ### The oracles
 
-``fso-oracle`` (``Simburbia/FSO.Oracle``) is a small .NET tool that compiles FreeSO's SimAntics, Files, and Content sources headless and records what they do. ``sb-oracle`` runs the same experiments on Simburbia, and ``compare`` sets the two side by side. ``sso-oracle`` (``ScriptOracle``) asks smaller questions: each scenario is a SimsScript object with the values it should leave, compiled once and run on both VMs (``fso-oracle run-scenarios``).
+``fso-oracle`` (``FSO.Oracle``) is a small .NET tool that compiles FreeSO's SimAntics, Files, and Content sources headless and records what they do. ``sb-oracle`` runs the same experiments on Simburbia, and ``compare`` sets the two side by side. ``sso-oracle`` (``ScriptOracle``) asks smaller questions: each scenario is a SimsScript object with the values it should leave, compiled once and run on both VMs (``fso-oracle run-scenarios``).
 
 Treat them as two witnesses, not an answer key and a student. FreeSO was the only earlier attempt, built without the tools this project has, and it was often wrong.
 
@@ -99,7 +99,7 @@ Treat them as two witnesses, not an answer key and a student. FreeSO was the onl
 
 Write ``docs/results/sb-review.md`` (``oracle-review.sh --review``) only at the end of a phase or milestone, or when the owner asks.
 
-Don't run ``dotnet``, ``msbuild``, ``mono``, or ``nuget``, except for ``FSO.Oracle`` (directly or through ``Simburbia/Simburbia.slnx``, which holds only the oracle). The snapshot doesn't build on Linux, and the oracle must never change a file under ``TSOClient/``.
+Don't run ``dotnet``, ``msbuild``, ``mono``, or ``nuget``, except for ``FSO.Oracle`` (directly or through ``Simburbia.slnx``, which holds only the oracle). The snapshot doesn't build on Linux, and the oracle must never change a file under ``FreeSO/TSOClient/``.
 
 ## Golden rules
 
@@ -127,7 +127,7 @@ Simburbia reads files nobody controls: original installs, patched objects, user 
 
 ### Forward compatibility
 
-FreeSO was built against TSO New & Improved, likely 1.1097.1.0. Simburbia was first built against the beta (1.3.2.121) and the 2002 retail copy (1.145.1.0), and it will meet newer data than any of them: FreeSO's content, mods, and its own later saves.
+FreeSO was built against TSO New & Improved, likely the Anniversary Update (1.1082.2.0). Simburbia was first built against the beta (1.3.2.121), then the 2002 retail copy (1.145.1.0) and finally the Mystic Tree update (1.1097.1.0). And it will still meet newer data than any of them: FreeSO's content, mods, and its own later saves.
 
 - **Port the versions real files use**. FreeSO's version branches are a guide, not a checklist. Port the rest when a file or mod needs them.
 - **Unknown isn't corrupt**. Data newer than a reader knows is skipped or kept raw and reported where the format allows. Data that is actually broken is still an error.
@@ -162,9 +162,9 @@ These apply to the Simburbia libraries. Tools (``tsofiles-check``, the oracles) 
 ### Documenting the FreeSO snapshot
 
 - **Work from the code** in this repo where you can, cite where it lives, and say how sure you are.
-- **Never change the snapshot (strict)**: ``TSOClient/``, ``Charvatia/``, ``FSOInstaller/``, and ``Other/``.
+- **Never change the snapshot (strict)**: ``FreeSO/TSOClient/``, ``FreeSO/Charvatia/``, ``FreeSO/FSOInstaller/``, and ``FreeSO/Other/``.
 - **Respect the IP**. Document formats and how the code reads them, but never paste or reconstruct game data.
-- The ``FSOMonoGame`` and ``FSOMina.NET`` submodules aren't checked out. Folder names often differ from assembly names; [docs/fso/README.md](./docs/fso/README.md) maps them.
+- ``FSOMonoGame`` and ``FSOMina.NET`` are vendored under ``FreeSO/Other/libs/``. Folder names often differ from assembly names; [docs/fso/README.md](./docs/fso/README.md) maps them.
 
 Markdown: plain short sentences, relative links, lowercase kebab-case file names. Link new pages from [docs/fso/README.md](./docs/fso/README.md).
 

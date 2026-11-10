@@ -31,10 +31,10 @@ For reviews, follow [REVIEW.md](REVIEW.md).
 
 ## Lines not to cross
 
-- Never edit FreeSO's snapshot: `TSOClient/`, `Charvatia/`, `FSOInstaller/`, and `Other/`.
-- Never commit the game's data. Tests use made-up files or `Simburbia/MockInstall`, and results
+- Never edit FreeSO's snapshot: `FreeSO/TSOClient/`, `FreeSO/Charvatia/`, `FreeSO/FSOInstaller/`, and `FreeSO/Other/`.
+- Never commit the game's data. Tests use made-up files or `MockInstall`, and results
   hold names, sizes, chunk IDs, and GUIDs only.
-- Run `dotnet` only for `Simburbia/FSO.Oracle`.
+- Run `dotnet` only for `FSO.Oracle`.
 - Keep private notes and anything in `*.local` out of tracked files, and don't mention them there.
 
 ## Personal Configuration

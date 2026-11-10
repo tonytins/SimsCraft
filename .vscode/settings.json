@@ -1,5 +1,5 @@
 {
-    "dotnet.defaultSolution": "Simburbia/Simburbia.slnx",
+    "dotnet.defaultSolution": "Simburbia.slnx",
     "files.exclude": {
         "**/.git": true,
         "**/.svn": true,
