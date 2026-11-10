@@ -144,9 +144,12 @@ extension Comparison {
     /// sampled lots, and the objects on them.
     ///
     /// Each record is a line of tab-separated fields: `lot`, the seed, how many objects, and
-    /// `agree`, `disagree` and the first differing digest, or `inconclusive` and why; `object`, its
+    /// `agree`, `disagree`, `broken`, or `unrepeatable` and the first sign of it, or `inconclusive`
+    /// and why; `object`, its
     /// GUID, and `agree`, `disagree`, or `unsupported` and why; or `shrunk`, the seed, the GUIDs
-    /// that still disagree, and the first differing digest.
+    /// that still disagree, and the first differing digest. A lot or object can also be `broken`
+    /// (it broke one of the lot's rules) or `unrepeatable` (two of Simburbia's runs differed):
+    /// findings on Simburbia alone, counted as disagreements.
     public static func study(_ records: [String]) -> [Comparison] {
         var lots = Comparison(name: "Study: sampled lots"), objects = Comparison(name: "Study: sampled objects")
         for record in records {
@@ -166,6 +169,7 @@ extension Comparison {
                 switch fields[2] {
                 case "agree": objects.matched += 1
                 case "disagree": objects.mismatches.append("\(fields[1]): \(rest(from: 3))")
+                case "broken", "unrepeatable": objects.mismatches.append("\(fields[1]): \(fields[2]) \(rest(from: 3))")
                 case "unsupported": objects.skip("unsupported: \(rest(from: 3))")
                 case "left out": objects.skip("FreeSO left it out: \(rest(from: 3))")
                 default: break

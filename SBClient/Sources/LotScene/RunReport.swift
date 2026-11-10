@@ -53,6 +53,19 @@ public enum RunReport {
         return lines
     }
 
+    /// The line logged when an object first breaks a rule, naming the object.
+    public static func broken(_ broken: BrokenRule, in vm: VM) -> String {
+        let object = vm.entity(id: broken.objectID).map { "\(Inspection($0).title) (#\(broken.objectID))" }
+            ?? "Object #\(broken.objectID)"
+        return "\(stamp(vm)): \(object) broke the rule \(broken.rule.rawValue): \(broken.detail)"
+    }
+
+    /// The line a checked run ends with.
+    public static func rulesSummary(_ vm: VM, broken: Int) -> String {
+        "\(stamp(vm)): checked \(LotRule.allCases.count) rules every game minute; "
+            + (broken == 0 ? "none broken" : "\(broken) broken (by rule and object)")
+    }
+
     /// Game minutes as "1 day 2 h 30 min", leaving out what's zero.
     public static func gameDuration(minutes: Double) -> String {
         let total = Int(minutes.rounded())

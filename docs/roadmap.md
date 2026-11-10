@@ -152,10 +152,11 @@ In order:
        growing (FreeSO is one witness, not the answer key).
        - [x] B5a. The project's rules relaxed: strict only on never crashing, determinism, older
          builds reading newer saves, game data, and the snapshot.
-       - [ ] B5b. A content census: which primitives, operands, and scopes the buy-mode catalog's
+       - [x] B5b. A content census: which primitives, operands, and scopes the buy-mode catalog's
          scripts reach, per install, with the owner's two lots as real cases. No VM, no FreeSO.
-       - [ ] B5c. Rules checked every tick in Simburbia's runs (motives in range, slots and hands
-         consistent, nothing in two places), which catch mistakes both VMs share.
+       - [x] B5c. Rules checked every game minute in Simburbia's runs (`LotRule`: motives within
+         −100 to 200, slots and containers consistent, objects on the lot and indexed, groups
+         whole), and every study lot run twice, which catch mistakes both VMs share.
        - [ ] B5d. A coverage-guided study with Sims: objects that reach new instructions picked
          first, and visitor Sims joining with no owner on the lot.
    - [ ] C. Animation: enough of the avatar formats (Nichol's Notch) to read animations' frames,
@@ -303,6 +304,7 @@ chunks) can land whenever TS1 hybrid mode is needed; nothing in TSO mode waits o
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-10 | minor | Fourth pass, step B5c: the lot's rules. SimAntics' `VM.brokenRules()` checks eight rules a lot's state should always keep (motive range, online job ID, on the lot, the object and tile indexes, slots both ways, objects with their containers, multi-tile groups), on Simburbia alone, reporting rather than throwing. The motive rule allows up to 200, as TSO did; FreeSO and Simburbia still cap motives at 100. The study checks them every game minute and runs each lot twice; a broken rule or an unrepeatable run is a finding, halved on Simburbia alone, without FreeSO. `simburbia --headless --check` does the same for one lot. On 1.1097.1.0 both owner lots break no rule over a game day, and a three-minute study (seed 100) found nothing: 23 lots agree, 2 inconclusive. B5b, the content census, was done on 2026-11-10 in the move to the root. |
 | 2026-11-07 | minor | Fourth pass, step B5a: the rules are relaxed. FreeSO is one fallible witness, so disagreements are triaged rather than each explained first, versions are ported as real files need them, and the hand-written oracle cases become a frozen regression set while the randomized study leads. Strict still: never crash, determinism, older builds reading newer saves, no game data, and never editing the snapshot. The owner's lots are renamed: `tonys-lot.xml`, a recreation of their original TSO lot and now the client's default, and `community-lot.xml`, formerly `tonys-house.xml`. |
 | 2026-11-05 | minor | Fourth pass, step B4e, which finishes phase B: 1,007 Expression cases on the mock Sim's motives and person data agree with FreeSO. They found two things. Simburbia's `setValue` dropped the person data setter's result, so a refused write (a job ID past 4) went true where FreeSO's goes false; fixed, with a regression test. And `sb-oracle` applied a case's presets in hash order (`JSONSerialization` keeps no key order) where `fso-oracle` used the written order, which mattered for a Sim's job values after its job ID; both oracles now apply presets in index order. |
 | 2026-11-04 | patch | Fourth pass, step B4d: 1,653 Set Motive Deltas cases with the mock Sim (once, an hour, clearing; every motive and two past the last; six lot categories; several scopes; an object caller) agree with FreeSO. The mock's `tuning.dat` is now written by `generators/mock_tuning.py`, with made-up weights outside the None category that don't divide 1000 evenly, so the scaling truncates on both sides; None stays at 1, so the mock lots' runs are unchanged. The same cases on 1.1097.1.0 are inconclusive until phase D: the template person reaches Push Interaction as it joins. |

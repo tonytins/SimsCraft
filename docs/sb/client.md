@@ -153,6 +153,9 @@ Three options run the lot without anyone at the screen, and a fourth rewrites it
 - **`--headless`** opens no window at all and needs no display, after CityLimits' headless run. The
   lot runs `--ticks` ticks back to back, as fast as the machine allows: a game day (216,000 ticks)
   by default, a game week at most. It logs to standard error and exits.
+- **`--check`**, with `--headless`, checks the lot's rules (`LotRule`, see
+  [tools.md](tools.md)) after loading and every game minute, logs each rule an object breaks the
+  first time it breaks it, and exits with a failure if any broke.
 - **`--verbose`** logs the same as a headless run while the window is open.
 - **`--rewrite-blueprint FILE`** writes the lot's blueprint in TSO's own dialect, with every object
   named, and quits without running it: how a lot saved by FreeSO becomes one people can read

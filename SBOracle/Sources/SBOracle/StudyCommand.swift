@@ -15,7 +15,10 @@ struct StudyCommand: AsyncParsableCommand {
             sides can load (no Sims, no multi-tile parts but their lead), picked by its seed with the \
             ones the ledger hasn't seen first, and lays them on a grid of an emptied lot. Simburbia runs \
             it first: an object that reaches something Simburbia doesn't support yet is recorded and \
-            set aside, and the lot runs again without it. Then fso-oracle runs it, and the digests are \
+            set aside, and the lot runs again without it. Simburbia also checks the lot's rules \
+            (LotRule) every game minute, and runs the lot twice: a broken rule, or two runs that \
+            differ, is a finding on Simburbia alone, halved to the fewest objects that still show it, \
+            and FreeSO doesn't run that lot. Then fso-oracle runs it, and the digests are \
             compared every game hour. A lot that disagrees is halved until the fewest objects that \
             still disagree are found. Each lot's blueprint is kept in --out/lots, so any of them can be \
             run again, and the records go to --out/study.tsv, which compare --study reads.
@@ -55,6 +58,9 @@ struct StudyCommand: AsyncParsableCommand {
 
     /// The most lots a disagreement's halving runs on both sides.
     static let shrinkRuns = 6
+    /// The most Simburbia-only runs halving a broken rule or an unrepeatable run takes; they're
+    /// quick, so more than a disagreement's.
+    static let shrinkAloneRuns = 12
     /// The most objects one lot sets aside before it's counted inconclusive.
     static let mostSetAside = 16
 
@@ -103,7 +109,7 @@ struct StudyCommand: AsyncParsableCommand {
             // Simburbia first, since it's quick: set aside each object that reaches something it
             // doesn't support yet, and run the lot again without it.
             var lot = Study.lot(sample, on: base, seed: lotSeed)
-            var ours = answers.lotRun(lot, ticks: ticks, every: every)
+            var ours = answers.lotRun(lot, ticks: ticks, every: every, checksRules: true)
             var inconclusive: String?
             var setAside = 0
             while let last = ours.last, last.hasPrefix("unsupported") {
@@ -121,12 +127,45 @@ struct StudyCommand: AsyncParsableCommand {
                 sample.removeAll { $0 == guid }
                 setAside += 1
                 lot.objects.removeAll { $0.guid == guid }
-                ours = answers.lotRun(lot, ticks: ticks, every: every)
+                ours = answers.lotRun(lot, ticks: ticks, every: every, checksRules: true)
             }
             if inconclusive == nil, lot.objects.isEmpty { inconclusive = "every object was set aside" }
             if let inconclusive {
                 records.append("lot\t\(lotSeed)\t\(lot.objects.count)\tinconclusive\t\(inconclusive)")
                 print("lot \(lotSeed): inconclusive, \(inconclusive)")
+                continue
+            }
+
+            // Findings on Simburbia alone: a broken rule, or a second run that differs. Either is
+            // halved without FreeSO, and FreeSO doesn't run the lot, since its digests would only
+            // repeat what's already known to be wrong.
+            let finding: (kind: String, first: String, shows: ([UInt32]) -> Bool)?
+            if let last = ours.last, last.hasPrefix("broken") {
+                finding = ("broken", last, { subset in
+                    var part = lot
+                    part.objects.removeAll { !subset.contains($0.guid) }
+                    return answers.lotRun(part, ticks: ticks, every: every, checksRules: true).last?.hasPrefix("broken") == true
+                })
+            } else if answers.lotRun(lot, ticks: ticks, every: every) != ours {
+                finding = ("unrepeatable", "two runs of the same seed differ", { subset in
+                    var part = lot
+                    part.objects.removeAll { !subset.contains($0.guid) }
+                    return answers.lotRun(part, ticks: ticks, every: every) != answers.lotRun(part, ticks: ticks, every: every)
+                })
+            } else {
+                finding = nil
+            }
+            if let finding {
+                records.append("lot\t\(lotSeed)\t\(lot.objects.count)\t\(finding.kind)\t\(finding.first)")
+                print("lot \(lotSeed): \(finding.kind), \(finding.first); narrowing it down on Simburbia alone")
+                let (culprits, _) = Study.shrink(lot.objects.map(\.guid), maxRuns: Self.shrinkAloneRuns, disagrees: finding.shows)
+                let guids = culprits.map { String(format: "0x%08X", $0) }
+                records.append("shrunk\t\(lotSeed)\t\(guids.joined(separator: ","))\t\(finding.kind): \(finding.first)")
+                for guid in culprits {
+                    records.append("object\t\(String(format: "0x%08X", guid))\t\(finding.kind)\ton lot \(lotSeed): \(finding.first)")
+                    book.record(guid, name: nameOf(guid, content), result: "\(finding.kind): \(finding.first)", seed: lotSeed)
+                }
+                print("lot \(lotSeed): narrowed to \(guids.joined(separator: ", "))")
                 continue
             }
 

@@ -177,8 +177,12 @@ public struct Answers {
     /// `N` is 0 if loading reached it. Other failures give `error`. Objects left out are reported
     /// through `leftOut`, as `fso-oracle` reports them on standard error. With `dump`, each digest
     /// is followed by every entity's digested fields, as `fso-oracle --dump` prints them.
+    ///
+    /// With `checksRules`, the lot's rules (`LotRule`) are checked after loading and every game
+    /// minute; the first broken one stops the run with `broken at tick N by 0xGUID: rule: detail`.
+    /// Checking reads the state only, so the digests are the same either way.
     public func lotRun(_ lot: Blueprint, ticks: Int, every: Int, seed: UInt64 = Answers.defaultSeed, dump: Bool = false,
-                       sims: Sims? = nil, leftOut: (VM.LeftOut) -> Void = { _ in }) -> [String] {
+                       sims: Sims? = nil, checksRules: Bool = false, leftOut: (VM.LeftOut) -> Void = { _ in }) -> [String] {
         let vm: VM
         do {
             let loaded = try loadedLot(lot, seed: seed, sims: sims)
@@ -192,13 +196,24 @@ public struct Answers {
         func gap() -> String? {
             Self.firstGap(in: vm.reportedErrors.map { ($0.objectID, $0.error) }) { vm.entity(id: $0)?.object.guid }
         }
+        func brokenRule(at tick: Int) -> String? {
+            guard checksRules, let broken = vm.brokenRules().first else { return nil }
+            let guid = vm.entity(id: broken.objectID).map { String(format: "0x%08X", $0.object.guid) } ?? "0x00000000"
+            return "broken at tick \(tick) by \(guid): \(broken.rule.rawValue): \(broken.detail)"
+        }
         if let gap = gap() { return ["unsupported at tick 0\(gap)"] }
+        if let broken = brokenRule(at: 0) { return [broken] }
         var lines = Self.digestLines(of: vm, tick: 0, dump: dump)
+        let checkEvery = max(1, Int(vm.clock.ticksPerMinute))
         if ticks > 0 {
             for tick in 1...ticks {
                 vm.tick()
                 if let gap = gap() {
                     lines.append("unsupported at tick \(tick)\(gap)")
+                    break
+                }
+                if tick % checkEvery == 0 || tick == ticks, let broken = brokenRule(at: tick) {
+                    lines.append(broken)
                     break
                 }
                 if (every > 0 && tick % every == 0) || tick == ticks { lines += Self.digestLines(of: vm, tick: tick, dump: dump) }

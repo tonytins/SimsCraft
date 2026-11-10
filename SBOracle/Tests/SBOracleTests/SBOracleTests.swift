@@ -431,6 +431,17 @@ extension ComparisonTests {
         #expect(objects.skipped == ["unsupported: primitive 1 (generic_sims_online_call)": 1])
     }
 
+    /// Findings on Simburbia alone, a broken rule or two runs that differ, count as disagreements.
+    @Test func brokenRulesAndUnrepeatableRunsAreDisagreements() {
+        let records = ["lot\t4\t32\tbroken\tbroken at tick 150 by 0x00000017: slots: detail",
+                       "shrunk\t4\t0x00000017\tbroken: broken at tick 150", "object\t0x00000017\tbroken\ton lot 4: slots",
+                       "lot\t5\t32\tunrepeatable\ttwo runs of the same seed differ",
+                       "shrunk\t5\t0x00000018\tunrepeatable: two runs", "object\t0x00000018\tunrepeatable\ton lot 5: two runs"]
+        let (lots, objects) = (Comparison.study(records)[0], Comparison.study(records)[1])
+        #expect(lots.matched == 0 && lots.mismatches.count == 2 && lots.skipped.isEmpty)
+        #expect(objects.mismatches == ["0x00000017: broken on lot 4: slots", "0x00000018: unrepeatable on lot 5: two runs"])
+    }
+
     /// A lot run names the object that reached something unsupported first; other errors don't count.
     @Test func aLotRunNamesTheObjectThatReachedSomethingUnsupported() {
         let reported: [(objectID: Int16, error: SimAnticsError)] = [
@@ -450,5 +461,10 @@ extension ComparisonTests {
         let lines = Answers(content: content).lotRun(lot, ticks: 30, every: 10, sims: Answers.Sims(count: 1, template: 0x4D4F_4307))
         #expect(lines.map { $0.split(separator: " ").prefix(2).joined(separator: " ") } == ["tick 0", "tick 10", "tick 20", "tick 30"],
                 "\(lines.suffix(2))")
+        // Checking the lot's rules over a game hour breaks none and changes no digest.
+        let answers = Answers(content: content)
+        let sims = Answers.Sims(count: 1, template: 0x4D4F_4307)
+        let checked = answers.lotRun(lot, ticks: 9_000, every: 1_500, sims: sims, checksRules: true)
+        #expect(checked == answers.lotRun(lot, ticks: 9_000, every: 1_500, sims: sims), "\(checked.suffix(1))")
     }
 }

@@ -78,6 +78,7 @@ done
 grep -rnE 'try!|as!|fatalError|precondition|preconditionFailure' */Sources  # must print nothing
 swift run --package-path TSOFilesCheck -c release tsofiles-check            # scans every TSO_*_DIR install that's set
 swift run --package-path SBClient -c release simburbia --headless --ticks 9000    # run a lot a game hour with no window; read the log
+swift run --package-path SBClient -c release simburbia --headless --check         # the same over a game day, checking the lot's rules
 packaging/linux/package.sh                                                   # the client as an AppImage and a .tar.gz, in dist/release
 scripts/oracle-fixtures.sh /tmp/oracle                                       # FreeSO's side; needs TSO_GAME_DIR
 TSO_ORACLE_DIR=/tmp/oracle swift test --package-path SBOracle               # Simburbia's side, compared
@@ -164,7 +165,7 @@ These apply to the Simburbia libraries. Tools (``tsofiles-check``, the oracles) 
 - **Work from the code** in this repo where you can, cite where it lives, and say how sure you are.
 - **Never change the snapshot (strict)**: ``FreeSO/TSOClient/``, ``FreeSO/Charvatia/``, ``FreeSO/FSOInstaller/``, and ``FreeSO/Other/``.
 - **Respect the IP**. Document formats and how the code reads them, but never paste or reconstruct game data.
-- ``FSOMonoGame`` and ``FSOMina.NET`` are vendored under ``FreeSO/Other/libs/``. Folder names often differ from assembly names; [docs/fso/README.md](./docs/fso/README.md) maps them.
+- ``FSOMonoGame`` and ``FSOMina.NET`` were removed from ``FreeSO/Other/libs/``; the oracle doesn't need them. Folder names often differ from assembly names; [docs/fso/README.md](./docs/fso/README.md) maps them.
 
 Markdown: plain short sentences, relative links, lowercase kebab-case file names. Link new pages from [docs/fso/README.md](./docs/fso/README.md).
 

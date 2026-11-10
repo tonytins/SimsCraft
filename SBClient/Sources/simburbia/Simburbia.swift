@@ -40,6 +40,12 @@ struct Simburbia: ParsableCommand {
     @Flag(help: "Log the run to standard error: system messages as they arrive and a line each game hour. --headless implies it.")
     var verbose = false
 
+    @Flag(help: """
+        With --headless: check the lot's rules (LotRule) every game minute, and log each rule an \
+        object breaks the first time it breaks it. Exits with a failure if any broke.
+        """)
+    var check = false
+
     @Option(help: """
         With --headless: how many ticks the run takes, 0 to \(Self.mostTicks), a game week (default \(Self.defaultHeadlessTicks), \
         a game day). With --screenshot: ticks to run before it (default 300). 30 ticks are a second at normal speed.
@@ -97,6 +103,7 @@ struct Simburbia: ParsableCommand {
                               ("--zoom", zoom != nil), ("--focus", focus != nil), ("--rotation", rotation != 0)].filter(\.1).map(\.0)
             if let first = windowOnly.first { throw ValidationError("\(first) needs a window, so it can't run with --headless") }
         }
+        if check, !headless { throw ValidationError("--check only applies with --headless") }
         guard let ticks else { return }
         guard headless || screenshot != nil else {
             throw ValidationError("--ticks only applies with --headless or --screenshot; the window runs until it is closed")
@@ -127,7 +134,9 @@ struct Simburbia: ParsableCommand {
         if headless {
             // A ClientError says what to fix; ArgumentParser prints it and exits with a failure.
             let session = try LotSession(options)
-            HeadlessRun.run(session, ticks: ticks ?? Self.defaultHeadlessTicks, install: Self.describe(options.gameDirectory))
+            let broken = HeadlessRun.run(session, ticks: ticks ?? Self.defaultHeadlessTicks,
+                                         install: Self.describe(options.gameDirectory), checksRules: check)
+            if broken > 0 { throw ExitCode.failure }
             return
         }
 

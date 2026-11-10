@@ -107,8 +107,13 @@ a game day, with a digest every game hour:
    support yet is recorded as such and set aside, and the lot runs again without it. If the
    object isn't one the lot names, it's mapped to the multi-tile object it belongs to, or found
    by halving the lot on Simburbia alone.
-2. Then on FreeSO, through `fso-oracle run-lot`, and the digests are compared.
-3. A lot that disagrees is halved, keeping every object's tile and facing, to the fewest objects
+2. Still on Simburbia alone, two checks that need no second VM. The lot's rules (below) are
+   checked every game minute, and the lot runs a second time, which must give the same digests.
+   A broken rule (`broken`) or a run that doesn't repeat (`unrepeatable`) is a finding: the lot
+   is halved on Simburbia alone to the fewest objects that still show it, and FreeSO doesn't run
+   it. These catch mistakes both VMs could share, which a comparison can't.
+3. Then on FreeSO, through `fso-oracle run-lot`, and the digests are compared.
+4. A lot that disagrees is halved, keeping every object's tile and facing, to the fewest objects
    that still disagree.
 
 Every lot is kept as a blueprint in `--out/lots`, so it can be run again, and the records go to
@@ -122,6 +127,27 @@ sb-oracle study --game "$TSO_GAME_DIR" --fso-objects /tmp/oracle/fso/objects.tsv
 
 The study replaced running every object alone (`run-objects`, still here for one-off
 questions), which took hours on a real install.
+
+### The lot's rules
+
+`VM.brokenRules()` in SimAntics lists what a running lot's state breaks of rules it should always
+keep (`LotRule`), in object ID order. It reads the state and changes nothing, and it reports
+rather than throws, so checking never stops a lot. The rules:
+
+| Rule | What it says |
+| --- | --- |
+| motive range | A Sim's motives stay within −100 to 200. TSO let a motive go past 100 (the owner recalls up to 200); FreeSO, and Simburbia for now, keep them within −100 to 100. |
+| online job ID | A Sim's online job ID stays at 4 or below, the most its setter takes. |
+| on the lot | An object in the world is on a tile of the lot, on level 1 to 5. |
+| object index | The object ID index finds each entity, and no deleted entity is still on the lot. |
+| tile index | An object in the world is listed on the tile it's on. |
+| slots | Containment points both ways: an object's container holds it in the slot it names, and what a slot holds names that container. |
+| with its container | An object in a slot is where its container is. |
+| multi-tile group | A group lists each of its parts, and has a lead. |
+
+Objects out of the world are allowed, including a Sim left out when tile 3,3 is taken at join.
+The study checks the rules every game minute, as does `simburbia --headless --check`. Rules wait
+for what they check: "no Sim inside an obstacle" comes with routing (phase E).
 
 ### The content census
 

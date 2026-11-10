@@ -113,6 +113,16 @@ private func mockSession() throws -> LotSession {
     #expect(RunReport.summary(vm, ticks: 300, seconds: 0.5)[1].hasSuffix("took 0.5 s, 600 ticks a second, 20x normal speed"))
 }
 
+@Test func runReportsNameTheObjectThatBrokeARule() throws {
+    let vm = try mockSession().vm
+    let object = try #require(vm.entities.first)
+    let line = RunReport.broken(BrokenRule(rule: .slots, objectID: object.objectID, detail: "slot 0 is empty"), in: vm)
+    #expect(line.hasPrefix(RunReport.stamp(vm) + ": ") && line.contains("(#\(object.objectID)) broke the rule slots: slot 0 is empty"))
+    #expect(RunReport.broken(BrokenRule(rule: .group, objectID: 999, detail: "x"), in: vm).contains("Object #999 broke"))
+    #expect(RunReport.rulesSummary(vm, broken: 0).hasSuffix("checked 8 rules every game minute; none broken"))
+    #expect(RunReport.rulesSummary(vm, broken: 2).hasSuffix("2 broken (by rule and object)"))
+}
+
 @Test(arguments: [(0.0, "0 min"), (5, "5 min"), (60, "1 h"), (1_440, "1 day"), (1_530, "1 day 1 h 30 min"), (2_880, "2 days")])
 func gameDurationsLeaveOutWhatsZero(minutes: Double, text: String) {
     #expect(RunReport.gameDuration(minutes: minutes) == text)

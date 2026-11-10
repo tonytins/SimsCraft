@@ -10,6 +10,9 @@ final class RunLog {
     private let session: LotSession
     private var messagesLogged = 0
     private var lastHour: Int32
+    /// Each rule broken so far, by rule and object, so a rule that stays broken is logged once.
+    private var brokenSoFar: Set<String> = []
+    var brokenCount: Int { brokenSoFar.count }
 
     /// Sends logging to standard error, each line its level and its message, without the wall
     /// clock: every message carries the tick and game time instead.
@@ -40,9 +43,18 @@ final class RunLog {
         }
     }
 
-    func finish(ticks: Int, seconds: Double?) {
+    /// Checks the lot's rules and logs each newly broken one.
+    func checkRules() {
+        let vm = session.vm
+        for broken in vm.brokenRules() where brokenSoFar.insert("\(broken.rule.rawValue) \(broken.objectID)").inserted {
+            logger.error("\(RunReport.broken(broken, in: vm))")
+        }
+    }
+
+    func finish(ticks: Int, seconds: Double?, checkedRules: Bool = false) {
         update()
         for line in RunReport.summary(session.vm, ticks: ticks, seconds: seconds) { logger.info("\(line)") }
+        if checkedRules { logger.info("\(RunReport.rulesSummary(session.vm, broken: brokenCount))") }
     }
 }
 
@@ -65,14 +77,22 @@ struct GameLogHandler: LogHandler {
 /// A run with no window: the lot ticks as fast as the machine allows, back to back, for a set
 /// number of ticks, then the run logs its summary and ends. Like CityLimits' `HeadlessRun`, it
 /// never touches raylib, so it needs no display.
+///
+/// With `checksRules`, the lot's rules are checked after loading and every game minute, and the
+/// run returns how many rules objects broke.
 enum HeadlessRun {
-    static func run(_ session: LotSession, ticks: Int, install: String) {
+    @discardableResult
+    static func run(_ session: LotSession, ticks: Int, install: String, checksRules: Bool = false) -> Int {
         let log = RunLog(session: session, install: install)
+        let every = max(1, Int(session.vm.clock.ticksPerMinute))
+        if checksRules { log.checkRules() }
         let start = Date()
-        for _ in 0..<ticks {
+        for tick in stride(from: 1, through: ticks, by: 1) {
             session.vm.tick()
             log.update()
+            if checksRules, tick % every == 0 || tick == ticks { log.checkRules() }
         }
-        log.finish(ticks: ticks, seconds: Date().timeIntervalSince(start))
+        log.finish(ticks: ticks, seconds: Date().timeIntervalSince(start), checkedRules: checksRules)
+        return log.brokenCount
     }
 }
